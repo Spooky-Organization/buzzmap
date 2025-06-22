@@ -1,6 +1,0 @@
----
-description: 
-globs: 
-alwaysApply: true
----
-Do not downgrade any dependencies in any package.json file, Then we're building this authentication system in development mode. We're deploying via Coolify.
