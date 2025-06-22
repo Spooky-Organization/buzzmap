@@ -1,0 +1,3 @@
+{
+  "extends": "./auth_module/tsconfig.json"
+}
