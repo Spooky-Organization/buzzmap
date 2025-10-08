@@ -1058,6 +1058,6 @@ For support and questions:
 
 ---
 
-**Built for secure authentication systems**
+**Built by SpookieLabsInc for secure authentication systems**
 
 _This authentication system provides enterprise-grade security with modern development practices, comprehensive logging, and professional user experience._
