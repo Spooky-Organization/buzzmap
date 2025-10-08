@@ -1,5 +1,6 @@
 // Authentication middleware
 export { authenticateToken, optionalAuth } from "./auth";
+export { authenticateToken as auth } from "./auth"; // Alias for authenticateToken
 
 // Authorization middleware
 export {
@@ -24,6 +25,7 @@ export {
   validatePagination,
   validateRoleAssignment,
 } from "./validation";
+export { handleValidationErrors as validate } from "./validation"; // Alias for handleValidationErrors
 
 // Error handling middleware
 export {
@@ -41,3 +43,17 @@ export {
   emailVerificationLimiter,
   adminLimiter,
 } from "./rateLimiter";
+
+// Sanitization middleware
+export {
+  sanitizeBody,
+  sanitizeQuery,
+  sanitizeParams,
+  sanitizeAll,
+  sanitizeString,
+  sanitizeEmail,
+  sanitizePassword,
+  sanitizeName,
+  sanitizeToken,
+  sanitizeRateLimitKey,
+} from "./sanitization";

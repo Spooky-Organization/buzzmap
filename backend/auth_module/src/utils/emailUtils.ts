@@ -1,21 +1,14 @@
 import { Resend } from "resend";
+import { getEnv } from "./envValidation";
 
 /**
- * Get Resend configuration from environment variables
+ * Get Resend configuration from validated environment variables
  */
 function getResendConfig() {
-  const RESEND_API_KEY = process.env["RESEND_API_KEY"];
-  const RESEND_FROM_EMAIL = process.env["RESEND_FROM_EMAIL"];
-  const RESEND_FROM_NAME = process.env["RESEND_FROM_NAME"];
-
-  if (!RESEND_API_KEY) {
-    throw new Error("RESEND_API_KEY is not set in environment variables");
-  }
-
   return {
-    apiKey: RESEND_API_KEY,
-    fromEmail: RESEND_FROM_EMAIL,
-    fromName: RESEND_FROM_NAME,
+    apiKey: getEnv('RESEND_API_KEY'),
+    fromEmail: getEnv('RESEND_FROM_EMAIL'),
+    fromName: getEnv('RESEND_FROM_NAME'),
   };
 }
 
@@ -38,13 +31,6 @@ export async function sendEmail({
   text?: string;
 }): Promise<void> {
   const config = getResendConfig();
-  console.log("Sending email with config:", {
-    fromEmail: config.fromEmail,
-    fromName: config.fromName,
-    to,
-    subject,
-  });
-
   const resend = new Resend(config.apiKey);
 
   await resend.emails.send({
@@ -62,7 +48,7 @@ export async function sendEmail({
 export function getVerificationEmailTemplate({
   to,
   token,
-  appUrl = process.env["APP_URL"] || "http://localhost:3000",
+  appUrl = getEnv('APP_URL'),
 }: {
   to: string;
   token: string;
@@ -270,7 +256,7 @@ This is an automated message, please do not reply to this email.`,
 export function getPasswordResetEmailTemplate({
   to,
   token,
-  appUrl = process.env["APP_URL"] || "http://localhost:3000",
+  appUrl = getEnv('APP_URL'),
 }: {
   to: string;
   token: string;

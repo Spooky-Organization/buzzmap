@@ -1,18 +1,9 @@
 import { createClient } from "redis";
-import dotenv from "dotenv";
+import { getEnv } from "../utils/envValidation";
 
-// Load environment variables
-dotenv.config();
-
-const host = process.env["REDIS_HOST"];
-const port = process.env["REDIS_PORT"];
-const password = process.env["REDIS_PASSWORD"];
-
-if (!host || !port) {
-  throw new Error(
-    "REDIS_HOST and REDIS_PORT must be defined in environment variables"
-  );
-}
+const host = getEnv('REDIS_HOST');
+const port = getEnv('REDIS_PORT');
+const password = getEnv('REDIS_PASSWORD');
 
 const redisClient = createClient({
   url: `redis://${host}:${port}`,

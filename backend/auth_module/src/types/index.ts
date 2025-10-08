@@ -14,6 +14,57 @@ export type UserWithoutSensitiveData = Omit<
   "password" | "refreshToken" | "emailVerificationToken" | "passwordResetToken"
 >;
 
+// MFA types
+export interface UserWithMFA {
+  id: string;
+  email: string;
+  password: string;
+  firstName: string | null;
+  lastName: string | null;
+  role: UserRole;
+  isEmailVerified: boolean;
+  emailVerificationToken: string | null;
+  passwordResetToken: string | null;
+  passwordResetExpires: Date | null;
+  refreshToken: string | null;
+  mfaEnabled: boolean;
+  mfaSecret: string | null;
+  mfaBackupCodes: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface MFASetupResponse {
+  message: string;
+  secret: string;
+  userEmail: string;
+  setupComplete: boolean;
+  qrCodeEndpoint: string;
+}
+
+export interface MFAVerificationRequest {
+  token: string;
+}
+
+export interface MFALoginVerificationRequest {
+  email: string;
+  token?: string;
+  backupCode?: string;
+}
+
+export interface MFADisableRequest {
+  password: string;
+}
+
+export interface MFABackupCodesRequest {
+  password: string;
+}
+
+export interface MFAStatusResponse {
+  mfaEnabled: boolean;
+  backupCodesRemaining: number;
+}
+
 // JWT Payload types
 export interface JWTPayload {
   userId: string;
@@ -74,6 +125,24 @@ export interface ApiResponse<T = any> {
   message: string;
   data?: T;
   error?: string;
+}
+
+// Standardized error response
+export interface ApiErrorResponse {
+  error: string;
+  message: string;
+  statusCode: number;
+  timestamp: string;
+  path: string;
+  details?: any;
+}
+
+// Standardized success response
+export interface ApiSuccessResponse<T = any> {
+  success: true;
+  message: string;
+  data?: T;
+  timestamp: string;
 }
 
 // Middleware types

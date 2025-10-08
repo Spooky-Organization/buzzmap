@@ -7,15 +7,15 @@ import { prisma } from "../config/prisma";
 import {
   hashPassword,
   comparePassword,
-  generateToken,
   validatePassword,
 } from "../utils/passwordUtils";
+import { generateAccessToken, generateRefreshToken } from "../config/jwt";
 import {
   sendEmail,
   getVerificationEmailTemplate,
   getPasswordResetEmailTemplate,
 } from "../utils/emailUtils";
-import { ApiError, asyncHandler } from "../middleware";
+import { ApiError, asyncHandler, sanitizeEmail, sanitizeName } from "../middleware";
 import { logFailedLogin } from "../utils/logger";
 
 /**
@@ -24,10 +24,15 @@ import { logFailedLogin } from "../utils/logger";
  */
 export const register = asyncHandler(async (req: Request, res: Response) => {
   const { email, password, firstName, lastName } = req.body;
+  
+  // Sanitize inputs
+  const sanitizedEmail = sanitizeEmail(email);
+  const sanitizedFirstName = firstName ? sanitizeName(firstName) : undefined;
+  const sanitizedLastName = lastName ? sanitizeName(lastName) : undefined;
 
   // Check if user already exists
   const existingUser = await prisma.user.findUnique({
-    where: { email },
+    where: { email: sanitizedEmail },
   });
 
   if (existingUser) {
@@ -43,10 +48,10 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   // Create user
   const user = await prisma.user.create({
     data: {
-      email,
+      email: sanitizedEmail,
       password: hashedPassword,
-      firstName,
-      lastName,
+      firstName: sanitizedFirstName || null,
+      lastName: sanitizedLastName || null,
       role: UserRole.USER, // Default role
       emailVerificationToken,
     },
@@ -63,31 +68,19 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 
   // Send verification email
   try {
-    console.log("Sending verification email to:", user.email);
     const emailTemplate = getVerificationEmailTemplate({
       to: user.email,
       token: emailVerificationToken,
     });
     await sendEmail(emailTemplate);
-    console.log("Verification email sent successfully to:", user.email);
   } catch (error) {
     console.error("Failed to send verification email:", error);
-    console.error("Email configuration:", {
-      apiKey: process.env["RESEND_API_KEY"] ? "Set" : "Not set",
-      fromEmail: process.env["RESEND_FROM_EMAIL"],
-      fromName: process.env["RESEND_FROM_NAME"],
-    });
     // Don't fail registration if email fails, but log the error
   }
 
   // Generate JWT tokens
-  const accessToken = generateToken({
-    userId: user.id,
-    email: user.email,
-    role: user.role,
-  });
-
-  const refreshToken = crypto.randomBytes(40).toString("hex");
+  const accessToken = generateAccessToken(user.id, user.email, user.role);
+  const refreshToken = generateRefreshToken(user.id, user.email, user.role);
 
   // Store refresh token
   await prisma.user.update({
@@ -119,30 +112,41 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
  */
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
+  
+  // Sanitize email input
+  const sanitizedEmail = sanitizeEmail(email);
 
   // Find user
   const user = await prisma.user.findUnique({
-    where: { email },
+    where: { email: sanitizedEmail },
   });
 
   if (!user) {
-    logFailedLogin(req.ip, email);
+    logFailedLogin(req.ip, sanitizedEmail);
     throw new ApiError("Invalid email or password", 401);
   }
 
   // Verify password
   const isPasswordValid = await comparePassword(password, user.password);
   if (!isPasswordValid) {
-    logFailedLogin(req.ip, email);
+    logFailedLogin(req.ip, sanitizedEmail);
     throw new ApiError("Invalid email or password", 401);
   }
 
-  // Generate JWT tokens
-  const accessToken = generateToken({
-    userId: user.id,
-    email: user.email,
-    role: user.role,
-  });
+  // Check if MFA is enabled
+  if (user.mfaEnabled) {
+    // Return response indicating MFA verification is required
+    res.json({
+      message: "MFA verification required",
+      mfaRequired: true,
+      email: user.email,
+      // Don't return tokens yet - they'll be provided after MFA verification
+    });
+    return;
+  }
+
+  // Generate JWT tokens (only if MFA is not enabled)
+  const accessToken = generateAccessToken(user.id, user.email, user.role);
 
   const refreshToken = crypto.randomBytes(40).toString("hex");
 
@@ -321,14 +325,10 @@ export const refreshToken = asyncHandler(
     }
 
     // Generate new access token
-    const accessToken = generateToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    });
+    const accessToken = generateAccessToken(user.id, user.email, user.role);
 
     // Generate new refresh token
-    const newRefreshToken = crypto.randomBytes(40).toString("hex");
+    const newRefreshToken = generateRefreshToken(user.id, user.email, user.role);
 
     // Update refresh token
     await prisma.user.update({
@@ -443,6 +443,59 @@ export const changePassword = asyncHandler(
 
     res.json({
       message: "Password changed successfully",
+    });
+  }
+);
+
+/**
+ * Complete login after MFA verification
+ * POST /api/auth/login/complete
+ */
+export const completeLogin = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { email } = req.body;
+
+    if (!email) {
+      throw new ApiError("Email is required", 400);
+    }
+
+    // Find user
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new ApiError("User not found", 404);
+    }
+
+    if (!user.mfaEnabled) {
+      throw new ApiError("MFA is not enabled for this user", 400);
+    }
+
+    // Generate JWT tokens
+    const accessToken = generateAccessToken(user.id, user.email, user.role);
+    const refreshToken = generateRefreshToken(user.id, user.email, user.role);
+
+    // Update refresh token
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { refreshToken },
+    });
+
+    res.json({
+      message: "Login completed successfully",
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        isEmailVerified: user.isEmailVerified,
+      },
+      tokens: {
+        accessToken,
+        refreshToken,
+      },
     });
   }
 );

@@ -5,18 +5,21 @@ A comprehensive, production-ready authentication system built with Node.js, Expr
 ## 🚀 Features
 
 - **User Authentication**: Registration, login, logout with JWT tokens
+- **Multi-Factor Authentication (MFA)**: TOTP-based 2FA with backup codes and QR code setup
 - **Role-Based Access Control**: Three roles (Admin, User, Accountant) with specific permissions
 - **Email Verification**: Secure email verification system with professional HTML templates
 - **Password Reset**: Forgot password functionality with secure tokens
 - **Session Management**: JWT refresh tokens for persistent sessions
 - **Security Logging**: Failed login attempt tracking with IP address logging
 - **Professional Email Templates**: Responsive HTML emails with modern CSS styling
-- **Rate Limiting**: Prevents brute force attacks
-- **Input Validation**: Comprehensive request validation
-- **Error Handling**: Global error handling with detailed logging
-- **Database**: PostgreSQL with Prisma ORM for type-safe operations
-- **Docker**: Containerized development environment with Docker Compose
-- **TypeScript**: Full TypeScript implementation for enhanced code quality
+- **Rate Limiting**: Prevents brute force attacks with Redis-backed rate limiting
+- **Input Validation & Sanitization**: Comprehensive request validation and XSS protection
+- **Performance Monitoring**: Comprehensive performance metrics and monitoring system
+- **API Versioning**: Professional versioned API structure with v1 routes
+- **Environment Validation**: Startup validation of all required environment variables
+- **Input Sanitization**: Comprehensive XSS protection and input validation
+- **Type Safety**: Full TypeScript type coverage with proper interfaces
+- **Error Standardization**: Consistent error response format across all endpoints
 
 ## 🏗️ Project Structure
 
@@ -26,6 +29,7 @@ backend/
 │   ├── src/
 │   │   ├── controllers/
 │   │   │   ├── authController.ts   # Authentication logic
+│   │   │   ├── mfaController.ts    # Multi-factor authentication logic
 │   │   │   └── userController.ts   # User management logic
 │   │   ├── middleware/
 │   │   │   ├── auth.ts            # JWT authentication middleware
@@ -33,11 +37,15 @@ backend/
 │   │   │   ├── validation.ts      # Input validation middleware
 │   │   │   ├── errorHandler.ts    # Global error handling
 │   │   │   ├── rateLimiter.ts     # Rate limiting middleware
+│   │   │   ├── sanitization.ts    # Input sanitization middleware
 │   │   │   └── index.ts           # Middleware exports
 │   │   ├── routes/
-│   │   │   ├── authRoutes.ts      # Authentication routes
-│   │   │   ├── userRoutes.ts      # User management routes
-│   │   │   └── index.ts           # Route exports
+│   │   │   ├── v1/                    # Versioned API routes
+│   │   │   │   ├── authRoutes.ts      # Authentication routes (v1)
+│   │   │   │   ├── mfaRoutes.ts       # Multi-factor authentication routes (v1)
+│   │   │   │   ├── userRoutes.ts      # User management routes (v1)
+│   │   │   │   └── performanceRoutes.ts # Performance monitoring routes (v1)
+│   │   │   └── index.ts               # Route exports
 │   │   ├── config/
 │   │   │   ├── jwt.ts             # JWT configuration
 │   │   │   ├── prisma.ts          # Prisma client configuration
@@ -45,8 +53,10 @@ backend/
 │   │   ├── utils/
 │   │   │   ├── passwordUtils.ts   # Password hashing utilities
 │   │   │   ├── emailUtils.ts      # Email sending utilities (Resend)
+│   │   │   ├── mfaUtils.ts        # Multi-factor authentication utilities
 │   │   │   ├── roleUtils.ts       # Role validation utilities
-│   │   │   └── logger.ts          # Failed login logging utility
+│   │   │   ├── logger.ts          # Failed login logging utility
+│   │   │   └── envValidation.ts   # Environment variable validation
 │   │   ├── types/
 │   │   │   └── index.ts           # TypeScript type definitions
 │   │   ├── app.ts                 # Express app configuration
@@ -144,7 +154,7 @@ npx prisma migrate dev
 npm run dev
 ```
 
-The server will start at `http://localhost:5000`
+The server will start at `http://localhost:3000`
 
 ## 🔧 Environment Variables
 
@@ -152,7 +162,7 @@ Create a `.env` file based on `.env.example`:
 
 ```env
 # Server Configuration
-PORT=5000
+PORT=3000
 NODE_ENV=development
 
 # Database Configuration
@@ -163,15 +173,15 @@ POSTGRES_PORT=5432
 DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT}/${POSTGRES_DB}"
 
 # JWT Configuration
-JWT_SECRET=your-super-secret-jwt-key
-JWT_REFRESH_SECRET=your-super-secret-refresh-key
+JWT_SECRET=your-super-secret-jwt-key-here
+JWT_REFRESH_SECRET=your-super-secret-refresh-key-here
 JWT_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=7d
 
 # Email Configuration (Resend)
-RESEND_API_KEY=your-resend-api-key
-RESEND_FROM_EMAIL=onboarding@resend.dev
-RESEND_FROM_NAME=Auth System
+RESEND_API_KEY=your-resend-api-key-here
+RESEND_FROM_EMAIL=your-email@yourdomain.com
+RESEND_FROM_NAME=Your App Name
 
 # Rate Limiting
 RATE_LIMIT_WINDOW_MS=900000
@@ -187,7 +197,7 @@ FRONTEND_URL=http://localhost:3000
 # Redis Configuration
 REDIS_HOST=localhost
 REDIS_PORT=6379
-REDIS_PASSWORD=your-redis-password
+REDIS_PASSWORD=your-redis-password-here
 ```
 
 ## 🗄️ Database Schema
@@ -213,6 +223,12 @@ model User {
   passwordResetToken    String?
   passwordResetExpires  DateTime?
   refreshToken          String?
+  
+  // MFA (Multi-Factor Authentication) fields
+  mfaEnabled            Boolean   @default(false)
+  mfaSecret             String?   // TOTP secret key
+  mfaBackupCodes        String[]  // Array of backup codes for account recovery
+  
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 }
@@ -231,40 +247,496 @@ model User {
 1. **Registration**: User registers with email and password
 2. **Email Verification**: User receives professionally styled verification email
 3. **Login**: User logs in with email and password
-4. **Failed Login Logging**: All failed attempts are logged with IP addresses
-5. **JWT Tokens**: Access token (15min) + Refresh token (7 days)
-6. **Token Refresh**: Automatic token renewal using refresh token
+4. **MFA Verification**: If MFA is enabled, user provides TOTP code or backup code
+5. **Failed Login Logging**: All failed attempts are logged with IP addresses
+6. **JWT Tokens**: Access token (15min) + Refresh token (7 days)
+7. **Token Refresh**: Automatic token renewal using refresh token
+
+## 🔐 Multi-Factor Authentication (MFA)
+
+### Overview
+
+The authentication system includes comprehensive Multi-Factor Authentication (MFA) support using Time-based One-Time Passwords (TOTP) with backup codes for account recovery.
+
+### MFA Features
+
+- **TOTP Support**: Compatible with Google Authenticator, Authy, and other TOTP apps
+- **QR Code Generation**: Automatic QR code generation for easy setup
+- **Backup Codes**: 5 single-use backup codes for account recovery
+- **Secure Storage**: MFA secrets are encrypted and stored securely
+- **Account Recovery**: Backup codes can be used when TOTP device is unavailable
+
+### MFA Setup Process
+
+1. **Initiate Setup**: User requests MFA setup via API
+2. **Generate Secret**: System generates a unique TOTP secret
+3. **QR Code**: User scans QR code with authenticator app
+4. **Verification**: User enters TOTP code to verify setup
+5. **Backup Codes**: System generates and displays backup codes
+6. **Activation**: MFA is enabled for the user account
+
+### MFA Login Process
+
+1. **Standard Login**: User enters email and password
+2. **MFA Check**: System checks if MFA is enabled for user
+3. **MFA Prompt**: If enabled, system requests TOTP code or backup code
+4. **Verification**: System verifies the provided code
+5. **Token Generation**: Upon successful verification, JWT tokens are issued
+6. **Backup Code Cleanup**: Used backup codes are automatically removed
+
+### MFA Management
+
+- **Enable/Disable**: Users can enable or disable MFA (requires password verification)
+- **Regenerate Backup Codes**: Users can generate new backup codes
+- **Status Check**: Users can check MFA status and remaining backup codes
+- **Secure Disable**: MFA can only be disabled with password verification
 
 ## 📡 API Endpoints
+
+### Base URL
+```
+http://localhost:3000/api/v1
+```
+
+### Health Check
+```
+GET  /api/health                 # API health status (not versioned)
+```
 
 ### Public Routes
 
 ```
-POST /api/auth/register          # User registration
-POST /api/auth/login             # User login (with failed attempt logging)
-POST /api/auth/logout            # User logout
-POST /api/auth/refresh           # Refresh access token
-POST /api/auth/forgot-password   # Request password reset
-POST /api/auth/reset-password    # Reset password
-POST /api/auth/verify-email      # Verify email address
+POST /api/v1/auth/register          # User registration
+POST /api/v1/auth/login             # User login (with failed attempt logging)
+POST /api/v1/auth/login/complete    # Complete login after MFA verification
+POST /api/v1/auth/logout            # User logout
+POST /api/v1/auth/refresh           # Refresh access token
+POST /api/v1/auth/forgot-password   # Request password reset
+POST /api/v1/auth/reset-password    # Reset password
+POST /api/v1/auth/verify-email      # Verify email address
 ```
 
 ### Protected Routes (All authenticated users)
 
 ```
-GET  /api/auth/me                # Get current user profile
-POST /api/auth/change-password   # Change user password
-PUT  /api/users/profile          # Update user profile
-DELETE /api/users/account        # Delete user account
+GET  /api/v1/auth/me                # Get current user profile
+POST /api/v1/auth/change-password   # Change user password
 ```
 
-### Admin Routes (Admin only)
+### MFA Routes
+
+#### Authenticated MFA Routes
+```
+POST /api/v1/auth/mfa/setup         # Initiate MFA setup
+POST /api/v1/auth/mfa/verify-setup  # Verify MFA setup with TOTP code
+POST /api/v1/auth/mfa/disable       # Disable MFA (requires password)
+POST /api/v1/auth/mfa/backup-codes  # Generate new backup codes
+GET  /api/v1/auth/mfa/status        # Get MFA status and backup codes count
+POST /api/v1/auth/mfa/generate-qr   # Generate QR code for setup
+```
+
+#### Public MFA Routes
+```
+POST /api/v1/auth/mfa/verify-login  # Verify MFA during login (public)
+GET  /api/v1/auth/mfa/qr/:secret/:email  # Get QR code as image (public)
+```
+
+### User Management Routes (All authenticated users)
 
 ```
-GET    /api/admin/users          # Get all users
-PUT    /api/admin/users/:id      # Update user
-DELETE /api/admin/users/:id      # Delete user
-POST   /api/admin/users/:id/change-role  # Change user role
+GET    /api/v1/users                # Get all users (Admin only)
+GET    /api/v1/users/stats          # Get user statistics (Admin only)
+GET    /api/v1/users/:userId        # Get user by ID (Admin/Accountant/Own)
+PUT    /api/v1/users/:userId        # Update user (Admin/Own)
+PATCH  /api/v1/users/:userId/role   # Change user role (Admin only)
+DELETE /api/v1/users/:userId        # Delete user (Admin only)
+POST   /api/v1/users/:userId/resend-verification  # Resend verification email (Admin only)
+```
+
+### Performance Monitoring Routes (Admin only)
+
+```
+GET /api/v1/admin/performance/:endpoint           # Get performance metrics
+GET /api/v1/admin/performance/:endpoint/stats     # Get performance statistics
+GET /api/v1/admin/performance/endpoints           # Get all monitored endpoints
+GET /api/v1/admin/performance/summary             # Get system performance summary
+```
+
+## 🚀 User Journey & Authentication Flows
+
+### 1. User Registration Flow
+
+#### Step 1: User Registration
+```http
+POST /api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "SecurePass123",
+  "firstName": "John",
+  "lastName": "Doe"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "User registered successfully. Please check your email to verify your account.",
+  "user": {
+    "id": "user_id",
+    "email": "user@example.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "role": "USER",
+    "isEmailVerified": false
+  },
+  "tokens": {
+    "accessToken": "jwt_token",
+    "refreshToken": "refresh_token"
+  }
+}
+```
+
+#### Step 2: Email Verification
+User receives professional HTML email with verification link. When clicked:
+
+```http
+POST /api/v1/auth/verify-email
+Content-Type: application/json
+
+{
+  "token": "verification_token_from_email"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Email verified successfully"
+}
+```
+
+### 2. User Login Flow (Without MFA)
+
+#### Standard Login
+```http
+POST /api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "SecurePass123"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Login successful",
+  "user": {
+    "id": "user_id",
+    "email": "user@example.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "role": "USER",
+    "isEmailVerified": true
+  },
+  "tokens": {
+    "accessToken": "jwt_token",
+    "refreshToken": "refresh_token"
+  }
+}
+```
+
+### 3. User Login Flow (With MFA Enabled)
+
+#### Step 1: Initial Login
+```http
+POST /api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "SecurePass123"
+}
+```
+
+**Response (MFA Required):**
+```json
+{
+  "message": "MFA verification required",
+  "mfaRequired": true,
+  "email": "user@example.com"
+}
+```
+
+#### Step 2: MFA Verification
+```http
+POST /api/v1/auth/mfa/verify-login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "token": "123456"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "MFA verification successful",
+  "mfaVerified": true
+}
+```
+
+#### Step 3: Complete Login
+```http
+POST /api/v1/auth/login/complete
+Content-Type: application/json
+
+{
+  "email": "user@example.com"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Login completed successfully",
+  "user": {
+    "id": "user_id",
+    "email": "user@example.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "role": "USER",
+    "isEmailVerified": true
+  },
+  "tokens": {
+    "accessToken": "jwt_token",
+    "refreshToken": "refresh_token"
+  }
+}
+```
+
+### 4. MFA Setup Flow
+
+#### Step 1: Initiate MFA Setup
+```http
+POST /api/v1/auth/mfa/setup
+Authorization: Bearer <access_token>
+```
+
+**Response:**
+```json
+{
+  "message": "MFA setup initiated",
+  "secret": "JBSWY3DPEHPK3PXP",
+  "userEmail": "user@example.com",
+  "setupComplete": false,
+  "qrCodeEndpoint": "/api/v1/auth/mfa/qr/JBSWY3DPEHPK3PXP/user%40example.com"
+}
+```
+
+#### Step 2: Generate QR Code
+```http
+POST /api/v1/auth/mfa/generate-qr
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "secret": "JBSWY3DPEHPK3PXP",
+  "email": "user@example.com"
+}
+```
+
+**Response:**
+```json
+{
+  "qrCodeDataURL": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+}
+```
+
+#### Step 3: Verify MFA Setup
+User scans QR code with authenticator app and enters TOTP code:
+
+```http
+POST /api/v1/auth/mfa/verify-setup
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "token": "123456"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "MFA enabled successfully",
+  "backupCodes": "1. ABC12345\n2. DEF67890\n3. GHI13579\n4. JKL24680\n5. MNO97531",
+  "setupComplete": true
+}
+```
+
+### 5. Password Reset Flow
+
+#### Step 1: Request Password Reset
+```http
+POST /api/v1/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "user@example.com"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Password reset email sent"
+}
+```
+
+#### Step 2: Reset Password
+User clicks link in email and submits new password:
+
+```http
+POST /api/v1/auth/reset-password
+Content-Type: application/json
+
+{
+  "token": "reset_token_from_email",
+  "password": "NewSecurePass123"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Password reset successfully"
+}
+```
+
+### 6. Token Refresh Flow
+
+#### Refresh Access Token
+```http
+POST /api/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "refresh_token"
+}
+```
+
+**Response:**
+```json
+{
+  "tokens": {
+    "accessToken": "new_jwt_token",
+    "refreshToken": "new_refresh_token"
+  }
+}
+```
+
+### 7. User Management Flow (Admin)
+
+#### Get All Users
+```http
+GET /api/v1/users?page=1&limit=10&role=USER&search=john
+Authorization: Bearer <admin_access_token>
+```
+
+**Response:**
+```json
+{
+  "users": [
+    {
+      "id": "user_id",
+      "email": "user@example.com",
+      "firstName": "John",
+      "lastName": "Doe",
+      "role": "USER",
+      "isEmailVerified": true,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 50,
+    "totalPages": 5,
+    "hasNext": true,
+    "hasPrev": false
+  }
+}
+```
+
+#### Update User Role
+```http
+PATCH /api/v1/users/:userId/role
+Authorization: Bearer <admin_access_token>
+Content-Type: application/json
+
+{
+  "role": "ACCOUNTANT"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "User role updated successfully"
+}
+```
+
+### 8. Performance Monitoring Flow (Admin)
+
+#### Get Performance Metrics
+```http
+GET /api/v1/admin/performance/auth/login?method=POST&timeRange=3600000
+Authorization: Bearer <admin_access_token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "endpoint": "/auth/login",
+    "method": "POST",
+    "timeRange": 3600000,
+    "metrics": [
+      {
+        "timestamp": "2024-01-01T00:00:00Z",
+        "responseTime": 150,
+        "statusCode": 200,
+        "memoryUsage": 45.2
+      }
+    ],
+    "count": 1
+  }
+}
+```
+
+### 9. Error Handling
+
+All endpoints return consistent error responses:
+
+```json
+{
+  "error": "Error message",
+  "message": "Error message",
+  "statusCode": 400,
+  "timestamp": "2024-01-01T00:00:00.000Z",
+  "path": "/api/v1/auth/login",
+  "details": {
+    "field": "email",
+    "message": "Valid email is required"
+  }
+}
 ```
 
 ## 🔒 Security Features
@@ -307,8 +779,8 @@ POST   /api/admin/users/:id/change-role  # Change user role
 ### Log Format
 
 ```
-[2024-01-15T10:30:45.123Z] Failed login attempt for email: user@example.com from IP: 192.168.1.100
-[2024-01-15T10:31:12.456Z] Failed login attempt for email: admin@test.com from IP: unknown
+[2024-01-15T10:30:45.123Z] Failed login attempt for email: user@example.com from IP: [REDACTED]
+[2024-01-15T10:31:12.456Z] Failed login attempt for email: admin@test.com from IP: [REDACTED]
 ```
 
 ## 🐳 Docker Setup
@@ -374,7 +846,7 @@ npm run test:coverage
 #### User Registration
 
 ```http
-POST /api/auth/register
+POST /api/v1/auth/register
 Content-Type: application/json
 
 {
@@ -408,7 +880,7 @@ Content-Type: application/json
 #### User Login
 
 ```http
-POST /api/auth/login
+POST /api/v1/auth/login
 Content-Type: application/json
 
 {
@@ -420,8 +892,86 @@ Content-Type: application/json
 #### Protected Route Example
 
 ```http
-GET /api/auth/me
+GET /api/v1/auth/me
 Authorization: Bearer <access_token>
+```
+
+#### MFA Setup Example
+
+```http
+POST /api/v1/auth/mfa/setup
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+# Response:
+{
+  "message": "MFA setup initiated",
+  "secret": "JBSWY3DPEHPK3PXP",
+  "userEmail": "user@example.com",
+  "setupComplete": false,
+  "qrCodeEndpoint": "/api/v1/auth/mfa/qr/JBSWY3DPEHPK3PXP/user%40example.com"
+}
+```
+
+#### MFA Verification Example
+
+```http
+POST /api/v1/auth/mfa/verify-setup
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "token": "123456"
+}
+
+# Response:
+{
+  "message": "MFA enabled successfully",
+  "backupCodes": "1. ABC12345\n2. DEF67890\n3. GHI13579\n4. JKL24680\n5. MNO97531",
+  "setupComplete": true
+}
+```
+
+#### MFA Login Example
+
+```http
+POST /api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "securePassword123"
+}
+
+# Response (if MFA enabled):
+{
+  "message": "MFA verification required",
+  "mfaRequired": true,
+  "email": "user@example.com"
+}
+
+# Then verify MFA:
+POST /api/v1/auth/mfa/verify-login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "token": "123456"
+}
+
+# Response:
+{
+  "message": "MFA verification successful",
+  "mfaVerified": true
+}
+
+# Finally complete login:
+POST /api/v1/auth/login/complete
+Content-Type: application/json
+
+{
+  "email": "user@example.com"
+}
 ```
 
 ## 🚀 Deployment
@@ -447,6 +997,25 @@ npm start
 ```
 
 ## 🔄 Recent Updates
+
+### Version 3.0.0 (Current)
+
+- ✅ **API Versioning**: Professional versioned API structure with v1 routes
+- ✅ **Performance Monitoring**: Comprehensive performance metrics and monitoring system
+- ✅ **Code Quality**: Clean, maintainable code structure with proper organization
+- ✅ **Template Readiness**: Professional-grade template ready for production use
+- ✅ **Future-Proof Architecture**: Easy to extend with v2 features when needed
+
+### Version 2.0.0
+
+- ✅ **Multi-Factor Authentication (MFA)**: Complete TOTP-based 2FA implementation
+- ✅ **MFA Management**: Setup, verification, backup codes, and QR code generation
+- ✅ **Environment Validation**: Comprehensive startup validation of all required variables
+- ✅ **Input Sanitization**: XSS protection and comprehensive input validation
+- ✅ **Type Safety**: Full TypeScript type coverage with proper interfaces
+- ✅ **Error Standardization**: Consistent error response format across all endpoints
+- ✅ **Security Enhancements**: Removed debug endpoints and sensitive logging
+- ✅ **Code Quality**: Improved error handling and middleware organization
 
 ### Version 1.1.0
 
@@ -489,6 +1058,6 @@ For support and questions:
 
 ---
 
-**Built with ❤️ for secure authentication systems**
+**Built for secure authentication systems**
 
 _This authentication system provides enterprise-grade security with modern development practices, comprehensive logging, and professional user experience._

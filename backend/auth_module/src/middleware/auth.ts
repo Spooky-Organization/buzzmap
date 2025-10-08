@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
 import { prisma } from "../config/prisma";
+import { ApiErrorResponse } from "../types";
+import { verifyAccessToken } from "../config/jwt";
 
 // Extend Express Request interface to include user
 declare global {
@@ -29,22 +30,19 @@ export async function authenticateToken(
     const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
 
     if (!token) {
-      res.status(401).json({ error: "Access token required" });
+      const errorResponse: ApiErrorResponse = {
+        error: "Access token required",
+        message: "Access token required",
+        statusCode: 401,
+        timestamp: new Date().toISOString(),
+        path: req.originalUrl,
+      };
+      res.status(401).json(errorResponse);
       return;
     }
 
-    const jwtSecret = process.env["JWT_SECRET"];
-    if (!jwtSecret) {
-      throw new Error("JWT_SECRET is not configured");
-    }
-
-    // Verify token
-    const decoded = jwt.verify(token, jwtSecret) as {
-      userId: string;
-      email: string;
-      role: string;
-    };
-
+    // Verify token using proper JWT verification
+    const decoded = verifyAccessToken(token);
     // Check if user still exists in database
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
@@ -52,7 +50,14 @@ export async function authenticateToken(
     });
 
     if (!user) {
-      res.status(401).json({ error: "User not found" });
+      const errorResponse: ApiErrorResponse = {
+        error: "User not found",
+        message: "User not found",
+        statusCode: 401,
+        timestamp: new Date().toISOString(),
+        path: req.originalUrl,
+      };
+      res.status(401).json(errorResponse);
       return;
     }
 
@@ -65,13 +70,48 @@ export async function authenticateToken(
 
     next();
   } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      res.status(401).json({ error: "Invalid token" });
-    } else if (error instanceof jwt.TokenExpiredError) {
-      res.status(401).json({ error: "Token expired" });
+    let errorResponse: ApiErrorResponse;
+    
+    if (error instanceof Error) {
+      if (error.message === "Invalid token" || error.message === "Invalid token type") {
+        errorResponse = {
+          error: "Invalid token",
+          message: "Invalid token",
+          statusCode: 401,
+          timestamp: new Date().toISOString(),
+          path: req.originalUrl,
+        };
+        res.status(401).json(errorResponse);
+      } else if (error.message === "Token expired") {
+        errorResponse = {
+          error: "Token expired",
+          message: "Token expired",
+          statusCode: 401,
+          timestamp: new Date().toISOString(),
+          path: req.originalUrl,
+        };
+        res.status(401).json(errorResponse);
+      } else {
+        console.error("Authentication error:", error);
+        errorResponse = {
+          error: "Authentication failed",
+          message: "Authentication failed",
+          statusCode: 500,
+          timestamp: new Date().toISOString(),
+          path: req.originalUrl,
+        };
+        res.status(500).json(errorResponse);
+      }
     } else {
       console.error("Authentication error:", error);
-      res.status(500).json({ error: "Authentication failed" });
+      errorResponse = {
+        error: "Authentication failed",
+        message: "Authentication failed",
+        statusCode: 500,
+        timestamp: new Date().toISOString(),
+        path: req.originalUrl,
+      };
+      res.status(500).json(errorResponse);
     }
   }
 }
@@ -96,18 +136,8 @@ export async function optionalAuth(
       return;
     }
 
-    const jwtSecret = process.env["JWT_SECRET"];
-    if (!jwtSecret) {
-      next();
-      return;
-    }
-
-    // Try to verify token
-    const decoded = jwt.verify(token, jwtSecret) as {
-      userId: string;
-      email: string;
-      role: string;
-    };
+    // Try to verify token using proper JWT verification
+    const decoded = verifyAccessToken(token);
 
     // Check if user exists
     const user = await prisma.user.findUnique({

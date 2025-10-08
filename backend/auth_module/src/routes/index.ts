@@ -1,4 +1,13 @@
-import authRoutes from "./authRoutes";
-import userRoutes from "./userRoutes";
+// V1 Routes (current implementation)
+import authRoutesV1 from "./v1/authRoutes";
+import userRoutesV1 from "./v1/userRoutes";
+import mfaRoutesV1 from "./v1/mfaRoutes";
+import performanceRoutesV1 from "./v1/performanceRoutes";
 
-export { authRoutes, userRoutes };
+// Export versioned routes
+export { 
+  authRoutesV1, 
+  userRoutesV1, 
+  mfaRoutesV1, 
+  performanceRoutesV1
+};

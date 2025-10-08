@@ -3,7 +3,7 @@ import path from "path";
 
 const logFilePath = path.join(
   __dirname,
-  "../../../volumes/logs/failed_logins.log"
+  "../../logs/failed_logins.log"
 );
 
 const logDirectory = path.dirname(logFilePath);

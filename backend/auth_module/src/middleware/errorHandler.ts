@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { ApiErrorResponse } from "../types";
 
 /**
  * Custom error class for API errors
@@ -97,10 +98,13 @@ export function errorHandler(
     });
   }
 
-  // Send error response
-  const errorResponse: any = {
+  // Send standardized error response
+  const errorResponse: ApiErrorResponse = {
     error: message,
+    message: message,
     statusCode,
+    timestamp: new Date().toISOString(),
+    path: req.originalUrl,
   };
 
   if (details) {
@@ -109,7 +113,7 @@ export function errorHandler(
 
   // Include stack trace in development
   if (process.env["NODE_ENV"] === "development") {
-    errorResponse.stack = error.stack;
+    (errorResponse as any).stack = error.stack;
   }
 
   res.status(statusCode).json(errorResponse);

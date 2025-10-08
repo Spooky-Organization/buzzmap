@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   register,
   login,
+  completeLogin,
   verifyEmail,
   forgotPassword,
   resetPassword,
@@ -9,7 +10,7 @@ import {
   logout,
   getProfile,
   changePassword,
-} from "../controllers/authController";
+} from "../../controllers/authController";
 
 import {
   authenticateToken,
@@ -22,13 +23,14 @@ import {
   validatePasswordReset,
   validateEmailVerification,
   validatePasswordChange,
-} from "../middleware";
+} from "../../middleware";
 
 const router = Router();
 
 // Public routes
 router.post("/register", authLimiter, validateRegistration, register);
 router.post("/login", authLimiter, validateLogin, login);
+router.post("/login/complete", authLimiter, completeLogin);
 router.post(
   "/verify-email",
   emailVerificationLimiter,

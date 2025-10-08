@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { body, param, query, validationResult } from "express-validator";
+import { ApiErrorResponse } from "../types";
 
 /**
  * Validation result handler
@@ -12,14 +13,20 @@ export function handleValidationErrors(
 ): void {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    res.status(400).json({
+    const errorResponse: ApiErrorResponse = {
       error: "Validation failed",
+      message: "Validation failed",
+      statusCode: 400,
+      timestamp: new Date().toISOString(),
+      path: req.originalUrl,
       details: errors.array().map((error) => ({
         field: error.type === "field" ? error.path : "unknown",
         message: error.msg,
         value: error.type === "field" ? error.value : undefined,
       })),
-    });
+    };
+    
+    res.status(400).json(errorResponse);
     return;
   }
   next();
