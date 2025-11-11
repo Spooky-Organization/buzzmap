@@ -3,8 +3,8 @@ import cors from "cors";
 import helmet from "helmet";
 
 // Import custom middleware
-import { errorHandler, notFoundHandler, generalLimiter, sanitizeAll } from "./middleware";
-import { performanceMonitor } from "./utils/performanceMonitor";
+import { errorHandler, notFoundHandler, generalLimiter, sanitizeAll } from "../auth_module/src/middleware";
+import { performanceMonitor } from "../auth_module/src/utils/performanceMonitor";
 
 // Import routes
 import { 
@@ -12,10 +12,10 @@ import {
   userRoutesV1, 
   mfaRoutesV1, 
   performanceRoutesV1
-} from "./routes";
+} from "../auth_module/src/routes";
 
 // Import environment validation
-import { getEnv } from "./utils/envValidation";
+import { getEnv } from "../auth_module/src/utils/envValidation";
 
 const app = express();
 

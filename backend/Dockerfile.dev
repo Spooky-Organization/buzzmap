@@ -1,0 +1,39 @@
+# Development Dockerfile with Hot Reload Support
+# Optimized for fast iteration and development workflow
+# Using Node.js 20 LTS to match @types/node ^20.9.0 and ensure compatibility with all dependencies
+FROM node:20-alpine AS development
+
+# Install system dependencies
+RUN apk add --no-cache dumb-init wget
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files first for better layer caching
+COPY package*.json ./
+
+# Install dependencies and clean cache in one layer
+RUN npm ci && \
+    npm cache clean --force
+
+# Copy source code and configuration files
+COPY . .
+
+# Ensure node_modules binaries have execute permissions, then generate Prisma client and set up directories
+RUN chmod +x node_modules/.bin/* 2>/dev/null || true && \
+    npm run db:generate && \
+    mkdir -p /app/logs
+
+# Expose port
+EXPOSE 5000
+
+# Health check for development
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:5000/api/health || exit 1
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start with hot reload (nodemon/ts-node-dev)
+# Note: Source code is mounted as volume, so changes reflect immediately
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run dev"]
