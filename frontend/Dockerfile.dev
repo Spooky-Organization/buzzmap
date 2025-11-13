@@ -1,0 +1,39 @@
+# Development Dockerfile with Hot Reload Support
+# Optimized for fast iteration and development workflow
+# Using Node.js 20 LTS for consistency with backend
+FROM node:20-alpine AS development
+
+# Install system dependencies
+RUN apk add --no-cache dumb-init wget
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files first for better layer caching
+COPY package*.json ./
+
+# Install dependencies and clean cache in one layer
+RUN npm ci && \
+    npm cache clean --force
+
+# Copy source code and configuration files
+COPY . .
+
+# Ensure node_modules binaries have execute permissions
+RUN chmod +x node_modules/.bin/* 2>/dev/null || true
+
+# Expose Vite dev server port
+EXPOSE 3000
+
+# Health check for development
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start Vite dev server with hot reload
+# Note: Source code is mounted as volume, so changes reflect immediately
+# Vite is configured to listen on 0.0.0.0 for Docker compatibility
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+

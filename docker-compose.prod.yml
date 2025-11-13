@@ -1,4 +1,41 @@
 services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      target: production
+      args:
+        # Build-time variables (VITE_* are embedded at build time)
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:5000/api/v1}
+        VITE_APP_NAME: ${VITE_APP_NAME:-Authentication Template}
+        VITE_ENVIRONMENT: production
+    container_name: frontend_service_prod
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Frontend Configuration (for runtime, build-time vars are baked in)
+      NODE_ENV: production
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    networks:
+      - backend_network_prod
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    # Production optimizations
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
   backend:
     build:
       context: ./backend

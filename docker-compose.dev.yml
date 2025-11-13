@@ -1,4 +1,52 @@
 services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+      target: development
+    container_name: frontend_service_dev
+    restart: unless-stopped
+    env_file:
+      - .env.development
+    environment:
+      # Frontend Configuration
+      NODE_ENV: development
+      # Note: VITE_* vars are available at runtime in dev mode
+      # Browser accesses backend via exposed port (localhost:5000)
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:5000/api/v1}
+      VITE_APP_NAME: ${VITE_APP_NAME:-Authentication Template}
+      VITE_ENVIRONMENT: development
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    volumes:
+      # Mount source code for hot reloading (read-write for development)
+      - ./frontend/src:/app/src:rw
+      - ./frontend/public:/app/public:ro
+      - ./frontend/index.html:/app/index.html:ro
+      - ./frontend/vite.config.ts:/app/vite.config.ts:ro
+      - ./frontend/tsconfig.json:/app/tsconfig.json:ro
+      - ./frontend/tsconfig.node.json:/app/tsconfig.node.json:ro
+      - ./frontend/tailwind.config.js:/app/tailwind.config.js:ro
+      - ./frontend/postcss.config.js:/app/postcss.config.js:ro
+      - ./frontend/.eslintrc.cjs:/app/.eslintrc.cjs:ro
+      - ./frontend/package.json:/app/package.json:ro
+      - ./frontend/.env:/app/.env:ro
+      # Exclude node_modules from volume mount
+      - /app/node_modules
+      # Exclude dist from volume mount
+      - /app/dist
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - backend_network_dev
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
   backend:
     build:
       context: ./backend
