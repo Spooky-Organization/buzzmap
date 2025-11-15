@@ -87,8 +87,9 @@ jspm_packages/
 .vscode-test
 
 # Prisma
-prisma/migrations/
-!prisma/migrations/.gitkeep
+# Note: migrations/ should be committed to version control for production deployments
+# Only exclude migration lock file if needed (but it's usually committed)
+# prisma/migrations/  # Commented out - migrations should be in git
 
 # Database
 *.db

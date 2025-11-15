@@ -57,6 +57,7 @@ RUN npm cache clean --force && \
 # Copy built application and necessary files from builder stage
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+# Copy Prisma schema and migrations (migrations must be committed to git for production)
 COPY --from=builder /app/prisma ./prisma
 COPY tsconfig.json ./
 COPY scripts/ ./scripts/
