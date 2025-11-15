@@ -85,7 +85,8 @@ services:
       - "${BACKEND_PORT:-5000}:5000"
     volumes:
       # Production: Only mount necessary files, no source code (built into image)
-      - ./backend/prisma:/app/prisma:ro
+      # Note: Prisma schema is already in the Docker image from build (copied in Dockerfile.prod)
+      # No need to mount it - using schema from image ensures it's always available
       - ./backend/volumes/logs:/app/logs:rw
     depends_on:
       postgres:
