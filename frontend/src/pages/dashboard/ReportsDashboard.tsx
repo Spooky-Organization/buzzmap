@@ -195,7 +195,7 @@ export const ReportsDashboard = () => {
                     {report.status}
                   </span>
                   {report.status === 'completed' && (
-                    <Button variant="outline" size="sm" className="flex items-center">
+                    <Button variant="secondary" size="sm" className="flex items-center">
                       <Download className="h-4 w-4 mr-2" />
                       Download
                     </Button>

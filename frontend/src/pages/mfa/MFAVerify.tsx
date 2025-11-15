@@ -11,7 +11,7 @@ export const MFAVerify = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | undefined>();
 
-  const handleVerify = async (code: string, isBackupCode: boolean) => {
+  const handleVerify = async (_code: string, isBackupCode: boolean) => {
     setIsLoading(true);
     setError(undefined);
 

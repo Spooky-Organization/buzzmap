@@ -148,6 +148,8 @@ export const Sidebar = ({
   ];
 
   // Get nav items based on role - memoized to prevent icon re-rendering issues
+  // Note: accountantNavItems, adminNavItems, and userNavItems are constants defined outside
+  // the component, so they don't need to be in the dependency array
   const navItems = useMemo(() => {
     switch (userRole) {
       case 'ACCOUNTANT':
@@ -158,6 +160,7 @@ export const Sidebar = ({
       default:
         return userNavItems;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userRole]);
 
   // Close sidebar when clicking outside on mobile

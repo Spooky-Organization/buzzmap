@@ -517,8 +517,6 @@ For questions, issues, or contributions:
 
 **© 2024 Matthew Makundi, Founder [SpookieLabsInc](https://www.spookielabsinc.site)**
 
-*Built with ❤️ for developers who value security, scalability, and best practices*
-
 [⬆ Back to Top](#authentication-template)
 
 </div>

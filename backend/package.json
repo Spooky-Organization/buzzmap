@@ -2,10 +2,10 @@
   "name": "auth-template-backend",
   "version": "1.0.0",
   "description": "A robust Node.js and Express authentication system with role-based access control",
-  "main": "dist/server.js",
+  "main": "dist/core/server.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "node dist/core/server.js",
     "dev": "ts-node-dev --respawn --transpile-only core/server.ts",
     "generate-secrets": "node scripts/generate-secrets.js",
     "db:generate": "prisma generate",
