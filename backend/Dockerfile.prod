@@ -33,8 +33,10 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install only production dependencies and clean up in one layer
+# Install production dependencies and Prisma CLI (needed for Prisma Studio and migrations)
+# Prisma version matches package.json devDependencies
 RUN npm ci --only=production && \
+    npm install -g prisma@^6.10.1 && \
     npm cache clean --force && \
     rm -rf /tmp/* /var/cache/apk/*
 

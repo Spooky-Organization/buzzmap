@@ -189,9 +189,8 @@ services:
     ports:
       - "${PRISMA_STUDIO_PORT:-5555}:5555"
     volumes:
-      # Mount Prisma schema for Studio
-      - ./backend/prisma:/app/prisma:ro
-      # Note: package.json is already in the Docker image from build, no need to mount it
+      # Note: Prisma schema is already in the Docker image from build (copied in Dockerfile.prod)
+      # No need to mount it - using schema from image ensures it's always available
       # Exclude node_modules - Prisma client already in image from build
       - /app/node_modules
     depends_on:
@@ -199,7 +198,7 @@ services:
         condition: service_healthy
     networks:
       - backend_network_prod
-    command: ["sh", "-c", "npx prisma generate && npx prisma studio --hostname 0.0.0.0 --port 5555"]
+    command: ["sh", "-c", "prisma studio --hostname 0.0.0.0 --port ${PRISMA_STUDIO_PORT:-5555} --schema /app/prisma/schema.prisma"]
     # Production optimizations
     deploy:
       resources:

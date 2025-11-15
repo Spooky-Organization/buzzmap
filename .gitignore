@@ -34,7 +34,5 @@ logs/
 # Node modules (if any in root)
 node_modules/
 
-# Docker
-docker-compose.override.yml 
-
-docs/FrontendPlan.md
+# Docs folder
+docs/
