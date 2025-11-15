@@ -10,11 +10,10 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install all dependencies (including dev dependencies for build) and clean cache
-# Add retry logic and network timeout handling for better reliability in CI/CD environments
+# Add retry logic for better reliability in CI/CD environments
 RUN npm config set fetch-retries 5 && \
     npm config set fetch-retry-mintimeout 20000 && \
     npm config set fetch-retry-maxtimeout 120000 && \
-    npm config set network-timeout 300000 && \
     npm ci || (echo "npm ci failed, retrying with npm install..." && npm install) && \
     npm cache clean --force
 
@@ -43,8 +42,7 @@ COPY package*.json ./
 # Add retry logic for network reliability in CI/CD environments
 RUN npm config set fetch-retries 5 && \
     npm config set fetch-retry-mintimeout 20000 && \
-    npm config set fetch-retry-maxtimeout 120000 && \
-    npm config set network-timeout 300000
+    npm config set fetch-retry-maxtimeout 120000
 
 # Install production dependencies with fallback
 RUN npm ci --only=production || npm install --only=production
