@@ -94,10 +94,10 @@ git clone https://github.com/Spooky-Organization/Authentication-Template.git
 cd Authentication-Template
 
 # Start development environment
-./dev.sh up --build
+./dev.sh start
 
 # Access the application
-# Frontend: http://localhost:3000
+# Frontend: http://localhost:3014
 # Backend API: http://localhost:5000/api/v1
 # Prisma Studio: http://localhost:5555
 ```
@@ -126,7 +126,7 @@ npm run dev
 
 ### First Steps
 
-1. **Register a new account** at `http://localhost:3000/register`
+1. **Register a new account** at `http://localhost:3014/register`
 2. **Verify your email** (check console logs in development)
 3. **Login** and explore the dashboard
 4. **Set up MFA** from the profile page
@@ -228,7 +228,7 @@ The frontend uses a **component-based architecture**:
 
 ### Environment Variables
 
-#### Frontend (`.env`)
+#### Frontend (`.env.development` for dev, `.env` for prod)
 
 ```env
 VITE_API_BASE_URL=http://localhost:5000/api/v1
@@ -257,7 +257,7 @@ RESEND_FROM_EMAIL=noreply@example.com
 
 # Server
 PORT=5000
-CORS_ORIGIN=http://localhost:3000
+CORS_ORIGIN=http://localhost:3014
 ```
 
 See [Environment Setup Documentation](docs/ENVIRONMENT_SETUP.md) for complete configuration details.
@@ -312,14 +312,22 @@ npm run lint         # Run ESLint
 
 ```bash
 # Development
-./dev.sh up --build          # Start development environment
-./dev.sh down                # Stop services
-./dev.sh logs -f             # View logs
+./dev.sh start               # Start development environment (builds and runs in detached mode)
+./dev.sh stop                # Stop services
+./dev.sh restart             # Restart services
+./dev.sh logs -f             # Follow logs in real-time
+./dev.sh logs backend        # View logs for specific service
+./dev.sh status              # Check service status
+./dev.sh help                # Show all available commands
 
 # Production
-./prod.sh up --build -d      # Start production environment
-./prod.sh down               # Stop services
-./prod.sh logs -f            # View logs
+./prod.sh start              # Start production environment (builds and runs in detached mode)
+./prod.sh stop               # Stop services
+./prod.sh restart            # Restart services
+./prod.sh logs -f            # Follow logs in real-time
+./prod.sh logs backend       # View logs for specific service
+./prod.sh status             # Check service status
+./prod.sh help               # Show all available commands
 ```
 
 ---
@@ -427,13 +435,13 @@ npm test
 
 2. **Build and Deploy**
    ```bash
-   ./prod.sh up --build -d
+   ./prod.sh start
    ```
 
 3. **Verify Deployment**
    ```bash
-   curl http://localhost:80/health      # Frontend
-   curl http://localhost:5000/api/health # Backend
+   curl http://localhost:3014/health      # Frontend
+   curl http://localhost:5001/api/health  # Backend
    ```
 
 ### Environment-Specific Configuration

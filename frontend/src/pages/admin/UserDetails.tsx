@@ -139,7 +139,7 @@ export const UserDetails = () => {
   return (
     <>
       <AutoSEO />
-      <DashboardLayout>
+    <DashboardLayout>
       <div className="max-w-4xl">
             {/* Breadcrumb */}
             <div className="mb-6">

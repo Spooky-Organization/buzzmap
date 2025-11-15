@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { Key, CheckCircle, ArrowLeft, XCircle } from 'lucide-react';
+import { Key, CheckCircle, ArrowLeft, XCircle, Home } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -216,13 +216,26 @@ export const ResetPassword = () => {
               Reset Password
             </Button>
 
-            <Link
-              to={ROUTES.LOGIN}
-              className="flex items-center justify-center gap-2 text-sm text-primary-600 hover:text-primary-700"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to login
-            </Link>
+            <div className="space-y-3">
+              <Link
+                to={ROUTES.LOGIN}
+                className="flex items-center justify-center gap-2 text-sm text-primary-600 hover:text-primary-700"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to login
+              </Link>
+              
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="w-full"
+                icon={<Home className="h-3 w-3" />}
+                onClick={() => navigate(ROUTES.HOME)}
+              >
+                Back to Home
+              </Button>
+            </div>
           </form>
         </Card>
       </div>

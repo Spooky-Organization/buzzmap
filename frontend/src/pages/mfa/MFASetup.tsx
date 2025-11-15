@@ -46,12 +46,14 @@ export const MFASetup = () => {
         
         setSecret(response.secret);
         
-        // Fetch QR code from endpoint (returns PNG image)
-        // The QR endpoint returns a PNG image, so we need to construct the full URL
+        // Construct QR code URL using API_ENDPOINTS helper for consistency
+        // The QR endpoint returns a PNG image, so we need the full URL
         const baseURL = API_BASE_URL.includes('/api/v1') 
           ? API_BASE_URL.replace('/api/v1', '')
           : API_BASE_URL.replace('/api', '') || 'http://localhost:5000';
-        const qrUrl = `${baseURL}${response.qrCodeEndpoint}`;
+        // Use API_ENDPOINTS helper instead of backend-provided URL for reliability
+        const qrEndpoint = API_ENDPOINTS.MFA.QR(response.secret, response.userEmail);
+        const qrUrl = `${baseURL}${qrEndpoint}`;
         setQrCodeUrl(qrUrl);
       } catch (error: unknown) {
         const apiError = error as ApiError;

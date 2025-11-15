@@ -14,24 +14,42 @@ This project uses Docker Compose to manage separate development and production e
 Use the helper script for automatic environment setup:
 
 ```bash
-# Start services
-./dev.sh up --build
+# Start all services (automatically builds and runs in detached mode)
+./dev.sh start
 
-# Start in detached mode
-./dev.sh up -d --build
+# Start specific service
+./dev.sh start frontend
 
-# View logs
+# View logs (all services)
+./dev.sh logs
+
+# Follow logs in real-time
 ./dev.sh logs -f
 
-# Stop services
-./dev.sh down
+# View logs for specific service
+./dev.sh logs backend
+
+# Stop all services
+./dev.sh stop
+
+# Stop specific service
+./dev.sh stop frontend
+
+# Restart all services
+./dev.sh restart
 
 # Restart specific service
 ./dev.sh restart frontend
+
+# Check service status
+./dev.sh status
+
+# Show help
+./dev.sh help
 ```
 
 **Access Points:**
-- Frontend: http://localhost:3000
+- Frontend: http://localhost:3014
 - Backend API: http://localhost:5000/api/v1
 - Prisma Studio: http://localhost:5555
 - PostgreSQL: localhost:5432
@@ -42,20 +60,38 @@ Use the helper script for automatic environment setup:
 Use the production helper script:
 
 ```bash
-# Start services
-./prod.sh up --build -d
+# Start all services (automatically builds and runs in detached mode)
+./prod.sh start
+
+# Start specific service
+./prod.sh start frontend
 
 # View logs
+./prod.sh logs
+
+# Follow logs in real-time
 ./prod.sh logs -f
 
-# Stop services
-./prod.sh down
+# View logs for specific service
+./prod.sh logs backend
+
+# Stop all services
+./prod.sh stop
+
+# Restart services
+./prod.sh restart
+
+# Check service status
+./prod.sh status
+
+# Show help
+./prod.sh help
 ```
 
 **Access Points:**
-- Frontend: http://localhost:80 or http://localhost
-- Backend API: http://localhost:5000/api/v1
-- Prisma Studio: http://localhost:5555
+- Frontend: http://localhost:3014
+- Backend API: http://localhost:5001/api/v1
+- Prisma Studio: http://localhost:5556
 
 ## Manual Docker Compose Commands
 
@@ -91,18 +127,18 @@ The helper scripts (`dev.sh` and `prod.sh`) solve this by:
 ## Port Configuration
 
 ### Development Ports
-- **Frontend**: `3000` (Vite dev server with hot reload)
+- **Frontend**: `3014` (Vite dev server with hot reload)
 - **Backend**: `5000`
 - **PostgreSQL**: `5432`
 - **Redis**: `6379`
 - **Prisma Studio**: `5555`
 
 ### Production Ports
-- **Frontend**: `80` (Nginx static file server)
-- **Backend**: `5000`
+- **Frontend**: `3014` (Nginx static file server)
+- **Backend**: `5001`
 - **PostgreSQL**: `5432`
 - **Redis**: `6379`
-- **Prisma Studio**: `5555`
+- **Prisma Studio**: `5556`
 
 ## Troubleshooting
 
@@ -112,10 +148,10 @@ If you get a port conflict error:
 
 ```bash
 # Check what's using the port
-sudo netstat -tulpn | grep :3000
+sudo netstat -tulpn | grep :3014
 
 # Or stop the conflicting service
-./dev.sh down
+./dev.sh stop
 ```
 
 ### Frontend Not Accessible
@@ -127,7 +163,7 @@ sudo netstat -tulpn | grep :3000
 
 2. **Check which port is mapped:**
    - Look for the PORTS column
-   - Should show `0.0.0.0:3000->3000/tcp` for development
+   - Should show `0.0.0.0:3014->3000/tcp` for development
 
 3. **Check logs:**
    ```bash
@@ -140,10 +176,10 @@ Always stop one environment before starting another:
 
 ```bash
 # Stop development
-./dev.sh down
+./dev.sh stop
 
 # Start production
-./prod.sh up -d --build
+./prod.sh start
 ```
 
 ## Advanced Usage
@@ -156,12 +192,25 @@ Always stop one environment before starting another:
 ### Rebuilding Specific Service
 ```bash
 ./dev.sh build frontend
-./dev.sh up -d --no-deps frontend
+./dev.sh start frontend
 ```
 
 ### Viewing Resource Usage
 ```bash
 docker stats
+```
+
+### Additional Commands
+
+```bash
+# Open shell in a service container
+./dev.sh shell backend
+
+# Execute command in a service container
+./dev.sh exec backend npm run db:migrate
+
+# Clean up (removes containers, networks, and volumes - ⚠️ deletes data)
+./dev.sh clean
 ```
 
 ### Cleaning Up
@@ -170,7 +219,7 @@ docker stats
 ./dev.sh down
 
 # Remove containers, networks, and volumes (⚠️ deletes data)
-./dev.sh down -v
+./dev.sh clean
 
 # Remove all unused Docker resources
 docker system prune -a

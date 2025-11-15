@@ -35,7 +35,7 @@ export const Profile = () => {
   return (
     <>
       <AutoSEO />
-      <DashboardLayout>
+    <DashboardLayout>
       <div className="max-w-4xl">
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>

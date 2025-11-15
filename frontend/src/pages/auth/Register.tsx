@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import type React from 'react';
-import { Mail, UserPlus, User, LogIn, FileText, XCircle } from 'lucide-react';
+import { Mail, UserPlus, User, LogIn, FileText, XCircle, Home } from 'lucide-react';
 import { toast } from 'sonner';
 import { CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -111,13 +111,32 @@ export const Register = () => {
     } catch (error: unknown) {
       const apiError = error as ApiError;
       
+      // Handle 409 Conflict - User already exists (email conflict)
+      if (apiError.statusCode === 409) {
+        // Set error on email field
+        setError('email', {
+          type: 'manual',
+          message: apiError.message || 'This email is already registered',
+        });
+        // Also show toast notification
+        toast.error(apiError.message || 'This email is already registered. Please use a different email or try logging in.', {
+          icon: <XCircle className="h-5 w-5" />,
+          duration: 5000,
+        });
+        return;
+      }
+      
       // Handle field-specific errors
       if (apiError.details?.field) {
         setError(apiError.details.field as keyof RegisterFormData, {
           type: 'manual',
           message: apiError.details.message || apiError.message,
         });
+        toast.error(apiError.details.message || apiError.message, {
+          icon: <XCircle className="h-5 w-5" />,
+        });
       } else {
+        // Generic error handling
         toast.error(apiError.message || 'Registration failed. Please try again.', {
           icon: <XCircle className="h-5 w-5" />,
         });
@@ -325,6 +344,19 @@ export const Register = () => {
                 Sign in
               </Link>
             </p>
+
+            <div className="pt-4 border-t border-gray-200">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="w-full"
+                icon={<Home className="h-3 w-3" />}
+                onClick={() => navigate(ROUTES.HOME)}
+              >
+                Back to Home
+              </Button>
+            </div>
           </form>
         </Card>
       </div>

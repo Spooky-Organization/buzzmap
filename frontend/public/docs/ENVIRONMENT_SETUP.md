@@ -221,6 +221,39 @@ All services communicate through this isolated network using service names as ho
 
 ### Starting Development Environment
 
+Use the helper script for simplified commands:
+
+```bash
+# Start all services (automatically builds and runs in detached mode)
+./dev.sh start
+
+# Start specific service
+./dev.sh start frontend
+
+# View logs
+./dev.sh logs
+
+# Follow logs in real-time
+./dev.sh logs -f
+
+# View logs for specific service
+./dev.sh logs backend
+
+# Stop services
+./dev.sh stop
+
+# Restart services
+./dev.sh restart
+
+# Check service status
+./dev.sh status
+
+# Clean up (removes containers, networks, and volumes - ⚠️ deletes data)
+./dev.sh clean
+```
+
+Or use Docker Compose directly:
+
 ```bash
 # Start all services
 docker-compose -f docker-compose.dev.yml up --build
@@ -240,7 +273,7 @@ docker-compose -f docker-compose.dev.yml down -v
 
 ### Access Points
 
-- **Frontend**: http://localhost:3000
+- **Frontend**: http://localhost:3014
 - **Backend API**: http://localhost:5000/api/v1
 - **API Health Check**: http://localhost:5000/api/health
 - **Prisma Studio**: http://localhost:5555
@@ -451,6 +484,39 @@ All services communicate through this isolated network using service names as ho
 
 ### Starting Production Environment
 
+Use the helper script for simplified commands:
+
+```bash
+# Start all services (automatically builds and runs in detached mode)
+./prod.sh start
+
+# Start specific service
+./prod.sh start frontend
+
+# View logs
+./prod.sh logs
+
+# Follow logs in real-time
+./prod.sh logs -f
+
+# View logs for specific service
+./prod.sh logs backend
+
+# Stop services
+./prod.sh stop
+
+# Restart services
+./prod.sh restart
+
+# Check service status
+./prod.sh status
+
+# Clean up (removes containers, networks, and volumes - ⚠️ deletes data)
+./prod.sh clean
+```
+
+Or use Docker Compose directly:
+
 ```bash
 # Build and start all services
 docker-compose -f docker-compose.prod.yml up --build -d
@@ -467,10 +533,10 @@ docker-compose -f docker-compose.prod.yml down -v
 
 ### Access Points
 
-- **Frontend**: http://localhost:80 (or configured port)
-- **Backend API**: http://localhost:5000/api/v1
-- **API Health Check**: http://localhost:5000/api/health
-- **Prisma Studio**: http://localhost:5555
+- **Frontend**: http://localhost:3014
+- **Backend API**: http://localhost:5001/api/v1
+- **API Health Check**: http://localhost:5001/api/health
+- **Prisma Studio**: http://localhost:5556
 - **PostgreSQL**: localhost:5432
 - **Redis**: localhost:6379
 
@@ -802,7 +868,7 @@ healthcheck:
 
 | Service | Container Port | Host Port | Access |
 |---------|---------------|-----------|--------|
-| Frontend | 3000 | 3000 | http://localhost:3000 |
+| Frontend | 3000 | 3014 | http://localhost:3014 |
 | Backend | 5000 | 5000 | http://localhost:5000 |
 | PostgreSQL | 5432 | 5432 | localhost:5432 |
 | Redis | 6379 | 6379 | localhost:6379 |
@@ -812,11 +878,11 @@ healthcheck:
 
 | Service | Container Port | Host Port | Access |
 |---------|---------------|-----------|--------|
-| Frontend | 80 | 80 (configurable) | http://localhost:80 |
-| Backend | 5000 | 5000 (configurable) | http://localhost:5000 |
-| PostgreSQL | 5432 | 5432 (configurable) | localhost:5432 |
-| Redis | 6379 | 6379 (configurable) | localhost:6379 |
-| Prisma Studio | 5555 | 5555 (configurable) | http://localhost:5555 |
+| Frontend | 80 | 3014 | http://localhost:3014 |
+| Backend | 5000 | 5001 | http://localhost:5001 |
+| PostgreSQL | 5432 | 5432 | localhost:5432 |
+| Redis | 6379 | 6379 | localhost:6379 |
+| Prisma Studio | 5555 | 5556 | http://localhost:5556 |
 
 ### Port Customization
 
@@ -825,7 +891,7 @@ Ports can be customized via environment variables:
 **Development** (`.env.development`):
 ```bash
 # Service Ports
-FRONTEND_PORT=3000
+FRONTEND_PORT=3014
 BACKEND_PORT=5000
 POSTGRES_PORT=5432
 REDIS_PORT=6379
@@ -840,15 +906,15 @@ VITE_ENVIRONMENT=development
 **Production** (`.env`):
 ```bash
 # Service Ports
-FRONTEND_PORT=80
-BACKEND_PORT=5000
+FRONTEND_PORT=3014
+BACKEND_PORT=5001
 POSTGRES_PORT=5432
 REDIS_PORT=6379
-PRISMA_STUDIO_PORT=5555
+PRISMA_STUDIO_PORT=5556
 
 # Frontend Environment Variables (Build-time)
 # IMPORTANT: Update VITE_API_BASE_URL with your production API URL
-VITE_API_BASE_URL=http://localhost:5000/api/v1
+VITE_API_BASE_URL=https://api-authtemplate.spookielabsinc.site/api/v1
 VITE_APP_NAME=Authentication Template
 VITE_ENVIRONMENT=production
 ```
@@ -970,24 +1036,24 @@ docker-compose -f docker-compose.prod.yml build backend
 
 2. **Start Services**:
    ```bash
-   # Build and start
-   docker-compose -f docker-compose.dev.yml up --build
+   # Using helper script (recommended)
+   ./dev.sh start
    
-   # Or in detached mode
-   docker-compose -f docker-compose.dev.yml up -d --build
+   # Or using Docker Compose directly
+   docker-compose -f docker-compose.dev.yml up --build -d
    ```
 
 3. **Verify Services**:
    ```bash
    # Check service status
-   docker-compose -f docker-compose.dev.yml ps
+   ./dev.sh status
    
    # Check logs
-   docker-compose -f docker-compose.dev.yml logs -f
+   ./dev.sh logs -f
    ```
 
 4. **Access Applications**:
-   - Frontend: http://localhost:3000
+   - Frontend: http://localhost:3014
    - Backend: http://localhost:5000/api/v1
    - Prisma Studio: http://localhost:5555
 
@@ -1012,33 +1078,36 @@ docker-compose -f docker-compose.prod.yml build backend
 
 2. **Build Images**:
    ```bash
-   # Build all services
-   docker-compose -f docker-compose.prod.yml build
+   # Using helper script (recommended)
+   ./prod.sh build
    
    # Or build specific service
-   docker-compose -f docker-compose.prod.yml build frontend
+   ./prod.sh build frontend
+   
+   # Or using Docker Compose directly
+   docker-compose -f docker-compose.prod.yml build
    ```
 
 3. **Start Services**:
    ```bash
-   # Start in detached mode
-   docker-compose -f docker-compose.prod.yml up -d
+   # Using helper script (recommended)
+   ./prod.sh start
    
-   # Or rebuild and start
+   # Or using Docker Compose directly
    docker-compose -f docker-compose.prod.yml up -d --build
    ```
 
 4. **Verify Deployment**:
    ```bash
    # Check service status
-   docker-compose -f docker-compose.prod.yml ps
+   ./prod.sh status
    
    # Check health
-   curl http://localhost:80/health      # Frontend
-   curl http://localhost:5000/api/health # Backend
+   curl http://localhost:3014/health      # Frontend
+   curl http://localhost:5001/api/health   # Backend
    
    # View logs
-   docker-compose -f docker-compose.prod.yml logs -f
+   ./prod.sh logs -f
    ```
 
 5. **Monitor Services**:
@@ -1047,7 +1116,7 @@ docker-compose -f docker-compose.prod.yml build backend
    docker stats
    
    # View service logs
-   docker-compose -f docker-compose.prod.yml logs -f backend
+   ./prod.sh logs -f backend
    ```
 
 ### Updating Services
@@ -1056,16 +1125,22 @@ docker-compose -f docker-compose.prod.yml build backend
 ```bash
 # Changes to source code are reflected immediately (hot reload)
 # To restart services:
-docker-compose -f docker-compose.dev.yml restart
+./dev.sh restart
+
+# Or restart specific service
+./dev.sh restart backend
 ```
 
 **Production**:
 ```bash
 # Rebuild and restart
-docker-compose -f docker-compose.prod.yml up -d --build
+./prod.sh start
 
 # Or restart without rebuild
-docker-compose -f docker-compose.prod.yml restart
+./prod.sh restart
+
+# Or restart specific service
+./prod.sh restart backend
 ```
 
 ### Scaling Services
@@ -1106,13 +1181,13 @@ docker exec -i backend_postgres_prod psql -U ${POSTGRES_USER} ${POSTGRES_DB} < b
 **Services Not Starting**:
 ```bash
 # Check logs
-docker-compose -f docker-compose.dev.yml logs
+./dev.sh logs
 
 # Check specific service
-docker-compose -f docker-compose.dev.yml logs backend
+./dev.sh logs backend
 
 # Check service status
-docker-compose -f docker-compose.dev.yml ps
+./dev.sh status
 ```
 
 **Port Conflicts**:

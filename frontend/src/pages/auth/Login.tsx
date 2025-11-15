@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { Mail, LogIn, Key, UserPlus } from 'lucide-react';
+import { Mail, LogIn, Key, UserPlus, Home } from 'lucide-react';
 import { toast } from 'sonner';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -198,6 +198,19 @@ export const Login = () => {
                 Sign up
               </Link>
             </p>
+
+            <div className="pt-4 border-t border-gray-200">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="w-full"
+                icon={<Home className="h-3 w-3" />}
+                onClick={() => navigate(ROUTES.HOME)}
+              >
+                Back to Home
+              </Button>
+            </div>
           </form>
         </Card>
       </div>

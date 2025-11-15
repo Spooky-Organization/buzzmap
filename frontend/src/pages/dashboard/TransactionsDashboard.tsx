@@ -100,7 +100,7 @@ export const TransactionsDashboard = () => {
   return (
     <>
       <AutoSEO />
-      <DashboardLayout>
+    <DashboardLayout>
       <div className="space-y-6">
         {/* Disclaimer Banner */}
         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md">

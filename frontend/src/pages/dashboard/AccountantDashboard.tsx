@@ -113,7 +113,7 @@ export const AccountantDashboard = () => {
   return (
     <>
       <AutoSEO />
-      <DashboardLayout>
+    <DashboardLayout>
             {/* Disclaimer Banner */}
             <Card variant="default" padding="md" className="mb-6 bg-yellow-50 border-yellow-200">
               <div className="flex items-start gap-3">

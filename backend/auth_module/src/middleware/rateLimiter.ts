@@ -21,6 +21,10 @@ export const generalLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Skip trust proxy validation - we're behind a reverse proxy in production
+  validate: {
+    trustProxy: false,
+  },
 });
 
 /**
@@ -36,6 +40,10 @@ export const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Skip trust proxy validation - we're behind a reverse proxy in production
+  validate: {
+    trustProxy: false,
+  },
 });
 
 /**
@@ -51,6 +59,10 @@ export const passwordResetLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Skip trust proxy validation - we're behind a reverse proxy in production
+  validate: {
+    trustProxy: false,
+  },
 });
 
 /**
@@ -66,6 +78,10 @@ export const emailVerificationLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Skip trust proxy validation - we're behind a reverse proxy in production
+  validate: {
+    trustProxy: false,
+  },
 });
 
 /**
@@ -81,4 +97,8 @@ export const adminLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Skip trust proxy validation - we're behind a reverse proxy in production
+  validate: {
+    trustProxy: false,
+  },
 });

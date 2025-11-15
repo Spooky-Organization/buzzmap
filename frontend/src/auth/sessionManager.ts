@@ -1,4 +1,4 @@
-/**faset
+/**
  * Singleton Session Manager
  * Centralized session management with automatic token refresh, secure storage, and user state management
  */
@@ -11,6 +11,7 @@ import type {
   RegisterResponse,
   LoginResponse,
   RefreshTokenResponse,
+  ApiError,
 } from '@/api/types';
 
 class SessionManager {
@@ -281,14 +282,23 @@ class SessionManager {
 
   /**
    * Handle API errors
+   * Preserves ApiError structure from apiClient to maintain statusCode and details
    */
-  private handleError(error: unknown): Error {
+  private handleError(error: unknown): Error | ApiError {
+    // If it's already an ApiError (from apiClient), return it as-is
+    // This preserves statusCode, details, and other ApiError properties
+    if (error && typeof error === 'object' && 'statusCode' in error && 'message' in error) {
+      return error as ApiError;
+    }
+    
     if (error instanceof Error) {
       return error;
     }
+    
     if (error && typeof error === 'object' && 'message' in error) {
       return new Error(String(error.message));
     }
+    
     return new Error('An error occurred');
   }
 }

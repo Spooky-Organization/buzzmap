@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { CheckCircle, ArrowLeft, XCircle, Mail, Sparkles } from 'lucide-react';
+import { CheckCircle, ArrowLeft, XCircle, Mail, Sparkles, Home } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -77,8 +77,8 @@ export const VerifyEmail = () => {
             </div>
 
 
-            {/* Action Button */}
-            <div className="pt-4">
+            {/* Action Buttons */}
+            <div className="pt-4 space-y-3">
               <Button
                 variant="primary"
                 size="lg"
@@ -87,6 +87,15 @@ export const VerifyEmail = () => {
                 onClick={() => navigate(ROUTES.LOGIN)}
               >
                 Continue to Login
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full"
+                icon={<Home className="h-3 w-3" />}
+                onClick={() => navigate(ROUTES.HOME)}
+              >
+                Back to Home
               </Button>
             </div>
           </div>
@@ -151,6 +160,15 @@ export const VerifyEmail = () => {
               >
                 Back to Login
               </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full"
+                icon={<Home className="h-3 w-3" />}
+                onClick={() => navigate(ROUTES.HOME)}
+              >
+                Back to Home
+              </Button>
               <Link
                 to={ROUTES.REGISTER}
                 className="block text-sm text-primary-600 hover:text-primary-700 text-center"
@@ -186,8 +204,8 @@ export const VerifyEmail = () => {
           </div>
 
 
-          {/* Action Button */}
-          <div className="pt-4">
+          {/* Action Buttons */}
+          <div className="pt-4 space-y-3">
             <Button
               variant="primary"
               size="lg"
@@ -196,6 +214,15 @@ export const VerifyEmail = () => {
               onClick={() => navigate(ROUTES.LOGIN)}
             >
               Back to Login
+            </Button>
+            <Button
+              variant="secondary"
+              size="md"
+              className="w-full"
+              icon={<Home className="h-4 w-4" />}
+              onClick={() => navigate(ROUTES.HOME)}
+            >
+              Back to Home
             </Button>
           </div>
         </div>

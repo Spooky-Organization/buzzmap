@@ -1482,7 +1482,7 @@ export const Home = () => {
                   size="lg"
                   icon={<Github className="h-5 w-5" />}
                   onClick={() => {
-                    window.open('https://github.com/Matthew-kabiu/Authentication-Template.git', '_blank', 'noopener,noreferrer');
+                    window.open('https://github.com/Matthew-kabiu/Production-Grade-Authentication-Template-.git', '_blank', 'noopener,noreferrer');
                   }}
                 >
                   View on GitHub

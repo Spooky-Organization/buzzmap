@@ -93,7 +93,7 @@ export const AnalyticsDashboard = () => {
   return (
     <>
       <AutoSEO />
-      <DashboardLayout>
+    <DashboardLayout>
       <div className="container-custom max-w-7xl">
         {/* Disclaimer Banner */}
         <Card variant="default" padding="md" className="mb-6 bg-yellow-50 border-yellow-200">

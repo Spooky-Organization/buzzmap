@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { Mail, ArrowLeft, XCircle, CheckCircle } from 'lucide-react';
+import { Mail, ArrowLeft, XCircle, CheckCircle, Home } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -18,6 +18,7 @@ interface ForgotPasswordFormData {
 }
 
 export const ForgotPassword = () => {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const {
@@ -94,11 +95,22 @@ export const ForgotPassword = () => {
           <p className="text-gray-600 mb-6">
             We've sent a password reset link to your email address.
           </p>
-          <Link to={ROUTES.LOGIN}>
-            <Button variant="primary" icon={<ArrowLeft className="h-5 w-5" />}>
-              Back to login
+          <div className="space-y-3">
+            <Link to={ROUTES.LOGIN}>
+              <Button variant="primary" className="w-full" icon={<ArrowLeft className="h-5 w-5" />}>
+                Back to login
+              </Button>
+            </Link>
+            <Button
+              variant="secondary"
+              size="md"
+              className="w-full"
+              icon={<Home className="h-4 w-4" />}
+              onClick={() => navigate(ROUTES.HOME)}
+            >
+              Back to Home
             </Button>
-          </Link>
+          </div>
         </Card>
       </div>
     );
@@ -150,13 +162,26 @@ export const ForgotPassword = () => {
               Send reset link
             </Button>
 
-            <Link
-              to={ROUTES.LOGIN}
-              className="flex items-center justify-center gap-2 text-sm text-primary-600 hover:text-primary-700"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to login
-            </Link>
+            <div className="space-y-3">
+              <Link
+                to={ROUTES.LOGIN}
+                className="flex items-center justify-center gap-2 text-sm text-primary-600 hover:text-primary-700"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to login
+              </Link>
+              
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="w-full"
+                icon={<Home className="h-3 w-3" />}
+                onClick={() => navigate(ROUTES.HOME)}
+              >
+                Back to Home
+              </Button>
+            </div>
           </form>
         </Card>
       </div>
