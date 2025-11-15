@@ -198,7 +198,7 @@ services:
         condition: service_healthy
     networks:
       - backend_network_prod
-    command: ["sh", "-c", "prisma studio --hostname 0.0.0.0 --port ${PRISMA_STUDIO_PORT:-5555} --schema /app/prisma/schema.prisma"]
+    command: ["sh", "-c", "cd /app && prisma studio --hostname 0.0.0.0 --port ${PRISMA_STUDIO_PORT:-5555} --schema prisma/schema.prisma"]
     # Production optimizations
     deploy:
       resources:
