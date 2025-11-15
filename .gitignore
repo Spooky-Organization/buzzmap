@@ -36,3 +36,5 @@ node_modules/
 
 # Docker
 docker-compose.override.yml 
+
+docs/FrontendPlan.md
