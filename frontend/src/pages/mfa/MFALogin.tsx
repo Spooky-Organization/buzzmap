@@ -7,6 +7,7 @@ import { MFAForm } from '@/components/forms/MFAForm';
 import { ROUTES } from '@/utils/constants';
 import { apiClient, API_ENDPOINTS } from '@/api/client';
 import { SessionManager } from '@/auth/sessionManager';
+import { AutoSEO } from '@/components/seo/SEO';
 import type { ApiError, MFAVerifyLoginResponse, MFALoginCompleteResponse } from '@/api/types';
 
 export const MFALogin = () => {
@@ -81,6 +82,7 @@ export const MFALogin = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-secondary-50 py-12 px-4 sm:px-6 lg:px-8">
+      <AutoSEO />
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="mx-auto w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mb-4">

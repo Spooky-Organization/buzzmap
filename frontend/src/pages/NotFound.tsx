@@ -3,10 +3,16 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ROUTES } from '@/utils/constants';
+import { SEO } from '@/components/seo/SEO';
 
 export const NotFound = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-secondary-50 py-12 px-4 sm:px-6 lg:px-8">
+      <SEO 
+        title="Page Not Found" 
+        description="The page you are looking for does not exist."
+        noindex={true}
+      />
       <Card variant="elevated" padding="lg" className="max-w-md w-full text-center">
         <div className="mb-6">
           <h1 className="text-9xl font-bold text-primary-600">404</h1>

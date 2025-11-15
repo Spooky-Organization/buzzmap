@@ -22,6 +22,7 @@ import { validationManager } from '@/utils/validation';
 import { apiClient, API_ENDPOINTS } from '@/api/client';
 import { API_BASE_URL } from '@/utils/constants';
 import type { ApiError, MFASetupResponse, MFAVerifySetupResponse } from '@/api/types';
+import { AutoSEO } from '@/components/seo/SEO';
 
 type SetupStep = 'qr' | 'verify' | 'complete';
 
@@ -147,7 +148,9 @@ export const MFASetup = () => {
   };
 
   return (
-    <DashboardLayout>
+    <>
+      <AutoSEO />
+      <DashboardLayout>
       <div className="max-w-3xl mx-auto">
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
@@ -435,6 +438,7 @@ export const MFASetup = () => {
             )}
       </div>
     </DashboardLayout>
+    </>
   );
 };
 

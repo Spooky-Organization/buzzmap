@@ -1,0 +1,29 @@
+# robots.txt for Authentication Template
+# https://authtemplate.spookielabsinc.site/robots.txt
+
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /register
+Allow: /terms
+Allow: /privacy
+
+# Disallow protected routes
+Disallow: /dashboard
+Disallow: /dashboard/*
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /profile
+Disallow: /mfa
+Disallow: /mfa/*
+Disallow: /change-password
+Disallow: /verify-email
+Disallow: /reset-password
+Disallow: /forgot-password
+Disallow: /analytics
+Disallow: /transactions
+Disallow: /reports
+
+# Sitemap location
+Sitemap: https://authtemplate.spookielabsinc.site/sitemap.xml
+

@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/Button';
 import { Footer } from '@/components/layout/Footer';
+import { AutoSEO } from '@/components/seo/SEO';
 
 export const PrivacyPolicy = () => {
   const navigate = useNavigate();
@@ -60,6 +61,7 @@ export const PrivacyPolicy = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
+      <AutoSEO />
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="container-custom max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">

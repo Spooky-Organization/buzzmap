@@ -13,6 +13,7 @@ import { ValidationErrorCode, getErrorMessage } from '@/utils/errorCodes';
 import { ROUTES } from '@/utils/constants';
 import { apiClient, API_ENDPOINTS } from '@/api/client';
 import type { ApiError, ChangePasswordResponse } from '@/api/types';
+import { AutoSEO } from '@/components/seo/SEO';
 
 interface ChangePasswordFormData {
   currentPassword: string;
@@ -105,7 +106,9 @@ export const ChangePassword = () => {
   };
 
   return (
-    <DashboardLayout>
+    <>
+      <AutoSEO />
+      <DashboardLayout>
       <div className="max-w-2xl">
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900">Change Password</h1>
@@ -194,6 +197,7 @@ export const ChangePassword = () => {
             </Card>
       </div>
     </DashboardLayout>
+    </>
   );
 };
 

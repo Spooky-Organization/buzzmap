@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { type UserRole } from '@/utils/constants';
+import { AutoSEO } from '@/components/seo/SEO';
 
 interface User {
   id: string;
@@ -159,7 +160,9 @@ export const Users = () => {
   };
 
   return (
-    <DashboardLayout>
+    <>
+      <AutoSEO />
+      <DashboardLayout>
           <div className="container-custom max-w-7xl">
             {/* Disclaimer Banner */}
             <Card variant="default" padding="md" className="mb-6 bg-yellow-50 border-yellow-200">
@@ -412,6 +415,7 @@ export const Users = () => {
             </Card>
           </div>
     </DashboardLayout>
+    </>
   );
 };
 

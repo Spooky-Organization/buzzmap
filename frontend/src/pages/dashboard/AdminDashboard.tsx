@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/Button';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { ROUTES } from '@/utils/constants';
 import { SessionManager } from '@/auth/sessionManager';
+import { AutoSEO } from '@/components/seo/SEO';
 
 export const AdminDashboard = () => {
   const sessionManager = SessionManager.getInstance();
@@ -123,7 +124,9 @@ export const AdminDashboard = () => {
   ];
 
   return (
-    <DashboardLayout>
+    <>
+      <AutoSEO />
+      <DashboardLayout>
             {/* Disclaimer Banner */}
             <Card variant="default" padding="md" className="mb-6 bg-yellow-50 border-yellow-200">
               <div className="flex items-start gap-3">
@@ -302,6 +305,7 @@ export const AdminDashboard = () => {
               </div>
             </Card>
     </DashboardLayout>
+    </>
   );
 };
 

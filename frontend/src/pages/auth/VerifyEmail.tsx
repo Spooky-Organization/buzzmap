@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { ROUTES } from '@/utils/constants';
 import { apiClient, API_ENDPOINTS } from '@/api/client';
 import type { ApiError, VerifyEmailResponse } from '@/api/types';
+import { AutoSEO } from '@/components/seo/SEO';
 
 export const VerifyEmail = () => {
   const navigate = useNavigate();
@@ -166,6 +167,7 @@ export const VerifyEmail = () => {
   // No Token State - Prompt user to check email
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-secondary-50 py-12 px-4 sm:px-6 lg:px-8">
+      <AutoSEO />
       <Card variant="elevated" padding="lg" className="max-w-md w-full">
         <div className="text-center space-y-6">
           {/* Email Icon */}

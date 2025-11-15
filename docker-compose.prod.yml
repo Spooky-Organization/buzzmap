@@ -191,8 +191,7 @@ services:
     volumes:
       # Mount Prisma schema for Studio
       - ./backend/prisma:/app/prisma:ro
-      # Mount package.json for Prisma CLI
-      - ./backend/package.json:/app/package.json:ro
+      # Note: package.json is already in the Docker image from build, no need to mount it
       # Exclude node_modules - Prisma client already in image from build
       - /app/node_modules
     depends_on:

@@ -42,6 +42,8 @@ import { Footer } from '@/components/layout/Footer';
 import { MarkdownViewer } from '@/components/docs/MarkdownViewer';
 import { ROUTES } from '@/utils/constants';
 import { isAuthenticated, getCurrentUser } from '@/utils/sessionCheck';
+import { AutoSEO } from '@/components/seo/SEO';
+import { OrganizationStructuredData, WebsiteStructuredData } from '@/components/seo/StructuredData';
 
 interface DocFile {
   name: string;
@@ -269,6 +271,9 @@ export const Home = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary-50 via-white to-secondary-50">
+      <AutoSEO />
+      <OrganizationStructuredData />
+      <WebsiteStructuredData />
       {/* Hero Section - Enhanced */}
       <div className="relative overflow-hidden">
         {/* Background decoration */}
@@ -1477,8 +1482,7 @@ export const Home = () => {
                   size="lg"
                   icon={<Github className="h-5 w-5" />}
                   onClick={() => {
-                    // Placeholder for GitHub link - update when repository is available
-                    alert('GitHub repository link will be available soon');
+                    window.open('https://github.com/Matthew-kabiu/Authentication-Template.git', '_blank', 'noopener,noreferrer');
                   }}
                 >
                   View on GitHub

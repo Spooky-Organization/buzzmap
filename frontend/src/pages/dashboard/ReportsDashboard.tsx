@@ -12,6 +12,7 @@ import {
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { AutoSEO } from '@/components/seo/SEO';
 
 export const ReportsDashboard = () => {
   // Mock data for Reports Dashboard
@@ -98,7 +99,9 @@ export const ReportsDashboard = () => {
   ];
 
   return (
-    <DashboardLayout>
+    <>
+      <AutoSEO />
+      <DashboardLayout>
       <div className="space-y-6">
         {/* Disclaimer Banner */}
         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md">
@@ -244,6 +247,7 @@ export const ReportsDashboard = () => {
         </div>
       </div>
     </DashboardLayout>
+    </>
   );
 };
 

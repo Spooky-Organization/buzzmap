@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { ROUTES } from '@/utils/constants';
 import { SessionManager } from '@/auth/sessionManager';
+import { AutoSEO } from '@/components/seo/SEO';
 
 export const Profile = () => {
   // Get user data from SessionManager
@@ -32,7 +33,9 @@ export const Profile = () => {
   };
 
   return (
-    <DashboardLayout>
+    <>
+      <AutoSEO />
+      <DashboardLayout>
       <div className="max-w-4xl">
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
@@ -147,6 +150,7 @@ export const Profile = () => {
             </div>
           </div>
     </DashboardLayout>
+    </>
   );
 };
 

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { AutoSEO } from '@/components/seo/SEO';
 
 export const AnalyticsDashboard = () => {
   // Mock data for Analytics Dashboard
@@ -90,7 +91,9 @@ export const AnalyticsDashboard = () => {
   const maxValue = Math.max(...timeSeriesData.map(d => d.value));
 
   return (
-    <DashboardLayout>
+    <>
+      <AutoSEO />
+      <DashboardLayout>
       <div className="container-custom max-w-7xl">
         {/* Disclaimer Banner */}
         <Card variant="default" padding="md" className="mb-6 bg-yellow-50 border-yellow-200">
@@ -270,6 +273,7 @@ export const AnalyticsDashboard = () => {
         </div>
       </div>
     </DashboardLayout>
+    </>
   );
 };
 
