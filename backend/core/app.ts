@@ -19,6 +19,10 @@ import { getEnv } from "../auth_module/src/utils/envValidation";
 
 const app = express();
 
+// Trust proxy: Enable when behind reverse proxy (nginx, Cloudflare, Coolify, etc.)
+// This allows Express to trust X-Forwarded-* headers from the proxy
+app.set('trust proxy', true);
+
 // Middleware: JSON body parsing
 app.use(express.json({ limit: "10mb" }));
 
