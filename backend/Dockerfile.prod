@@ -44,10 +44,16 @@ COPY package*.json ./
 RUN npm config set fetch-retries 5 && \
     npm config set fetch-retry-mintimeout 20000 && \
     npm config set fetch-retry-maxtimeout 120000 && \
-    npm config set network-timeout 300000 && \
-    (npm ci --only=production || (echo "npm ci failed, retrying with npm install..." && npm install --only=production)) && \
-    npm install -g prisma@^6.10.1 && \
-    npm cache clean --force && \
+    npm config set network-timeout 300000
+
+# Install production dependencies with fallback
+RUN npm ci --only=production || npm install --only=production
+
+# Install Prisma CLI globally
+RUN npm install -g prisma@^6.10.1
+
+# Clean up
+RUN npm cache clean --force && \
     rm -rf /tmp/* /var/cache/apk/*
 
 # Copy built application and necessary files from builder stage
