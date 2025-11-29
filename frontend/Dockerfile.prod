@@ -21,7 +21,7 @@ ENV VITE_ENVIRONMENT=$VITE_ENVIRONMENT
 COPY package*.json ./
 
 # Install all dependencies (including dev dependencies for build) and clean cache
-RUN npm ci && \
+RUN npm ci --include=dev&& \
     npm cache clean --force
 
 # Set PATH to include node_modules/.bin so binaries like tsc are found
