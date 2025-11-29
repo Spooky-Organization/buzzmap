@@ -217,13 +217,13 @@ export const ResetPassword = () => {
             </Button>
 
             <div className="space-y-3">
-              <Link
-                to={ROUTES.LOGIN}
-                className="flex items-center justify-center gap-2 text-sm text-primary-600 hover:text-primary-700"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to login
-              </Link>
+            <Link
+              to={ROUTES.LOGIN}
+              className="flex items-center justify-center gap-2 text-sm text-primary-600 hover:text-primary-700"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to login
+            </Link>
               
               <Button
                 type="button"
