@@ -11,10 +11,11 @@ COPY package*.json ./
 
 # Install all dependencies (including dev dependencies for build) and clean cache
 # Add retry logic for better reliability in CI/CD environments
+# Use --include=dev to ensure devDependencies are installed even when NODE_ENV=production
 RUN npm config set fetch-retries 5 && \
     npm config set fetch-retry-mintimeout 20000 && \
     npm config set fetch-retry-maxtimeout 120000 && \
-    npm ci || (echo "npm ci failed, retrying with npm install..." && npm install) && \
+    npm ci --include=dev || (echo "npm ci failed, retrying with npm install..." && npm install) && \
     npm cache clean --force
 
 # Copy source code and configuration files
