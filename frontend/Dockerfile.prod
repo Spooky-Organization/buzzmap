@@ -24,6 +24,9 @@ COPY package*.json ./
 RUN npm ci && \
     npm cache clean --force
 
+# Set PATH to include node_modules/.bin so binaries like tsc are found
+ENV PATH="/app/node_modules/.bin:$PATH"
+
 # Copy environment file for build-time variables (VITE_*)
 # Note: If .env exists, it will override ARG values
 COPY .env* ./
