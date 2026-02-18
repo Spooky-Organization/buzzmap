@@ -13,11 +13,11 @@ services:
       NODE_ENV: development
       # Note: VITE_* vars are available at runtime in dev mode
       # Browser accesses backend via exposed port (localhost:5000)
-      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:5000/api/v1}
-      VITE_APP_NAME: ${VITE_APP_NAME:-Authentication Template}
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+      VITE_APP_NAME: ${VITE_APP_NAME}
       VITE_ENVIRONMENT: development
     ports:
-      - "${FRONTEND_PORT:-3000}:3000"
+      - "${FRONTEND_PORT}:3000"
     volumes:
       # Mount source code for hot reloading (read-write for development)
       - ./frontend/src:/app/src:rw
@@ -72,14 +72,14 @@ services:
       
       # Application URLs (from .env.development)
       APP_URL: ${APP_URL}
-      FRONTEND_URL: ${FRONTEND_URL:-${APP_URL}}
+      FRONTEND_URL: ${FRONTEND_URL}
       CORS_ORIGIN: ${CORS_ORIGIN}
       
       # JWT Configuration (from .env.development)
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
-      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN}
       
       # Email Configuration (from .env.development)
       RESEND_API_KEY: ${RESEND_API_KEY}
@@ -87,13 +87,13 @@ services:
       RESEND_FROM_NAME: ${RESEND_FROM_NAME}
       
       # Rate Limiting (from .env.development)
-      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
-      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS}
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS}
       
       # Redis Password (from .env.development)
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:
-      - "${BACKEND_PORT:-5000}:5000"
+      - "${BACKEND_PORT}:5000"
     volumes:
       # Mount source code for hot reloading (read-write for development)
       - ./backend/auth_module/src:/app/auth_module/src:rw
@@ -132,9 +132,9 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_PORT: ${POSTGRES_PORT}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${POSTGRES_PORT}:5432"
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
     networks:
@@ -153,7 +153,7 @@ services:
       - .env.development
     command: redis-server --requirepass ${REDIS_PASSWORD}
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "${REDIS_PORT}:6379"
     volumes:
       - redis_data_dev:/data
     networks:
@@ -179,9 +179,9 @@ services:
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       # Prisma Studio Configuration
-      PRISMA_STUDIO_PORT: ${PRISMA_STUDIO_PORT:-5555}
+      PRISMA_STUDIO_PORT: ${PRISMA_STUDIO_PORT}
     ports:
-      - "${PRISMA_STUDIO_PORT:-5555}:5555"
+      - "${PRISMA_STUDIO_PORT}:5555"
     volumes:
       # Mount Prisma schema for Studio
       - ./backend/prisma:/app/prisma:ro

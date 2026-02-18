@@ -443,3 +443,9 @@ See the root `docker-compose.dev.yml` and `docker-compose.prod.yml` for containe
 
 ISC
 
+---
+
+**© <span id="copyright-year"></span> Matthew Makundi, Founder [SpookieLabsInc](https://www.spookielabsinc.site)**
+
+*All rights reserved.*
+
