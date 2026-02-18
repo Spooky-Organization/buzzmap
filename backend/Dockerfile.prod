@@ -69,9 +69,9 @@ RUN mkdir -p /app/logs
 # Expose port
 EXPOSE ${BACKEND_PORT}
 
-# Health check for production
+# Health check uses container PORT (set at runtime) so it works for any port
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:5000/api/health || exit 1
+  CMD-SHELL wget --no-verbose --tries=1 --spider "http://localhost:${BACKEND_PORT}/api/health" || exit 1
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]

@@ -96,7 +96,8 @@ services:
     networks:
       - backend_network_prod
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/api/health"]
+      # Use container PORT so health check works for any BACKEND_PORT ($$ escapes for compose)
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider \"http://localhost:$$PORT/api/health\" || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
