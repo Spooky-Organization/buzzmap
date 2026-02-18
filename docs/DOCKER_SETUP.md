@@ -51,8 +51,7 @@ Use the helper script for automatic environment setup:
 **Access Points:**
 - Frontend: http://localhost:3014
 - Backend API: http://localhost:5000/api/v1
-- Prisma Studio: http://localhost:5555
-- PostgreSQL: localhost:5432
+- PostgreSQL: localhost:5432 (backend only; bind to 127.0.0.1 if you need host access)
 - Redis: localhost:6379
 
 ### Production Environment
@@ -91,7 +90,7 @@ Use the production helper script:
 **Access Points:**
 - Frontend: http://localhost:3014
 - Backend API: http://localhost:5001/api/v1
-- Prisma Studio: http://localhost:5556
+- Prisma Studio is not exposed. To inspect the database, run it locally (see [Accessing the database](#accessing-the-database)).
 
 ## Manual Docker Compose Commands
 
@@ -131,14 +130,25 @@ The helper scripts (`dev.sh` and `prod.sh`) solve this by:
 - **Backend**: `5000`
 - **PostgreSQL**: `5432`
 - **Redis**: `6379`
-- **Prisma Studio**: `5555`
 
 ### Production Ports
 - **Frontend**: `3014` (Nginx static file server)
 - **Backend**: `5001`
 - **PostgreSQL**: `5432`
 - **Redis**: `6379`
-- **Prisma Studio**: `5556`
+
+## Accessing the database
+
+Prisma Studio is not run as a Docker service and is not exposed. To view or edit data:
+
+- **With Docker running (dev or prod):** From your machine, in the `backend` directory, run:
+  ```bash
+  cd backend
+  DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/DBNAME" npx prisma studio
+  ```
+  Use the same `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` as in your `.env` or `.env.development`. Then open http://localhost:5555.
+
+- **Remote server:** SSH tunnel to the host, then use the command above with `127.0.0.1` (e.g. `ssh -L 5432:127.0.0.1:5432 user@server`).
 
 ## Troubleshooting
 

@@ -98,13 +98,18 @@ export function errorHandler(
     });
   }
 
+  // In production, do not leak probed path for 404 (security: avoid helping scanners)
+  const isProduction = process.env["NODE_ENV"] === "production";
+  const safePath = isProduction && statusCode === 404 ? "/api/..." : req.originalUrl;
+  const safeMessage = isProduction && statusCode === 404 ? "Not found" : message;
+
   // Send standardized error response
   const errorResponse: ApiErrorResponse = {
-    error: message,
-    message: message,
+    error: safeMessage,
+    message: safeMessage,
     statusCode,
     timestamp: new Date().toISOString(),
-    path: req.originalUrl,
+    path: safePath,
   };
 
   if (details) {
@@ -120,14 +125,19 @@ export function errorHandler(
 }
 
 /**
- * 404 handler for unmatched routes
+ * 404 handler for unmatched routes.
+ * In production, use a generic message to avoid leaking probed paths to scanners.
  */
 export function notFoundHandler(
   req: Request,
   _res: Response,
   _next: NextFunction
 ): void {
-  const error = new ApiError(`Route ${req.originalUrl} not found`, 404);
+  const message =
+    process.env["NODE_ENV"] === "production"
+      ? "Not found"
+      : `Route ${req.originalUrl} not found`;
+  const error = new ApiError(message, 404);
   _next(error);
 }
 

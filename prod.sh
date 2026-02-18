@@ -12,7 +12,6 @@ export FRONTEND_PORT=3014
 export BACKEND_PORT=5001
 export POSTGRES_PORT=5432
 export REDIS_PORT=6379
-export PRISMA_STUDIO_PORT=5556
 
 # Docker Compose file
 COMPOSE_FILE="docker-compose.prod.yml"
@@ -102,7 +101,7 @@ case "$COMMAND" in
     shell)
         if [ -z "$SERVICE" ]; then
             echo "Error: Service name required for shell command"
-            echo "Available services: frontend, backend, postgres, redis, prisma-studio"
+            echo "Available services: frontend, backend, postgres, redis"
             exit 1
         fi
         docker compose -f "$COMPOSE_FILE" exec "$SERVICE" /bin/sh

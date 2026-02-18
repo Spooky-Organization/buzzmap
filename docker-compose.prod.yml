@@ -8,7 +8,7 @@ services:
         # Build-time variables (VITE_* are embedded at build time)
         VITE_API_BASE_URL: ${VITE_API_BASE_URL}
         VITE_APP_NAME: ${VITE_APP_NAME}
-        VITE_ENVIRONMENT: production
+        VITE_ENVIRONMENT: ${VITE_ENVIRONMENT}
     container_name: frontend_service_prod
     restart: unless-stopped
     env_file:
@@ -53,11 +53,11 @@ services:
       
       # Redis Configuration (overrides from .env)
       REDIS_HOST: redis
-      REDIS_PORT: 6379
+      REDIS_PORT: ${REDIS_PORT}
       
       # Server Configuration
       NODE_ENV: production
-      PORT: 5000
+      PORT: ${BACKEND_PORT}
       
       # Application URLs (from .env)
       APP_URL: ${APP_URL}
@@ -82,7 +82,7 @@ services:
       # Redis Password (from .env)
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:
-      - "${BACKEND_PORT}:5000"
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
     volumes:
       # Production: Only mount necessary files, no source code (built into image)
       # Note: Prisma schema is already in the Docker image from build (copied in Dockerfile.prod)
@@ -122,6 +122,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_PORT: ${POSTGRES_PORT}
+    # In production on a public host, avoid exposing 5432 to the internet;
+    # bind to 127.0.0.1:${POSTGRES_PORT}:5432 or remove ports and access via internal network only.
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:
@@ -170,52 +172,6 @@ services:
         reservations:
           cpus: '0.25'
           memory: 256M
-
-  prisma-studio:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile.prod
-      target: production
-    container_name: prisma_studio_prod
-    restart: unless-stopped
-    env_file:
-      - .env
-    environment:
-      # Database Configuration (same as backend)
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      # Prisma Studio Configuration
-      PRISMA_STUDIO_PORT: ${PRISMA_STUDIO_PORT}
-    ports:
-      - "${PRISMA_STUDIO_PORT}:5555"
-    volumes:
-      # Note: Prisma schema is already in the Docker image from build (copied in Dockerfile.prod)
-      # No need to mount it - using schema from image ensures it's always available
-      # Exclude node_modules - Prisma client already in image from build
-      - /app/node_modules
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - backend_network_prod
-    healthcheck:
-      # Prisma Studio serves its UI on port 5555 inside the container
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5555/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
-    command: ["sh", "-c", "cd /app && prisma studio --hostname 0.0.0.0 --port ${PRISMA_STUDIO_PORT} --schema prisma/schema.prisma"]
-    # Production optimizations
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
-        reservations:
-          cpus: '0.25'
-          memory: 128M
 
 volumes:
   postgres_data_prod:

@@ -21,9 +21,9 @@ export const generalLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Skip trust proxy validation - we're behind a reverse proxy in production
+  // Trust proxy so rate limits use real client IP when behind Cloudflare/Coolify
   validate: {
-    trustProxy: false,
+    trustProxy: true,
   },
 });
 
@@ -40,9 +40,9 @@ export const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Skip trust proxy validation - we're behind a reverse proxy in production
+  // Trust proxy so rate limits use real client IP when behind Cloudflare/Coolify
   validate: {
-    trustProxy: false,
+    trustProxy: true,
   },
 });
 
@@ -59,9 +59,9 @@ export const passwordResetLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Skip trust proxy validation - we're behind a reverse proxy in production
+  // Trust proxy so rate limits use real client IP when behind Cloudflare/Coolify
   validate: {
-    trustProxy: false,
+    trustProxy: true,
   },
 });
 
@@ -78,9 +78,9 @@ export const emailVerificationLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Skip trust proxy validation - we're behind a reverse proxy in production
+  // Trust proxy so rate limits use real client IP when behind Cloudflare/Coolify
   validate: {
-    trustProxy: false,
+    trustProxy: true,
   },
 });
 
@@ -97,8 +97,8 @@ export const adminLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Skip trust proxy validation - we're behind a reverse proxy in production
+  // Trust proxy so rate limits use real client IP when behind Cloudflare/Coolify
   validate: {
-    trustProxy: false,
+    trustProxy: true,
   },
 });

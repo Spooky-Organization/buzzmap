@@ -164,38 +164,6 @@ services:
       timeout: 3s
       retries: 5
 
-  prisma-studio:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile.dev
-      target: development
-    container_name: prisma_studio_dev
-    restart: unless-stopped
-    env_file:
-      - .env.development
-    environment:
-      # Database Configuration (same as backend)
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      # Prisma Studio Configuration
-      PRISMA_STUDIO_PORT: ${PRISMA_STUDIO_PORT}
-    ports:
-      - "${PRISMA_STUDIO_PORT}:5555"
-    volumes:
-      # Mount Prisma schema for Studio
-      - ./backend/prisma:/app/prisma:ro
-      # Mount package.json for Prisma CLI
-      - ./backend/package.json:/app/package.json:ro
-      # Exclude node_modules - will be generated in container
-      - /app/node_modules
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - backend_network_dev
-    command: ["sh", "-c", "npx prisma generate && npx prisma studio --hostname 0.0.0.0 --port 5555"]
-
 volumes:
   postgres_data_dev:
     driver: local
