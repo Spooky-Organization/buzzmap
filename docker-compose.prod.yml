@@ -199,6 +199,13 @@ services:
         condition: service_healthy
     networks:
       - backend_network_prod
+    healthcheck:
+      # Prisma Studio serves its UI on port 5555 inside the container
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5555/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     command: ["sh", "-c", "cd /app && prisma studio --hostname 0.0.0.0 --port ${PRISMA_STUDIO_PORT} --schema prisma/schema.prisma"]
     # Production optimizations
     deploy:
