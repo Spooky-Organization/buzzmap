@@ -10,47 +10,55 @@ backend/
 │   ├── app.ts                    # Express app configuration and middleware setup
 │   └── server.ts                 # Server entry point and startup logic
 │
-├── auth_module/                  # Authentication module (isolated)
-│   └── src/
-│       ├── config/               # Configuration files
-│       │   ├── jwt.ts           # JWT token configuration
-│       │   ├── prisma.ts        # Prisma client configuration
-│       │   └── redis.ts         # Redis client configuration
-│       │
-│       ├── controllers/         # Request handlers
-│       │   ├── authController.ts    # Authentication endpoints
-│       │   ├── mfaController.ts     # Multi-factor authentication
-│       │   └── userController.ts    # User management
-│       │
-│       ├── middleware/          # Express middleware
-│       │   ├── auth.ts          # Authentication middleware
-│       │   ├── authorization.ts # Role-based authorization
-│       │   ├── errorHandler.ts  # Global error handler
-│       │   ├── rateLimiter.ts   # Rate limiting
-│       │   ├── sanitization.ts  # Input sanitization
-│       │   ├── validation.ts    # Request validation
-│       │   └── index.ts         # Middleware exports
-│       │
-│       ├── routes/              # API route definitions
-│       │   ├── index.ts         # Route aggregator
-│       │   ├── v1/              # API version 1 routes
-│       │   │   ├── authRoutes.ts
-│       │   │   ├── mfaRoutes.ts
-│       │   │   ├── performanceRoutes.ts
-│       │   │   └── userRoutes.ts
-│       │   └── v2/              # API version 2 routes (future)
-│       │
-│       ├── types/               # TypeScript type definitions
-│       │   └── index.ts
-│       │
-│       └── utils/               # Utility functions
-│           ├── emailUtils.ts        # Email service utilities
-│           ├── envValidation.ts     # Environment variable validation
-│           ├── logger.ts            # Logging utilities
-│           ├── mfaUtils.ts          # MFA helper functions
-│           ├── passwordUtils.ts      # Password hashing/validation
-│           ├── performanceMonitor.ts # Performance monitoring
-│           └── roleUtils.ts          # Role management utilities
+├── modules/                       # Feature modules directory
+│   └── auth_module/              # Authentication module (isolated)
+│       └── src/
+│           ├── config/           # Configuration files
+│           │   ├── jwt.ts       # JWT token configuration
+│           │   ├── prisma.ts    # Prisma client configuration
+│           │   └── redis.ts     # Redis client configuration
+│           │
+│           ├── controllers/      # Request handlers
+│           │   ├── authController.ts    # Authentication endpoints
+│           │   ├── mfaController.ts     # Multi-factor authentication
+│           │   ├── sseController.ts     # Server-Sent Events endpoints
+│           │   └── userController.ts    # User management
+│           │
+│           ├── middleware/       # Express middleware
+│           │   ├── auth.ts          # Authentication middleware
+│           │   ├── authorization.ts # Role-based authorization
+│           │   ├── errorHandler.ts  # Global error handler
+│           │   ├── rateLimiter.ts   # Rate limiting
+│           │   ├── sanitization.ts  # Input sanitization
+│           │   ├── validation.ts    # Request validation
+│           │   ├── methodRestriction.ts # HTTP method enforcement
+│           │   └── index.ts         # Middleware exports
+│           │
+│           ├── routes/          # API route definitions
+│           │   ├── index.ts     # Route aggregator
+│           │   ├── v1/          # API version 1 routes
+│           │   │   ├── authRoutes.ts
+│           │   │   ├── mfaRoutes.ts
+│           │   │   ├── performanceRoutes.ts
+│           │   │   ├── sseRoutes.ts
+│           │   │   └── userRoutes.ts
+│           │   └── v2/          # API version 2 routes (future)
+│           │
+│           ├── types/           # TypeScript type definitions
+│           │   └── index.ts
+│           │
+│           └── utils/           # Utility functions
+│               ├── emailUtils.ts        # Email service utilities
+│               ├── envValidation.ts     # Environment variable validation
+│               ├── logger.ts            # Logging utilities
+│               ├── mfaUtils.ts          # MFA helper functions
+│               ├── passwordUtils.ts      # Password hashing/validation
+│               ├── performanceMonitor.ts # Performance monitoring
+│               ├── roleUtils.ts          # Role management utilities
+│               ├── cache.ts              # Redis caching utilities
+│               ├── sseManager.ts         # SSE connection management
+│               ├── eventEmitter.ts       # Event publishing for SSE
+│               └── securityLogger.ts     # Security event logging
 │
 ├── prisma/                       # Database schema and migrations
 │   ├── migrations/              # Database migration files
@@ -77,7 +85,7 @@ backend/
 ├── nodemon.json                 # Nodemon configuration
 │
 ├── API_DOCUMENTATION.md         # API endpoint documentation
-└── Authentication_Fixes.md      # Authentication fixes and notes
+└── SECURITY_FIXES.md            # Security fixes and improvements
 ```
 
 ## 🏗️ Architecture Overview
@@ -86,7 +94,7 @@ backend/
 - **`app.ts`**: Configures the Express application with middleware, routes, and error handlers
 - **`server.ts`**: Entry point that initializes connections (Redis, database) and starts the server
 
-### Auth Module (`auth_module/src/`)
+### Auth Module (`modules/auth_module/src/`)
 A self-contained authentication module that handles:
 - User authentication and authorization
 - Multi-factor authentication (MFA)
@@ -97,13 +105,15 @@ A self-contained authentication module that handles:
 
 ### Key Features
 - 🔐 **Authentication**: JWT-based authentication with refresh tokens
-- 🛡️ **Security**: Rate limiting, input sanitization, CORS, Helmet
+- 🛡️ **Security**: Rate limiting, input sanitization, CORS, Helmet, account lockout
 - 🔑 **MFA**: TOTP-based multi-factor authentication
 - 👥 **RBAC**: Role-based access control system
 - 📧 **Email**: Email notifications via Resend
 - 📊 **Monitoring**: Performance monitoring and logging
 - 🗄️ **Database**: PostgreSQL with Prisma ORM
 - ⚡ **Caching**: Redis for session management and rate limiting
+- 🔄 **Real-time**: Server-Sent Events for notifications and session sync
+- 🚦 **Method Restriction**: HTTP method enforcement on all routes
 
 ## 🚀 Getting Started
 
@@ -193,7 +203,9 @@ Key environment variables (see `.env.example` for full list):
 ## 📚 Documentation
 
 - [API Documentation](./API_DOCUMENTATION.md) - Complete API endpoint reference
-- [Authentication Fixes](./Authentication_Fixes.md) - Authentication-related fixes and improvements
+- [SSE Implementation](./SSE_IMPLEMENTATION.md) - Real-time features documentation
+- [API Routing](./API_ROUTING.md) - Centralized API routing architecture
+- [Security Fixes](./SECURITY_FIXES.md) - Security-related fixes and improvements
 
 ## 🏛️ Project Structure Philosophy
 
@@ -310,7 +322,7 @@ Each module's `src/` directory should follow this structure:
 3. **Import and register in core app:**
    ```typescript
    // core/app.ts
-   import { {Feature}RoutesV1 } from '../{feature}_module/src/routes';
+   import { {Feature}RoutesV1 } from '../modules/{feature}_module/src/routes';
    
    // Register routes
    app.use('/api/v1/{feature}', {Feature}RoutesV1);
@@ -355,28 +367,29 @@ Each module's `src/` directory should follow this structure:
 ### Example: Creating a Payment Module
 
 ```bash
-# 1. Create the module structure
+# 1. Create the module structure inside modules/
 backend/
-└── payment_module/
-    └── src/
-        ├── config/
-        │   └── payment.config.ts
-        ├── controllers/
-        │   ├── paymentController.ts
-        │   └── index.ts
-        ├── routes/
-        │   ├── index.ts
-        │   └── v1/
-        │       └── paymentRoutes.ts
-        ├── services/
-        │   ├── paymentService.ts
-        │   └── index.ts
-        ├── types/
-        │   ├── payment.types.ts
-        │   └── index.ts
-        └── utils/
-            ├── paymentUtils.ts
-            └── index.ts
+└── modules/
+    └── payment_module/
+        └── src/
+            ├── config/
+            │   └── payment.config.ts
+            ├── controllers/
+            │   ├── paymentController.ts
+            │   └── index.ts
+            ├── routes/
+            │   ├── index.ts
+            │   └── v1/
+            │       └── paymentRoutes.ts
+            ├── services/
+            │   ├── paymentService.ts
+            │   └── index.ts
+            ├── types/
+            │   ├── payment.types.ts
+            │   └── index.ts
+            └── utils/
+                ├── paymentUtils.ts
+                └── index.ts
 ```
 
 ```typescript
@@ -384,7 +397,7 @@ backend/
 export { default as paymentRoutesV1 } from './v1/paymentRoutes';
 
 // 3. Import and use in core/app.ts
-import { paymentRoutesV1 } from '../payment_module/src/routes';
+import { paymentRoutesV1 } from '../modules/payment_module/src/routes';
 app.use('/api/v1/payments', paymentRoutesV1);
 ```
 
@@ -413,6 +426,10 @@ When updating an existing module:
 - CORS protection
 - Security headers (Helmet)
 - Multi-factor authentication (TOTP)
+- Account lockout (lock after 4, ban after 6 failed attempts)
+- HTTP method restriction on all routes
+- Security event logging
+- Response compression
 
 ## 📦 Dependencies
 

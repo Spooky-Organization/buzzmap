@@ -1,5 +1,5 @@
-import { connectRedis } from "../auth_module/src/config/redis";
-import { validateEnvironment, getEnv, EnvValidationError } from "../auth_module/src/utils/envValidation";
+import { connectRedis } from "../modules/auth_module/src/config/redis";
+import { validateEnvironment, getEnv, EnvValidationError } from "../modules/auth_module/src/utils/envValidation";
 
 const startServer = async () => {
   try {

@@ -4,7 +4,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.dev
       target: development
-    container_name: frontend_service_dev
+    container_name: dashboard_frontend_dev
     restart: unless-stopped
     env_file:
       - .env.development
@@ -52,7 +52,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile.dev
       target: development
-    container_name: backend_service_dev
+    container_name: dashboard_backend_dev
     restart: unless-stopped
     env_file:
       - .env.development
@@ -96,14 +96,13 @@ services:
       - "${BACKEND_PORT}:5000"
     volumes:
       # Mount source code for hot reloading (read-write for development)
-      - ./backend/auth_module/src:/app/auth_module/src:rw
+      - ./backend/modules/auth_module/src:/app/modules/auth_module/src:rw
+      - ./backend/core:/app/core:rw
       - ./backend/package.json:/app/package.json:ro
       - ./backend/tsconfig.json:/app/tsconfig.json:ro
       - ./backend/prisma:/app/prisma:rw
       - ./backend/scripts:/app/scripts:ro
       - ./backend/nodemon.json:/app/nodemon.json:ro
-      - ./backend/app.ts:/app/app.ts:ro
-      - ./backend/server.ts:/app/server.ts:ro
       # Exclude node_modules from volume mount
       - /app/node_modules
       # Mount logs directory for development debugging
@@ -124,7 +123,7 @@ services:
 
   postgres:
     image: postgres:15-alpine
-    container_name: backend_postgres_dev
+    container_name: dashboard_postgres_dev
     restart: unless-stopped
     env_file:
       - .env.development
@@ -147,11 +146,11 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: backend_redis_dev
+    container_name: dashboard_redis_dev
     restart: unless-stopped
     env_file:
       - .env.development
-    command: redis-server --requirepass ${REDIS_PASSWORD}
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
     ports:
       - "${REDIS_PORT}:6379"
     volumes:
@@ -159,7 +158,7 @@ services:
     networks:
       - backend_network_dev
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "--raw", "incr", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5

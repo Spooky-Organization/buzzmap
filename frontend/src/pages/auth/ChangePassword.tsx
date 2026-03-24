@@ -7,7 +7,6 @@ import { CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import { Card } from '@/components/ui/Card';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { validationManager } from '@/utils/validation';
 import { ValidationErrorCode, getErrorMessage } from '@/utils/errorCodes';
 import { ROUTES } from '@/utils/constants';
@@ -108,7 +107,6 @@ export const ChangePassword = () => {
   return (
     <>
       <AutoSEO />
-    <DashboardLayout>
       <div className="max-w-2xl">
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900">Change Password</h1>
@@ -196,7 +194,6 @@ export const ChangePassword = () => {
               </form>
             </Card>
       </div>
-    </DashboardLayout>
     </>
   );
 };

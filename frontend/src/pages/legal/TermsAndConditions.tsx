@@ -40,7 +40,7 @@ export const TermsAndConditions = () => {
               found = true;
               break;
             }
-          } catch (error) {
+          } catch {
             continue;
           }
         }

@@ -1,4 +1,4 @@
-# Authentication API Documentation
+# Dashboard API Documentation
 
 ## Base URL
 
@@ -402,6 +402,74 @@ All MFA routes require authentication unless otherwise specified.
   - `email`: User email address (URL encoded)
 - **Response**: PNG image data
 
+### Server-Sent Events Routes (`/api/v1/sse`)
+
+SSE endpoints provide real-time notifications and session synchronization.
+
+#### Notification Stream (Protected)
+
+- **GET** `/api/v1/sse/notifications`
+- **Description**: Establish SSE connection for real-time notifications
+- **Authentication**: Required (JWT token via query parameter `?token=<access_token>`)
+- **Query Parameters**:
+  - `token`: JWT access token
+- **Response**: Server-Sent Events stream with events:
+  - `user:updated` - User profile was updated
+  - `user:deleted` - User was deleted
+  - `session:sync` - Session data changed
+  - `mfa:enabled` - MFA was enabled
+  - `mfa:disabled` - MFA was disabled
+  - `security:alert` - Security event occurred
+  - `heartbeat` - Keep-alive ping (every 30 seconds)
+- **Headers**:
+  ```
+  Content-Type: text/event-stream
+  Cache-Control: no-cache
+  Connection: keep-alive
+  ```
+- **Event Format**:
+  ```
+  event: user:updated
+  data: {"userId":"user_id","timestamp":"2024-01-01T00:00:00Z"}
+  ```
+
+#### Session Sync Stream (Protected)
+
+- **GET** `/api/v1/sse/sessions`
+- **Description**: Establish SSE connection for session synchronization
+- **Authentication**: Required (JWT token via query parameter `?token=<access_token>`)
+- **Query Parameters**:
+  - `token`: JWT access token
+- **Response**: Server-Sent Events stream with session events:
+  - `session:created` - New session created
+  - `session:revoked` - Session was revoked
+  - `session:revoked:all` - All sessions were revoked
+  - `heartbeat` - Keep-alive ping (every 30 seconds)
+
+#### Get SSE Statistics (Admin Only)
+
+- **GET** `/api/v1/sse/stats`
+- **Description**: Get SSE connection statistics
+- **Authentication**: Required
+- **Authorization**: Admin only
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "totalConnections": 25,
+      "connectionsByUser": {
+        "user_123": 2,
+        "user_456": 1
+      },
+      "streams": {
+        "notifications": 15,
+        "sessions": 10
+      }
+    }
+  }
+  ```
+
 ### User Management Routes (`/api/v1/users`)
 
 All user routes require authentication.
@@ -654,6 +722,59 @@ All endpoints return consistent error responses:
     "field": "email",
     "message": "Valid email is required"
   }
+}
+```
+
+### Account Lockout Responses
+
+Account lockout prevents brute force attacks by temporarily locking accounts after repeated failed login attempts.
+
+#### Account Temporarily Locked (HTTP 423)
+
+```json
+{
+  "error": "Account temporarily locked due to too many failed login attempts",
+  "message": "Account temporarily locked due to too many failed login attempts",
+  "statusCode": 423,
+  "lockedUntil": "2024-01-01T00:15:00.000Z",
+  "retryAfterSeconds": 900
+}
+```
+
+#### Account Permanently Banned (HTTP 403)
+
+```json
+{
+  "error": "Account permanently banned due to excessive failed login attempts",
+  "message": "Account permanently banned due to excessive failed login attempts",
+  "statusCode": 403
+}
+```
+
+### Method Restriction Responses
+
+All routes enforce specific HTTP methods. Invalid methods receive a 405 response:
+
+#### Method Not Allowed (HTTP 405)
+
+```json
+{
+  "error": "Method not allowed",
+  "message": "POST method is not allowed for this endpoint",
+  "statusCode": 405,
+  "allowedMethods": ["GET"]
+}
+```
+
+#### Not Found (HTTP 404) - Strict Mode
+
+Some routes may return 404 instead of 405 for additional security:
+
+```json
+{
+  "error": "Not found",
+  "message": "Not found",
+  "statusCode": 404
 }
 ```
 

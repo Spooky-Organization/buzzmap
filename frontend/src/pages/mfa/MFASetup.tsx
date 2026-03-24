@@ -15,7 +15,6 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { MFAForm } from '@/components/forms/MFAForm';
 import { ROUTES } from '@/utils/constants';
 import { validationManager } from '@/utils/validation';
@@ -152,7 +151,6 @@ export const MFASetup = () => {
   return (
     <>
       <AutoSEO />
-      <DashboardLayout>
       <div className="max-w-3xl mx-auto">
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
@@ -439,7 +437,6 @@ export const MFASetup = () => {
               </Card>
             )}
       </div>
-    </DashboardLayout>
     </>
   );
 };

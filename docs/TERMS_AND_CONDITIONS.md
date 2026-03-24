@@ -4,11 +4,11 @@
 
 ## 1. Acceptance of Terms
 
-By accessing and using the Authentication Template ("Service", "Application", "we", "us", or "our"), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.
+By accessing and using the Dashboard Template ("Service", "Application", "we", "us", or "our"), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.
 
 ## 2. Description of Service
 
-The Authentication Template is a production-ready authentication system that provides:
+The Dashboard Template is a production-ready authentication system that provides:
 
 - User registration and account management
 - Secure authentication and session management
@@ -67,7 +67,7 @@ You agree NOT to:
 ### 5.1 Service Ownership
 
 - The Service and its original content, features, and functionality are owned by SpookieLabsInc and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws
-- The Authentication Template code and documentation are provided as-is for use in your projects
+- The Dashboard Template code and documentation are provided as-is for use in your projects
 
 ### 5.2 User Content
 

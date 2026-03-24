@@ -10,7 +10,6 @@ import {
   Info
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { AutoSEO } from '@/components/seo/SEO';
 
 export const TransactionsDashboard = () => {
@@ -100,7 +99,6 @@ export const TransactionsDashboard = () => {
   return (
     <>
       <AutoSEO />
-    <DashboardLayout>
       <div className="space-y-6">
         {/* Disclaimer Banner */}
         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md">
@@ -212,7 +210,6 @@ export const TransactionsDashboard = () => {
           </div>
         </Card>
       </div>
-    </DashboardLayout>
     </>
   );
 };

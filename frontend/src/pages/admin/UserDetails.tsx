@@ -21,7 +21,6 @@ import { CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { AutoSEO } from '@/components/seo/SEO';
 import { type UserRole } from '@/utils/constants';
 import { validationManager } from '@/utils/validation';
@@ -139,7 +138,6 @@ export const UserDetails = () => {
   return (
     <>
       <AutoSEO />
-    <DashboardLayout>
       <div className="max-w-4xl">
             {/* Breadcrumb */}
             <div className="mb-6">
@@ -389,7 +387,6 @@ export const UserDetails = () => {
               </div>
             </Card>
       </div>
-    </DashboardLayout>
     </>
   );
 };

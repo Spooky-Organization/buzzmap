@@ -27,7 +27,7 @@
     "allowUnreachableCode": false,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "baseUrl": "./auth_module/src",
+    "baseUrl": "./modules/auth_module/src",
     "paths": {
       "@/*": ["*"],
       "@/controllers/*": ["controllers/*"],
@@ -38,7 +38,7 @@
       "@/types/*": ["types/*"]
     }
   },
-  "include": ["auth_module/src/**/*", "prisma/**/*", "*.ts", "core/app.ts", "core/server.ts"],
+  "include": ["modules/auth_module/src/**/*", "prisma/**/*", "*.ts", "core/app.ts", "core/server.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
   "ts-node": {
     "require": ["tsconfig-paths/register"]

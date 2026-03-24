@@ -34,8 +34,21 @@ model User {
   mfaSecret             String?   // TOTP secret key
   mfaBackupCodes        String[]  // Array of backup codes for account recovery
   
+  // Account Security fields (OWASP A02)
+  failedAttempts        Int       @default(0)  // Count of failed login attempts
+  lockedUntil           DateTime?              // Account lockout expiry (null = not locked)
+  isBanned              Boolean   @default(false)  // Permanent ban flag
+  
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
   @@map("users")
+  
+  // Indexes for performance optimization
+  @@index([role])                    // For filtering users by role (admin queries)
+  @@index([createdAt])                // For sorting users by creation date
+  @@index([isEmailVerified])           // For filtering unverified users
+  @@index([emailVerificationToken])    // For email verification token lookup
+  @@index([passwordResetToken])        // For password reset token lookup
+  @@index([refreshToken])             // For refresh token lookup
 } 

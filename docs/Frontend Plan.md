@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the core frontend implementation plan for the Authentication Template. The frontend will implement authentication, MFA, and user management endpoints, provide secure session management, and include comprehensive security measures following OWASP Top 10 guidelines.
+This document outlines the core frontend implementation plan for the Dashboard Template. The frontend will implement authentication, MFA, and user management endpoints, provide secure session management, and include comprehensive security measures following OWASP Top 10 guidelines.
 
 **Focus:** Core functionality - Authentication, MFA, User Management, and Session Management across the stack.
 
@@ -1120,7 +1120,7 @@ Core endpoints to be implemented (excluding performance monitoring for now):
 ```env
 # .env.example
 VITE_API_BASE_URL=http://localhost:5000/api/v1
-VITE_APP_NAME=Authentication Template
+VITE_APP_NAME=Dashboard Template
 VITE_ENVIRONMENT=development
 ```
 

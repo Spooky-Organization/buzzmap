@@ -1,4 +1,4 @@
-# Authentication Template
+# Dashboard Template
 
 <div align="center">
 
@@ -18,7 +18,7 @@
 
 ## 🎯 Overview
 
-**Authentication Template** is a complete, enterprise-grade authentication system that saves weeks of development time. Built with modern technologies and security best practices, it provides everything you need for secure user authentication, authorization, and session management out of the box.
+**Dashboard Template** is a complete, enterprise-grade authentication system that saves weeks of development time. Built with modern technologies and security best practices, it provides everything you need for secure user authentication, authorization, and session management out of the box.
 
 ### Why Choose This Template?
 
@@ -110,8 +110,8 @@ cd backend && npm install
 cd ../frontend && npm install
 
 # Set up environment variables
-cp .env.example .env
-# Edit .env with your configuration
+cp .env.example .env.development
+# Edit .env.development with your configuration
 
 # Start backend
 cd backend
@@ -150,12 +150,13 @@ Authentication-Template/
 │
 ├── backend/                 # Express backend application
 │   ├── core/                # Express app configuration
-│   ├── auth_module/         # Authentication module
-│   │   └── src/
-│   │       ├── controllers/ # Request handlers
-│   │       ├── middleware/  # Express middleware
-│   │       ├── routes/      # API routes
-│   │       └── utils/       # Utility functions
+│   ├── modules/             # Modular code organization
+│   │   └── auth_module/     # Authentication module
+│   │       └── src/
+│   │           ├── controllers/ # Request handlers
+│   │           ├── middleware/  # Express middleware
+│   │           ├── routes/      # API routes
+│   │           └── utils/       # Utility functions
 │   └── prisma/              # Database schema and migrations
 │
 ├── docs/                    # Comprehensive documentation
@@ -196,11 +197,12 @@ Authentication-Template/
 The backend follows a **modular architecture** pattern:
 
 - **`core/`** - Express application configuration and server setup
-- **`auth_module/`** - Self-contained authentication module
-  - Controllers for request handling
-  - Middleware for authentication, authorization, validation
-  - Routes organized by API version
-  - Utilities for password, email, MFA, etc.
+- **`modules/`** - Modular code organization
+  - **`auth_module/`** - Self-contained authentication module
+    - Controllers for request handling
+    - Middleware for authentication, authorization, validation
+    - Routes organized by API version
+    - Utilities for password, email, MFA, etc.
 - **`prisma/`** - Database schema and migrations
 
 ### Frontend Architecture
@@ -228,15 +230,15 @@ The frontend uses a **component-based architecture**:
 
 ### Environment Variables
 
-#### Frontend (`.env.development` for dev, `.env` for prod)
+#### Frontend (`.env.development` for dev, `.env.prod` for prod)
 
 ```env
 VITE_API_BASE_URL=http://localhost:5000/api/v1
-VITE_APP_NAME=Authentication Template
+VITE_APP_NAME=Dashboard Template
 VITE_ENVIRONMENT=development
 ```
 
-#### Backend (`.env`)
+#### Backend (`.env.development` or `.env.prod`)
 
 ```env
 # Database
@@ -311,7 +313,7 @@ npm run lint         # Run ESLint
 ### Docker Commands
 
 ```bash
-# Development
+# Development (uses .env.development automatically)
 ./dev.sh start               # Start development environment (builds and runs in detached mode)
 ./dev.sh stop                # Stop services
 ./dev.sh restart             # Restart services
@@ -320,7 +322,7 @@ npm run lint         # Run ESLint
 ./dev.sh status              # Check service status
 ./dev.sh help                # Show all available commands
 
-# Production
+# Production (uses .env.prod automatically)
 ./prod.sh start              # Start production environment (builds and runs in detached mode)
 ./prod.sh stop               # Stop services
 ./prod.sh restart            # Restart services
@@ -429,8 +431,7 @@ npm test
 
 1. **Prepare Environment**
    ```bash
-   cp .env.example .env
-   # Edit .env with production values
+   # Edit .env.prod with production values
    ```
 
 2. **Build and Deploy**

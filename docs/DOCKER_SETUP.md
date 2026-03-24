@@ -4,7 +4,7 @@ This project uses Docker Compose to manage separate development and production e
 
 ## Environment Files
 
-- **`.env`**: Production environment variables (used by `docker-compose.prod.yml`)
+- **`.env.prod`**: Production environment variables (used by `docker-compose.prod.yml`)
 - **`.env.development`**: Development environment variables (used by `docker-compose.dev.yml`)
 
 ## Quick Start
@@ -94,32 +94,28 @@ Use the production helper script:
 
 ## Manual Docker Compose Commands
 
-If you prefer not to use the helper scripts, you can run Docker Compose manually with environment variable overrides:
+If you prefer not to use the helper scripts, you can run Docker Compose manually with the `--env-file` flag:
 
 ### Development
 
 ```bash
-# Set environment variables and run
-FRONTEND_PORT=3000 docker compose -f docker-compose.dev.yml up --build
-
-# Or export them first
-export FRONTEND_PORT=3000
-docker compose -f docker-compose.dev.yml up --build
+# Use --env-file to specify the development environment
+docker compose --env-file .env.development -f docker-compose.dev.yml up --build -d
 ```
 
 ### Production
 
 ```bash
-# Production uses default values from .env
-docker compose -f docker-compose.prod.yml up --build -d
+# Use --env-file to specify the production environment
+docker compose --env-file .env.prod -f docker-compose.prod.yml up --build -d
 ```
 
 ## Why Helper Scripts?
 
-Docker Compose reads the root `.env` file for **variable substitution** (like `${FRONTEND_PORT}`) in the compose file itself, even when using different `env_file` directives. This can cause port conflicts between dev and prod.
+Docker Compose automatically loads `.env` for **variable substitution** (like `${FRONTEND_PORT}`) in the compose file. This can cause conflicts when running dev and prod environments.
 
 The helper scripts (`dev.sh` and `prod.sh`) solve this by:
-1. Exporting environment-specific variables before running Docker Compose
+1. Using `--env-file` to explicitly load the correct environment file
 2. Ensuring the correct ports are mapped for each environment
 3. Providing a consistent interface for managing services
 
@@ -137,6 +133,28 @@ The helper scripts (`dev.sh` and `prod.sh`) solve this by:
 - **PostgreSQL**: `5432`
 - **Redis**: `6379`
 
+## Redis for SSE and Caching
+
+Redis is used for:
+- **SSE Connection Management**: Tracks active SSE connections per user
+- **Session Caching**: User sessions cached with 7-day TTL
+- **Query Caching**: API responses cached with 1-minute TTL
+- **Rate Limiting**: Redis-backed rate limiters
+
+### Redis Connection Limits
+
+The application implements Redis connection pooling and limits:
+- Default pool size: 10 connections
+- Max connections per user: 5
+- SSE heartbeat: 30 seconds
+
+### Performance Considerations
+
+- SSE connections are lightweight but persistent
+- Each user can have up to 5 SSE connections across streams
+- Redis SCAN is used instead of KEYS for production safety
+- Connection limits prevent resource exhaustion
+
 ## Accessing the database
 
 Prisma Studio is not run as a Docker service and is not exposed. To view or edit data:
@@ -146,7 +164,7 @@ Prisma Studio is not run as a Docker service and is not exposed. To view or edit
   cd backend
   DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/DBNAME" npx prisma studio
   ```
-  Use the same `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` as in your `.env` or `.env.development`. Then open http://localhost:5555.
+  Use the same `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` as in your `.env.development` or `.env.prod`. Then open http://localhost:5555.
 
 - **Remote server:** SSH tunnel to the host, then use the command above with `127.0.0.1` (e.g. `ssh -L 5432:127.0.0.1:5432 user@server`).
 

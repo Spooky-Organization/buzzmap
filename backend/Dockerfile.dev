@@ -36,4 +36,4 @@ ENTRYPOINT ["dumb-init", "--"]
 
 # Start with hot reload (nodemon/ts-node-dev)
 # Note: Source code is mounted as volume, so changes reflect immediately
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run dev"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npx ts-node prisma/seed.ts && npm run dev"]

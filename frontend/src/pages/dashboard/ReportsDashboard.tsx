@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { AutoSEO } from '@/components/seo/SEO';
 
 export const ReportsDashboard = () => {
@@ -101,7 +100,6 @@ export const ReportsDashboard = () => {
   return (
     <>
       <AutoSEO />
-    <DashboardLayout>
       <div className="space-y-6">
         {/* Disclaimer Banner */}
         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md">
@@ -246,7 +244,6 @@ export const ReportsDashboard = () => {
           </Card>
         </div>
       </div>
-    </DashboardLayout>
     </>
   );
 };

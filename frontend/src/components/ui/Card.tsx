@@ -1,5 +1,6 @@
 import { HTMLAttributes, ReactNode } from 'react';
 import { cn } from '@/utils/cn';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
@@ -14,10 +15,18 @@ export const Card = ({
   className,
   ...props
 }: CardProps) => {
+  const { isDark } = useTheme();
+
   const variantStyles = {
-    default: 'bg-white shadow-soft',
-    elevated: 'bg-white shadow-medium',
-    outlined: 'bg-white border-2 border-gray-200',
+    default: isDark 
+      ? 'bg-gray-800 border border-gray-700' 
+      : 'bg-white shadow-soft',
+    elevated: isDark 
+      ? 'bg-gray-800 shadow-lg shadow-black/20 border border-gray-700' 
+      : 'bg-white shadow-medium',
+    outlined: isDark 
+      ? 'bg-transparent border-2 border-gray-700' 
+      : 'bg-white border-2 border-gray-200',
   };
 
   const paddingStyles = {
@@ -41,4 +50,3 @@ export const Card = ({
     </div>
   );
 };
-

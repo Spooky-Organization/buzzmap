@@ -1,6 +1,6 @@
-# Authentication Template - Frontend
+# Dashboard Template - Frontend
 
-A modern, production-ready frontend for the Authentication Template application. This frontend provides a complete, beautiful user interface with form validation, routing, and all authentication-related pages. **Backend integration is fully implemented** - API client, session management, and token handling are complete and ready to connect to your backend API.
+A modern, production-ready frontend for the Dashboard Template application. This frontend provides a complete, beautiful user interface with form validation, routing, and all authentication-related pages. **Backend integration is fully implemented** - API client, session management, and token handling are complete and ready to connect to your backend API.
 
 ## Features
 
@@ -279,7 +279,7 @@ Create a `.env` file based on `.env.example`:
 
 ```env
 VITE_API_BASE_URL=http://localhost:5000/api/v1
-VITE_APP_NAME=Authentication Template
+VITE_APP_NAME=Dashboard Template
 VITE_ENVIRONMENT=development
 ```
 

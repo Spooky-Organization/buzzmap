@@ -6,6 +6,7 @@ import { PasswordRequirements } from './PasswordRequirements';
 
 export interface PasswordInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
   label?: string;
+  labelClass?: string;
   error?: string;
   showStrengthIndicator?: boolean;
   showRequirements?: boolean;
@@ -15,6 +16,7 @@ export interface PasswordInputProps extends Omit<InputHTMLAttributes<HTMLInputEl
 export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>((props, ref) => {
   const {
   label,
+  labelClass,
   error,
   showStrengthIndicator = false,
     showRequirements = false,
@@ -50,7 +52,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>((p
   return (
     <div className="space-y-2">
       {label && (
-        <label htmlFor={inputId} className="block text-sm font-medium text-gray-700">
+        <label htmlFor={inputId} className={cn('block text-sm font-medium text-gray-700', labelClass)}>
           {label}
         </label>
       )}

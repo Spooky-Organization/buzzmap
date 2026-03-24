@@ -3,6 +3,7 @@ import { cn } from '@/utils/cn';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
+  labelClass?: string;
   error?: string;
   icon?: ReactNode;
   helperText?: string;
@@ -17,6 +18,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
  */
 export const Input = forwardRef<HTMLInputElement, InputProps>(({
   label,
+  labelClass,
   error,
   icon,
   helperText,
@@ -29,7 +31,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
   return (
     <div className="space-y-2">
       {label && (
-        <label htmlFor={inputId} className="block text-sm font-medium text-gray-700">
+        <label htmlFor={inputId} className={cn('block text-sm font-medium text-gray-700', labelClass)}>
           {label}
         </label>
       )}

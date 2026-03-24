@@ -5,7 +5,6 @@ import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -15,19 +14,29 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    host: true, // Listen on all addresses for Docker
+    host: true,
     hmr: {
-      clientPort: 3000, // HMR client port
+      clientPort: 3000,
     },
     watch: {
-      usePolling: true, // Enable polling for Docker volume mounts
+      usePolling: true,
     },
-    // Serve docs folder for documentation access
     fs: {
       allow: ['..'],
     },
   },
-  // Copy docs to public folder during build
   publicDir: 'public',
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          forms: ['react-hook-form', '@hookform/resolvers', 'zod'],
+          ui: ['lucide-react', 'tailwind-merge', 'clsx', 'sonner'],
+          markdown: ['react-markdown', 'remark-gfm'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 500,
+  },
 })
-

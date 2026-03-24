@@ -9,7 +9,7 @@ WORKDIR /app
 # Build arguments for VITE environment variables (build-time only)
 # These can be passed during docker build: --build-arg VITE_API_BASE_URL=...
 ARG VITE_API_BASE_URL=http://localhost:5000/api/v1
-ARG VITE_APP_NAME=Authentication Template
+ARG VITE_APP_NAME=Dashboard Template
 ARG VITE_ENVIRONMENT=production
 
 # Set as environment variables for Vite to pick up during build

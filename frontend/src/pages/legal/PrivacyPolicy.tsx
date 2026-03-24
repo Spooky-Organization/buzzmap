@@ -40,7 +40,7 @@ export const PrivacyPolicy = () => {
               found = true;
               break;
             }
-          } catch (error) {
+          } catch {
             continue;
           }
         }

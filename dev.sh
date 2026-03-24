@@ -6,22 +6,24 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-# Export development-specific variables for docker-compose substitution
-export FRONTEND_PORT=3014
-export BACKEND_PORT=5000
-export POSTGRES_PORT=5432
-export REDIS_PORT=6379
-
-# Export CORS and URL variables from .env.development
-# These override the root .env values used in docker-compose variable substitution
-# NOTE: If your frontend runs on a different port, update CORS_ORIGIN accordingly
-export CORS_ORIGIN=http://localhost:3014
-export APP_URL=http://localhost:3014
-export FRONTEND_URL=http://localhost:3014
-export VITE_API_BASE_URL=http://localhost:5000/api/v1
-
 # Docker Compose file
 COMPOSE_FILE="docker-compose.dev.yml"
+
+# Environment file for development
+ENV_FILE=".env.development"
+
+# Load all variables from the env file into the shell environment so they are
+# available for docker-compose variable substitution.  Values come exclusively
+# from the env file — nothing is hardcoded here.
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  # shellcheck source=.env.development
+  source "$ENV_FILE"
+  set +a
+else
+  echo "ERROR: $ENV_FILE not found. Cannot start services."
+  exit 1
+fi
 
 # Function to show usage
 show_usage() {
@@ -55,52 +57,52 @@ SERVICE="${2:-}"
 case "$COMMAND" in
     start)
         if [ -n "$SERVICE" ]; then
-            docker compose -f "$COMPOSE_FILE" up -d --build "$SERVICE"
+            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --build "$SERVICE"
         else
-            docker compose -f "$COMPOSE_FILE" up -d --build
+            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --build
         fi
         ;;
     stop)
         if [ -n "$SERVICE" ]; then
-            docker compose -f "$COMPOSE_FILE" stop "$SERVICE"
+            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" stop "$SERVICE"
         else
-            docker compose -f "$COMPOSE_FILE" stop
+            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" stop
         fi
         ;;
     restart)
         if [ -n "$SERVICE" ]; then
-            docker compose -f "$COMPOSE_FILE" restart "$SERVICE"
+            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" restart "$SERVICE"
         else
-            docker compose -f "$COMPOSE_FILE" restart
+            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" restart
         fi
         ;;
     logs)
         if [ "$SERVICE" = "-f" ] || [ "$SERVICE" = "--follow" ]; then
-            docker compose -f "$COMPOSE_FILE" logs -f
+            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" logs -f
         elif [ -n "$SERVICE" ]; then
-            docker compose -f "$COMPOSE_FILE" logs "$SERVICE"
+            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" logs "$SERVICE"
         else
-            docker compose -f "$COMPOSE_FILE" logs
+            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" logs
         fi
         ;;
     status|ps)
-        docker compose -f "$COMPOSE_FILE" ps
+        docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" ps
         ;;
     build)
         if [ -n "$SERVICE" ]; then
-            docker compose -f "$COMPOSE_FILE" build "$SERVICE"
+            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" build "$SERVICE"
         else
-            docker compose -f "$COMPOSE_FILE" build
+            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" build
         fi
         ;;
     down)
-        docker compose -f "$COMPOSE_FILE" down
+        docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" down
         ;;
     clean)
         echo "⚠️  WARNING: This will delete all volumes and data!"
         read -p "Are you sure? (yes/no): " confirm
         if [ "$confirm" = "yes" ]; then
-            docker compose -f "$COMPOSE_FILE" down -v
+            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" down -v
         else
             echo "Cancelled."
         fi
@@ -111,7 +113,7 @@ case "$COMMAND" in
             echo "Available services: frontend, backend, postgres, redis"
             exit 1
         fi
-        docker compose -f "$COMPOSE_FILE" exec "$SERVICE" /bin/sh
+        docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec "$SERVICE" /bin/sh
         ;;
     exec)
         if [ -z "$SERVICE" ]; then
@@ -120,14 +122,14 @@ case "$COMMAND" in
             exit 1
         fi
         shift 2  # Remove 'exec' and service name
-        docker compose -f "$COMPOSE_FILE" exec "$SERVICE" "$@"
+        docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec "$SERVICE" "$@"
         ;;
     help|--help|-h)
         show_usage
         ;;
     *)
         # If command not recognized, pass it through to docker compose
-        docker compose -f "$COMPOSE_FILE" "$@"
+        docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"
         ;;
 esac
 

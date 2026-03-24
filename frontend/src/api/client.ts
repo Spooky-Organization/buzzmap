@@ -1,61 +1,61 @@
 /**
  * Singleton API Client
  * Centralized HTTP client with automatic token management, request/response interceptors, and error handling
+ * 
+ * IMPORTANT: Always use API_ROUTES from '@/api/apiRoutes' for endpoint definitions
  */
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { API_BASE_URL } from '@/utils/constants';
 import { TokenManager } from '@/auth/tokenManager';
+import { API_ROUTES } from './apiRoutes';
 import type { ApiError } from './types';
 
-// API Endpoints - Centralized definitions
+// Re-export API_ROUTES for convenience
+export { API_ROUTES, getSSEUrl, getFullUrl } from './apiRoutes';
+
+/**
+ * @deprecated Use API_ROUTES from '@/api/apiRoutes' instead
+ * This export is provided for backward compatibility only
+ */
 export const API_ENDPOINTS = {
-  // Health Check (not versioned)
-  HEALTH: '/api/health',
-
-  // Authentication Endpoints
+  HEALTH: API_ROUTES.HEALTH,
   AUTH: {
-    REGISTER: '/api/v1/auth/register',
-    LOGIN: '/api/v1/auth/login',
-    LOGOUT: '/api/v1/auth/logout',
-    REFRESH: '/api/v1/auth/refresh',
-    VERIFY_EMAIL: '/api/v1/auth/verify-email',
-    FORGOT_PASSWORD: '/api/v1/auth/forgot-password',
-    RESET_PASSWORD: '/api/v1/auth/reset-password',
-    CHANGE_PASSWORD: '/api/v1/auth/change-password',
-    ME: '/api/v1/auth/me',
+    REGISTER: API_ROUTES.AUTH.REGISTER,
+    LOGIN: API_ROUTES.AUTH.LOGIN,
+    LOGOUT: API_ROUTES.AUTH.LOGOUT,
+    REFRESH: API_ROUTES.AUTH.REFRESH,
+    VERIFY_EMAIL: API_ROUTES.AUTH.VERIFY_EMAIL,
+    FORGOT_PASSWORD: API_ROUTES.AUTH.FORGOT_PASSWORD,
+    RESET_PASSWORD: API_ROUTES.AUTH.RESET_PASSWORD,
+    CHANGE_PASSWORD: API_ROUTES.AUTH.CHANGE_PASSWORD,
+    ME: API_ROUTES.AUTH.ME,
   },
-
-  // Multi-Factor Authentication Endpoints
   MFA: {
-    SETUP: '/api/v1/auth/mfa/setup',
-    VERIFY_SETUP: '/api/v1/auth/mfa/verify-setup',
-    VERIFY_LOGIN: '/api/v1/auth/mfa/verify-login',
-    COMPLETE_LOGIN: '/api/v1/auth/login/complete',
-    DISABLE: '/api/v1/auth/mfa/disable',
-    STATUS: '/api/v1/auth/mfa/status',
-    GENERATE_QR: '/api/v1/auth/mfa/generate-qr',
-    BACKUP_CODES: '/api/v1/auth/mfa/backup-codes',
-    QR: (secret: string, email: string) => `/api/v1/auth/mfa/qr/${encodeURIComponent(secret)}/${encodeURIComponent(email)}`,
+    SETUP: API_ROUTES.MFA.SETUP,
+    VERIFY_SETUP: API_ROUTES.MFA.VERIFY_SETUP,
+    VERIFY_LOGIN: API_ROUTES.MFA.VERIFY_LOGIN,
+    COMPLETE_LOGIN: API_ROUTES.AUTH.LOGIN_COMPLETE,
+    DISABLE: API_ROUTES.MFA.DISABLE,
+    STATUS: API_ROUTES.MFA.STATUS,
+    GENERATE_QR: API_ROUTES.MFA.GENERATE_QR,
+    BACKUP_CODES: API_ROUTES.MFA.BACKUP_CODES,
+    QR: API_ROUTES.MFA.QR,
   },
-
-  // User Management Endpoints
   USERS: {
-    LIST: '/api/v1/users',
-    DETAILS: (id: string) => `/api/v1/users/${id}`,
-    UPDATE: (id: string) => `/api/v1/users/${id}`,
-    DELETE: (id: string) => `/api/v1/users/${id}`,
-    UPDATE_ROLE: (id: string) => `/api/v1/users/${id}/role`,
-    STATS: '/api/v1/users/stats',
-    RESEND_VERIFICATION: (id: string) => `/api/v1/users/${id}/resend-verification`,
+    LIST: API_ROUTES.USERS.LIST,
+    DETAILS: API_ROUTES.USERS.DETAILS,
+    UPDATE: API_ROUTES.USERS.UPDATE,
+    DELETE: API_ROUTES.USERS.DELETE,
+    UPDATE_ROLE: API_ROUTES.USERS.UPDATE_ROLE,
+    STATS: API_ROUTES.USERS.STATS,
+    RESEND_VERIFICATION: API_ROUTES.USERS.RESEND_VERIFICATION,
   },
-
-  // Performance Monitoring Endpoints (Admin Only)
   PERFORMANCE: {
-    METRICS: (endpoint: string) => `/api/v1/admin/performance/${encodeURIComponent(endpoint)}`,
-    STATS: (endpoint: string) => `/api/v1/admin/performance/${encodeURIComponent(endpoint)}/stats`,
-    ENDPOINTS: '/api/v1/admin/performance/endpoints',
-    SUMMARY: '/api/v1/admin/performance/summary',
+    METRICS: API_ROUTES.PERFORMANCE.METRICS,
+    STATS: API_ROUTES.PERFORMANCE.STATS,
+    ENDPOINTS: API_ROUTES.PERFORMANCE.ENDPOINTS,
+    SUMMARY: API_ROUTES.PERFORMANCE.SUMMARY,
   },
 } as const;
 
@@ -72,7 +72,6 @@ class ApiClient {
   private constructor() {
     this.tokenManager = TokenManager.getInstance();
     
-    // Extract base URL without /api/v1 since endpoints already include it
     const baseURL = API_BASE_URL.includes('/api/v1') 
       ? API_BASE_URL.replace('/api/v1', '')
       : API_BASE_URL.replace('/api', '');
@@ -83,7 +82,7 @@ class ApiClient {
       headers: {
         'Content-Type': 'application/json',
       },
-      withCredentials: true, // For secure cookies if needed
+      withCredentials: true,
     });
 
     this.setupInterceptors();
@@ -96,16 +95,12 @@ class ApiClient {
     return ApiClient.instance;
   }
 
-  /**
-   * Get access token from stored session
-   */
   private getAccessToken(): string | null {
     const session = this.tokenManager.getStoredSession();
     return session?.accessToken || null;
   }
 
   private setupInterceptors(): void {
-    // Request interceptor - Add auth token
     this.client.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
         const token = this.getAccessToken();
@@ -117,16 +112,13 @@ class ApiClient {
       (error) => Promise.reject(error)
     );
 
-    // Response interceptor - Handle token refresh
     this.client.interceptors.response.use(
       (response: AxiosResponse) => response,
       async (error) => {
         const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-        // Handle 401 - Token expired
         if (error.response?.status === 401 && !originalRequest._retry) {
           if (this.isRefreshing) {
-            // If already refreshing, queue this request
             return new Promise((resolve, reject) => {
               this.failedQueue.push({ resolve, reject });
             })
@@ -137,23 +129,18 @@ class ApiClient {
                 }
                 return this.client(originalRequest);
               })
-              .catch((err) => {
-                return Promise.reject(err);
-              });
+              .catch((err) => Promise.reject(err));
           }
 
           originalRequest._retry = true;
           this.isRefreshing = true;
 
           try {
-            // Lazy import SessionManager to avoid circular dependency
             const { SessionManager } = await import('@/auth/sessionManager');
             const sessionManager = SessionManager.getInstance();
             const newToken = await sessionManager.refreshToken();
             if (newToken) {
-              // Process queued requests
               this.processQueue(null);
-              
               if (originalRequest.headers) {
                 originalRequest.headers.Authorization = `Bearer ${newToken}`;
               }
@@ -161,7 +148,6 @@ class ApiClient {
             }
           } catch (refreshError) {
             this.processQueue(refreshError);
-            // Lazy import SessionManager to avoid circular dependency
             const { SessionManager } = await import('@/auth/sessionManager');
             SessionManager.getInstance().logout();
             window.location.href = '/login';
@@ -187,7 +173,6 @@ class ApiClient {
     this.failedQueue = [];
   }
 
-  // HTTP Methods
   public async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
     try {
       const response = await this.client.get<T>(url, config);
@@ -238,7 +223,6 @@ class ApiClient {
   }
 
   private handleError(error: unknown): ApiError {
-    // Check if it's an Axios error
     if (error && typeof error === 'object' && 'response' in error) {
       const axiosError = error as { response?: { data?: unknown; status?: number } };
       if (axiosError.response?.data && typeof axiosError.response.data === 'object') {
@@ -254,7 +238,6 @@ class ApiClient {
       }
     }
     
-    // Check if it's a network error
     if (error && typeof error === 'object' && 'request' in error) {
       return {
         message: 'Network error. Please check your connection and try again.',
@@ -262,7 +245,6 @@ class ApiClient {
       };
     }
 
-    // Generic error
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
     return {
       message: errorMessage,

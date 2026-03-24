@@ -45,8 +45,11 @@ RUN npm config set fetch-retries 5 && \
     npm config set fetch-retry-mintimeout 20000 && \
     npm config set fetch-retry-maxtimeout 120000
 
-# Install production dependencies with fallback
-RUN npm ci --only=production || npm install --only=production
+# Install all dependencies (compression is a production dependency)
+RUN npm ci || npm install
+
+# Install ts-node for seed script (production doesn't include devDeps by default)
+RUN npm install --save-dev ts-node
 
 # Install Prisma CLI globally
 RUN npm install -g prisma@^6.10.1
@@ -76,5 +79,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
 
-# Start the application with migration deployment
-CMD ["sh", "-c", "cd /app && npx prisma migrate deploy --schema prisma/schema.prisma && node dist/core/server.js"]
+# Start the application with migration deployment and seed
+CMD ["sh", "-c", "cd /app && npx prisma migrate deploy --schema prisma/schema.prisma && npx ts-node prisma/seed.ts && node dist/core/server.js"]

@@ -23,7 +23,7 @@ export interface AuthResponse {
   };
 }
 
-export interface RegisterResponse extends AuthResponse {}
+export type RegisterResponse = AuthResponse;
 
 export interface LoginResponse extends AuthResponse {
   mfaRequired?: boolean;
@@ -71,7 +71,7 @@ export interface MFAVerifyLoginResponse {
   mfaVerified: boolean;
 }
 
-export interface MFALoginCompleteResponse extends AuthResponse {}
+export type MFALoginCompleteResponse = AuthResponse;
 
 export interface MFAStatusResponse {
   mfaEnabled: boolean;
@@ -125,4 +125,64 @@ export interface SessionData {
   accessToken: string;
   refreshToken: string;
   expiresAt: number;
+}
+
+export interface SSEEvent {
+  type: SSEEventType;
+  data: unknown;
+  timestamp?: string;
+}
+
+export enum SSEEventType {
+  NOTIFICATION = 'NOTIFICATION',
+  SESSION_CREATED = 'SESSION_CREATED',
+  SESSION_REVOKED = 'SESSION_REVOKED',
+  SESSION_UPDATED = 'SESSION_UPDATED',
+  USER_UPDATED = 'USER_UPDATED',
+  ROLE_CHANGED = 'ROLE_CHANGED',
+  MFA_ENABLED = 'MFA_ENABLED',
+  MFA_DISABLED = 'MFA_DISABLED',
+  TOKEN_EXPIRED = 'TOKEN_EXPIRED',
+  HEARTBEAT = 'HEARTBEAT',
+  ERROR = 'ERROR',
+}
+
+export interface NotificationPayload {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  timestamp: string;
+  read?: boolean;
+}
+
+export enum NotificationType {
+  INFO = 'INFO',
+  SUCCESS = 'SUCCESS',
+  WARNING = 'WARNING',
+  ERROR = 'ERROR',
+  SESSION = 'SESSION',
+  SECURITY = 'SECURITY',
+}
+
+export interface SessionPayload {
+  sessionId: string;
+  device?: string;
+  ip?: string;
+  timestamp: string;
+}
+
+export interface UserUpdatePayload {
+  userId: string;
+  changes: Partial<User>;
+}
+
+export interface TokenExpiredPayload {
+  expiresAt: string;
+}
+
+export interface SSEConnectionInfo {
+  connected: boolean;
+  reconnectAttempts: number;
+  lastHeartbeat: string | null;
 }

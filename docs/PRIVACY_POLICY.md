@@ -4,7 +4,7 @@
 
 ## 1. Introduction
 
-SpookieLabsInc ("we", "us", or "our") operates the Authentication Template application ("Service"). This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Service.
+SpookieLabsInc ("we", "us", or "our") operates the Dashboard Template application ("Service"). This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Service.
 
 By using the Service, you consent to the data practices described in this Privacy Policy. If you do not agree with the data practices described, please do not use the Service.
 
@@ -284,7 +284,7 @@ We respect privacy rights in all jurisdictions where we operate and comply with 
 
 ## 15. Consent
 
-By using the Authentication Template Service, you consent to:
+By using the Dashboard Template Service, you consent to:
 
 - The collection and use of information as described in this Privacy Policy
 - The transfer of your information to countries where we operate
