@@ -51,6 +51,9 @@ RUN npm ci || npm install
 # Install ts-node and tsconfig-paths for seed script (production doesn't include devDeps by default)
 RUN npm install --save-dev ts-node tsconfig-paths
 
+# Set PATH to include node_modules/.bin
+ENV PATH="/app/node_modules/.bin:$PATH"
+
 # Install Prisma CLI globally
 RUN npm install -g prisma@^6.10.1
 
