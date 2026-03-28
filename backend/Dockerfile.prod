@@ -48,8 +48,8 @@ RUN npm config set fetch-retries 5 && \
 # Install all dependencies (compression is a production dependency)
 RUN npm ci || npm install
 
-# Install ts-node for seed script (production doesn't include devDeps by default)
-RUN npm install --save-dev ts-node
+# Install ts-node and tsconfig-paths for seed script (production doesn't include devDeps by default)
+RUN npm install --save-dev ts-node tsconfig-paths
 
 # Install Prisma CLI globally
 RUN npm install -g prisma@^6.10.1
