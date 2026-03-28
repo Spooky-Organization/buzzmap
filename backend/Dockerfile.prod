@@ -80,4 +80,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 ENTRYPOINT ["dumb-init", "--"]
 
 # Start the application with migration deployment and seed
-CMD ["sh", "-c", "cd /app && npx prisma migrate deploy --schema prisma/schema.prisma && npx ts-node prisma/seed.ts && node dist/core/server.js"]
+CMD ["sh", "-c", "cd /app && npx prisma migrate deploy --schema prisma/schema.prisma && ts-node -r tsconfig-paths/register prisma/seed.ts && node dist/core/server.js"]
