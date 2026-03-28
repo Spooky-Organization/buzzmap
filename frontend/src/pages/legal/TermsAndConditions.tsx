@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, FileText } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Footer } from '@/components/layout/Footer';
 import { AutoSEO } from '@/components/seo/SEO';
 

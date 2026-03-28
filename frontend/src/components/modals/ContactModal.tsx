@@ -1,5 +1,5 @@
 import { X, Mail, Linkedin, Briefcase, Building2, ExternalLink } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 
 interface ContactModalProps {
   isOpen: boolean;

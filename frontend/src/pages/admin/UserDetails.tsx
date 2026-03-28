@@ -18,9 +18,11 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { CheckCircle } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/glass-card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { AutoSEO } from '@/components/seo/SEO';
 import { type UserRole } from '@/utils/constants';
 import { validationManager } from '@/utils/validation';
@@ -122,19 +124,6 @@ export const UserDetails = () => {
     });
   };
 
-  const getRoleBadgeColor = (role: UserRole) => {
-    switch (role) {
-      case 'ADMIN':
-        return 'bg-red-100 text-red-800';
-      case 'ACCOUNTANT':
-        return 'bg-blue-100 text-blue-800';
-      case 'USER':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   return (
     <>
       <AutoSEO />
@@ -152,22 +141,22 @@ export const UserDetails = () => {
 
             {/* Header */}
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+              <h1 className="text-3xl font-bold text-[var(--foreground)] flex items-center gap-2">
                 <UserCog className="h-8 w-8 text-primary-600" />
                 User Details
               </h1>
             </div>
 
             {/* Disclaimer Banner */}
-            <Card variant="default" padding="md" className="mb-6 bg-yellow-50 border-yellow-200">
+            <Card variant="default" padding="md" className="mb-6 bg-amber-500/10 border-amber-500/20">
               <div className="flex items-start gap-3">
-                <Info className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <Info className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-yellow-900">
+                  <p className="text-sm font-medium text-[var(--foreground)]">
                     Sample/Mock User Details Page
                   </p>
-                  <p className="text-xs text-yellow-800 mt-1">
-                    This is a mock user details page with sample/placeholder data to demonstrate user detail management functionality. 
+                  <p className="text-xs text-[var(--foreground-muted)] mt-1">
+                    This is a mock user details page with sample/placeholder data to demonstrate user detail management functionality.
                     All user information, activity logs, and operations shown here are for demonstration purposes only.
                   </p>
                 </div>
@@ -177,24 +166,22 @@ export const UserDetails = () => {
             {/* User Info Card */}
             <Card variant="elevated" padding="lg" className="mb-6">
               <div className="flex items-start gap-6">
-                <div className="h-20 w-20 rounded-full bg-primary-100 flex items-center justify-center">
-                  <User className="h-10 w-10 text-primary-600" />
-                </div>
+                <Avatar className="h-20 w-20">
+                  <AvatarFallback className="text-2xl">
+                    <User className="h-10 w-10" />
+                  </AvatarFallback>
+                </Avatar>
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-2xl font-bold text-gray-900">
+                    <h2 className="text-2xl font-bold text-[var(--foreground)]">
                       {userData.firstName} {userData.lastName}
                     </h2>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(
-                        userData.role
-                      )}`}
-                    >
+                    <Badge variant={userData.role.toLowerCase() as 'admin' | 'accountant' | 'user'}>
                       {userData.role}
-                    </span>
+                    </Badge>
                   </div>
-                  <p className="text-gray-600 mb-4">{userData.email}</p>
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                  <p className="text-[var(--foreground-muted)] mb-4">{userData.email}</p>
+                  <div className="flex items-center gap-4 text-sm text-[var(--foreground-muted)]">
                     <div className="flex items-center gap-1">
                       <Clock className="h-4 w-4" />
                       Created: {new Date(userData.createdAt).toLocaleDateString()}
@@ -214,8 +201,8 @@ export const UserDetails = () => {
             <Card variant="elevated" padding="lg" className="mb-6">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-gray-600" />
-                  <h3 className="text-xl font-semibold text-gray-900">User Information</h3>
+                  <User className="h-5 w-5 text-[var(--foreground-muted)]" />
+                  <h3 className="text-xl font-semibold text-[var(--foreground)]">User Information</h3>
                 </div>
                 {!isEdit && (
                   <Button
@@ -276,11 +263,11 @@ export const UserDetails = () => {
                 />
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                  <label className="block text-sm font-medium text-[var(--foreground)] mb-2">Role</label>
                   <select
                     {...register('role')}
                     disabled={!isEdit}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100"
+                    className="w-full px-4 py-2 glass-input disabled:opacity-50"
                   >
                     <option value="USER">User</option>
                     <option value="ACCOUNTANT">Accountant</option>
@@ -289,7 +276,7 @@ export const UserDetails = () => {
                 </div>
 
                 {isEdit && (
-                  <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
+                  <div className="flex items-center gap-3 pt-4 border-t border-[var(--glass-border)]">
                     <Button
                       type="submit"
                       variant="primary"
@@ -314,32 +301,24 @@ export const UserDetails = () => {
             {/* Status Card */}
             <Card variant="default" padding="lg" className="mb-6">
               <div className="flex items-center gap-2 mb-4">
-                <Shield className="h-5 w-5 text-gray-600" />
-                <h3 className="text-xl font-semibold text-gray-900">Account Status</h3>
+                <Shield className="h-5 w-5 text-[var(--foreground-muted)]" />
+                <h3 className="text-xl font-semibold text-[var(--foreground)]">Account Status</h3>
               </div>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Email Verification</span>
+                  <span className="text-sm text-[var(--foreground-muted)]">Email Verification</span>
                   {userData.isEmailVerified ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      Verified
-                    </span>
+                    <Badge variant="verified">Verified</Badge>
                   ) : (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                      Unverified
-                    </span>
+                    <Badge variant="unverified">Unverified</Badge>
                   )}
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Two-Factor Authentication</span>
+                  <span className="text-sm text-[var(--foreground-muted)]">Two-Factor Authentication</span>
                   {userData.mfaEnabled ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      Enabled
-                    </span>
+                    <Badge variant="success">Enabled</Badge>
                   ) : (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                      Disabled
-                    </span>
+                    <Badge variant="default">Disabled</Badge>
                   )}
                 </div>
               </div>
@@ -347,7 +326,7 @@ export const UserDetails = () => {
 
             {/* Actions Card */}
             <Card variant="default" padding="lg" className="mb-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Actions</h3>
+              <h3 className="text-xl font-semibold text-[var(--foreground)] mb-4">Actions</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Button
                   variant="secondary"
@@ -372,8 +351,8 @@ export const UserDetails = () => {
             <Card variant="outlined" padding="lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Danger Zone</h3>
-                  <p className="text-sm text-gray-500">
+                  <h3 className="text-lg font-semibold text-[var(--foreground)] mb-1">Danger Zone</h3>
+                  <p className="text-sm text-[var(--foreground-muted)]">
                     Once you delete a user, there is no going back. Please be certain.
                   </p>
                 </div>
@@ -390,4 +369,3 @@ export const UserDetails = () => {
     </>
   );
 };
-

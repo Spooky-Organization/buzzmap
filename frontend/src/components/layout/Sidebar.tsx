@@ -8,18 +8,16 @@ import {
   FileText,
   BarChart3,
   Users as UsersIcon,
-  ChevronLeft,
-  ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
   Shield
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { cn } from '@/utils/cn';
+import { cn } from '@/lib/utils';
 import { ROUTES } from '@/utils/constants';
-import { Tooltip } from '@/components/ui/Tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { SessionManager } from '@/auth/sessionManager';
 import { toast } from 'sonner';
-
-type Theme = 'light' | 'dark';
 
 export interface SidebarProps {
   userRole?: 'USER' | 'ACCOUNTANT' | 'ADMIN';
@@ -33,7 +31,6 @@ export interface SidebarProps {
   onMobileToggle?: () => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
-  theme?: Theme;
 }
 
 interface NavItem {
@@ -51,13 +48,11 @@ export const Sidebar = ({
   onMobileToggle,
   isCollapsed = false,
   onToggleCollapse,
-  theme = 'dark'
 }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const sidebarRef = useRef<HTMLDivElement>(null);
   const sessionManager = SessionManager.getInstance();
-  const isDark = theme === 'dark';
 
   const handleLogout = async () => {
     try {
@@ -132,22 +127,25 @@ export const Sidebar = ({
     }
   }, [location.pathname]);
 
+  const isActuallyCollapsed = isCollapsed && !isMobileOpen;
+  const userInitials = user?.name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2) || '?';
+
   const navLinkClass = (isActive: boolean) => cn(
     'flex items-center gap-3 py-3 rounded-lg transition-colors',
-    'justify-center lg:justify-start',
+    isActuallyCollapsed ? 'justify-center' : 'justify-center lg:justify-start',
     isActuallyCollapsed ? 'px-2' : 'px-4',
     isActive
-      ? isDark
-        ? 'bg-primary-500/20 text-primary-400 font-medium'
-        : 'bg-primary-50 text-primary-600 font-medium'
-      : isDark
-        ? 'text-gray-400 hover:text-white hover:bg-white/10'
-        : 'text-gray-700 hover:bg-gray-100'
+      ? 'bg-primary-500/20 text-primary-400 font-medium'
+      : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--card-hover)]'
   );
 
-  const isActuallyCollapsed = isCollapsed && !isMobileOpen;
-
   return (
+    <TooltipProvider delayDuration={200}>
     <>
       {isMobileOpen && (
         <div 
@@ -167,60 +165,52 @@ export const Sidebar = ({
           isMobileOpen ? 'w-full translate-x-0' : '-translate-x-full',
           'lg:translate-x-0',
           isCollapsed ? 'lg:w-20' : 'lg:w-64',
-          isDark
-            ? 'bg-gray-800 border-gray-700'
-            : 'bg-white border-gray-200'
+          'bg-[var(--sidebar-bg)] backdrop-blur-xl border-[var(--sidebar-border)]'
         )}
       >
         <div className={cn(
-          'flex items-center justify-between p-4 flex-shrink-0 border-b',
-          isDark ? 'border-gray-700' : 'border-gray-200'
+          'flex flex-shrink-0 border-b border-[var(--glass-border)]',
+          isActuallyCollapsed
+            ? 'flex-col items-center p-2'
+            : 'items-center justify-between p-4'
         )}>
-          <Link
-            to={ROUTES.HOME}
-            className={cn(
-              'flex items-center gap-2 hover:opacity-80 transition-opacity',
-              isCollapsed && !isMobileOpen && 'justify-center'
-            )}
-          >
-            <div className={cn(
-              'w-10 h-10 rounded-xl flex items-center justify-center',
-              'bg-gradient-to-br from-primary-500 to-secondary-600'
-            )}>
-              <Shield className="h-5 w-5 text-white" />
-            </div>
-            <h1 className={cn(
-              'text-xl font-bold text-white transition-opacity duration-300 whitespace-nowrap',
-              isActuallyCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'
-            )}>
-              DashLabs
-            </h1>
-          </Link>
-          <button
-            onClick={() => {
-              if (isMobileOpen) {
-                onMobileToggle?.();
-              } else {
-                onToggleCollapse?.();
-              }
-            }}
-            className={cn(
-              'p-2 rounded-lg transition-colors',
-              isDark 
-                ? 'hover:bg-white/10 text-gray-400 hover:text-white' 
-                : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900',
-              isCollapsed && 'lg:mx-auto',
-              'lg:block',
-              isMobileOpen ? 'block' : 'hidden lg:block'
-            )}
-            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {isCollapsed ? (
-              <ChevronRight className="h-5 w-5" />
-            ) : (
-              <ChevronLeft className="h-5 w-5" />
-            )}
-          </button>
+          {isActuallyCollapsed ? (
+            <button
+              onClick={() => onToggleCollapse?.()}
+              className="group relative w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-primary-500 to-secondary-600 cursor-pointer"
+              aria-label="Expand sidebar"
+            >
+              <Shield className="h-5 w-5 text-white transition-opacity duration-200 group-hover:opacity-0" />
+              <PanelLeftOpen className="h-5 w-5 text-white absolute transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+            </button>
+          ) : (
+            <>
+              <Link
+                to={ROUTES.HOME}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-primary-500 to-secondary-600">
+                  <Shield className="h-5 w-5 text-white" />
+                </div>
+                <h1 className="text-xl font-bold text-[var(--foreground)] whitespace-nowrap">
+                  DashLabs
+                </h1>
+              </Link>
+              <button
+                onClick={() => {
+                  if (isMobileOpen) {
+                    onMobileToggle?.();
+                  } else {
+                    onToggleCollapse?.();
+                  }
+                }}
+                className="p-2 rounded-lg transition-colors hover:bg-[var(--card-hover)] text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
+                aria-label="Collapse sidebar"
+              >
+                <PanelLeftClose className="h-5 w-5" />
+              </button>
+            </>
+          )}
         </div>
 
         <nav className={cn(
@@ -252,8 +242,13 @@ export const Sidebar = ({
 
             if (isActuallyCollapsed) {
               return (
-                <Tooltip key={item.path} content={item.label} position="right">
-                  <div>{linkContent}</div>
+                <Tooltip key={item.path}>
+                  <TooltipTrigger asChild>
+                    <div>{linkContent}</div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    {item.label}
+                  </TooltipContent>
                 </Tooltip>
               );
             }
@@ -265,64 +260,66 @@ export const Sidebar = ({
         {user && (
           <div className={cn(
             'border-t flex-shrink-0 space-y-2 overflow-x-hidden transition-all duration-300',
-            isDark ? 'border-gray-700' : 'border-gray-200',
+            'border-[var(--glass-border)]',
             isCollapsed && !isMobileOpen ? 'p-2' : 'p-4'
           )}>
-            {isCollapsed && !isMobileOpen ? (
-              <div className="w-full flex items-center justify-center">
-                <div className={cn(
-                  'h-8 w-8 rounded-full flex items-center justify-center',
-                  isDark ? 'bg-gray-700' : 'bg-gray-100'
-                )}>
-                  <User className="h-4 w-4 text-gray-400" />
-                </div>
-              </div>
+            {isActuallyCollapsed ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="w-full flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-primary-500 to-secondary-600">
+                      <span className="text-xs font-semibold text-white">{userInitials}</span>
+                    </div>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right">{user.name}</TooltipContent>
+              </Tooltip>
             ) : (
               <div className={cn(
                 'w-full flex items-center gap-3 px-4 py-2 rounded-lg',
-                isDark ? 'bg-gray-700/50' : 'bg-gray-50'
+                'bg-[var(--glass-bg)]'
               )}>
-                <div className={cn(
-                  'h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0',
-                  isDark ? 'bg-gray-600' : 'bg-gray-200'
-                )}>
-                  <User className="h-4 w-4 text-gray-400" />
+                <div className="h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-primary-500 to-secondary-600">
+                  <span className="text-xs font-semibold text-white">{userInitials}</span>
                 </div>
                 <div className="text-left min-w-0 flex-1">
                   <p className={cn(
                     'text-sm font-medium truncate',
-                    isDark ? 'text-white' : 'text-gray-900'
+                    'text-[var(--foreground)]'
                   )}>{user.name}</p>
                   <p className={cn(
                     'text-xs truncate',
-                    isDark ? 'text-gray-400' : 'text-gray-500'
+                    'text-[var(--foreground-muted)]'
                   )}>{user.email}</p>
                 </div>
               </div>
             )}
 
-            <button
-              onClick={handleLogout}
-              className={cn(
-                'w-full flex items-center gap-3 py-2.5 rounded-lg transition-colors',
-                'justify-center lg:justify-start',
-                isActuallyCollapsed ? 'px-2' : 'px-4',
-                isDark
-                  ? 'text-red-400 hover:bg-red-500/20'
-                  : 'text-red-600 hover:bg-red-50'
-              )}
-            >
-              <LogOut className="h-5 w-5 flex-shrink-0" />
-              <span className={cn(
-                'transition-opacity duration-300 whitespace-nowrap text-sm',
-                isActuallyCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'
-              )}>
-                Logout
-              </span>
-            </button>
+            {isActuallyCollapsed ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center justify-center py-2.5 px-2 rounded-lg transition-colors text-red-400 hover:bg-red-500/20"
+                  >
+                    <LogOut className="h-5 w-5 flex-shrink-0" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right">Logout</TooltipContent>
+              </Tooltip>
+            ) : (
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 justify-center lg:justify-start py-2.5 px-4 rounded-lg transition-colors text-red-400 hover:bg-red-500/20"
+              >
+                <LogOut className="h-5 w-5 flex-shrink-0" />
+                <span className="whitespace-nowrap text-sm">Logout</span>
+              </button>
+            )}
           </div>
         )}
       </aside>
     </>
+    </TooltipProvider>
   );
 };

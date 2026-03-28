@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Copy, Rocket, Check } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/glass-card';
 import { ROUTES } from '@/utils/constants';
 
 const steps = [

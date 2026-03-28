@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Github, BookOpen, ArrowRight, Star } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/utils/constants';
 
 export const CTASection = () => {

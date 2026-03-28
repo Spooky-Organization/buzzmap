@@ -1,6 +1,6 @@
-import { 
-  Users, 
-  Shield, 
+import {
+  Users,
+  Shield,
   Activity,
   AlertCircle,
   CheckCircle,
@@ -10,8 +10,9 @@ import {
   Server
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/glass-card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ROUTES } from '@/utils/constants';
 import { SessionManager } from '@/auth/sessionManager';
 import { AutoSEO } from '@/components/seo/SEO';
@@ -19,7 +20,7 @@ import { AutoSEO } from '@/components/seo/SEO';
 export const AdminDashboard = () => {
   const sessionManager = SessionManager.getInstance();
   const sessionUser = sessionManager.getUser();
-  
+
   const user = sessionUser ? {
     name: `${sessionUser.firstName} ${sessionUser.lastName}`,
     email: sessionUser.email,
@@ -38,8 +39,8 @@ export const AdminDashboard = () => {
       change: '+127',
       trend: 'up',
       icon: <Users className="h-6 w-6" />,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
+      color: 'text-blue-400',
+      bgColor: 'bg-blue-500/10',
     },
     {
       label: 'Active Sessions',
@@ -47,8 +48,8 @@ export const AdminDashboard = () => {
       change: '+23',
       trend: 'up',
       icon: <Activity className="h-6 w-6" />,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
+      color: 'text-emerald-400',
+      bgColor: 'bg-emerald-500/10',
     },
     {
       label: 'System Health',
@@ -56,8 +57,8 @@ export const AdminDashboard = () => {
       change: 'Excellent',
       trend: 'stable',
       icon: <Server className="h-6 w-6" />,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
+      color: 'text-violet-400',
+      bgColor: 'bg-violet-500/10',
     },
     {
       label: 'Pending Actions',
@@ -65,8 +66,8 @@ export const AdminDashboard = () => {
       change: '-3',
       trend: 'down',
       icon: <AlertCircle className="h-6 w-6" />,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-100',
+      color: 'text-amber-400',
+      bgColor: 'bg-amber-500/10',
     },
   ];
 
@@ -77,45 +78,45 @@ export const AdminDashboard = () => {
   ];
 
   const recentActivity = [
-    { 
-      action: 'New user registered', 
+    {
+      action: 'New user registered',
       user: 'john.doe@example.com',
-      time: '5 minutes ago', 
+      time: '5 minutes ago',
       icon: <UserCheck className="h-4 w-4" />,
       type: 'user'
     },
-    { 
-      action: 'Role updated', 
+    {
+      action: 'Role updated',
       user: 'jane.smith@example.com',
-      time: '1 hour ago', 
+      time: '1 hour ago',
       icon: <Shield className="h-4 w-4" />,
       type: 'security'
     },
-    { 
-      action: 'System backup completed', 
+    {
+      action: 'System backup completed',
       user: 'System',
-      time: '2 hours ago', 
+      time: '2 hours ago',
       icon: <CheckCircle className="h-4 w-4" />,
       type: 'system'
     },
-    { 
-      action: 'Failed login attempt', 
+    {
+      action: 'Failed login attempt',
       user: 'unknown@example.com',
-      time: '3 hours ago', 
+      time: '3 hours ago',
       icon: <AlertCircle className="h-4 w-4" />,
       type: 'security'
     },
   ];
 
   const systemAlerts = [
-    { 
-      title: 'High API Usage', 
+    {
+      title: 'High API Usage',
       message: 'API requests exceeded 10K in the last hour',
       severity: 'warning',
       time: '15 minutes ago'
     },
-    { 
-      title: 'Database Optimization', 
+    {
+      title: 'Database Optimization',
       message: 'Scheduled maintenance completed successfully',
       severity: 'info',
       time: '2 hours ago'
@@ -126,15 +127,15 @@ export const AdminDashboard = () => {
     <>
       <AutoSEO />
             {/* Disclaimer Banner */}
-            <Card variant="default" padding="md" className="mb-6 bg-yellow-50 border-yellow-200">
+            <Card variant="default" padding="md" className="mb-6 bg-amber-500/10 border-amber-500/20">
               <div className="flex items-start gap-3">
-                <Info className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <Info className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-yellow-900">
+                  <p className="text-sm font-medium text-[var(--foreground)]">
                     Sample/Mock Admin Dashboard
                   </p>
-                  <p className="text-xs text-yellow-800 mt-1">
-                    This is a mock dashboard page with sample data to demonstrate role-based UI implementation for Admin role. 
+                  <p className="text-xs text-[var(--foreground-muted)] mt-1">
+                    This is a mock dashboard page with sample data to demonstrate role-based UI implementation for Admin role.
                     All user statistics, system metrics, and activity logs shown here are for demonstration purposes only.
                   </p>
                 </div>
@@ -143,10 +144,10 @@ export const AdminDashboard = () => {
 
             {/* Welcome Section */}
             <div className="mb-8">
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-                Admin Dashboard 🛡️
+              <h1 className="text-3xl md:text-4xl font-bold text-[var(--foreground)] mb-2">
+                Admin Dashboard
               </h1>
-              <p className="text-gray-600 text-lg">
+              <p className="text-[var(--foreground-muted)] text-lg">
                 Welcome back, {user.name.split(' ')[0]}! Here's your system overview.
               </p>
             </div>
@@ -159,19 +160,19 @@ export const AdminDashboard = () => {
                     <div className={`${stat.bgColor} p-3 rounded-lg`}>
                       <div className={stat.color}>{stat.icon}</div>
                     </div>
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                      stat.trend === 'up' 
-                        ? 'text-green-600 bg-green-100' 
+                    <Badge variant={
+                      stat.trend === 'up'
+                        ? 'positive'
                         : stat.trend === 'down'
-                        ? 'text-red-600 bg-red-100'
-                        : 'text-blue-600 bg-blue-100'
-                    }`}>
+                        ? 'negative'
+                        : 'neutral'
+                    }>
                       {stat.change}
-                    </span>
+                    </Badge>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
-                    <p className="text-2xl md:text-3xl font-bold text-gray-900">{stat.value}</p>
+                    <p className="text-sm text-[var(--foreground-muted)] mb-1">{stat.label}</p>
+                    <p className="text-2xl md:text-3xl font-bold text-[var(--foreground)]">{stat.value}</p>
                   </div>
                 </Card>
               ))}
@@ -183,22 +184,22 @@ export const AdminDashboard = () => {
               <Card variant="elevated" padding="lg">
                 <div className="flex items-center gap-2 mb-6">
                   <BarChart3 className="h-5 w-5 text-primary-600" />
-                  <h2 className="text-xl font-semibold text-gray-900">User Distribution</h2>
+                  <h2 className="text-xl font-semibold text-[var(--foreground)]">User Distribution</h2>
                 </div>
                 <div className="space-y-4">
                   {userStats.map((stat, index) => (
                     <div key={index}>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-700">{stat.role}</span>
-                        <span className="text-sm font-semibold text-gray-900">{stat.count}</span>
+                        <span className="text-sm font-medium text-[var(--foreground)]">{stat.role}</span>
+                        <span className="text-sm font-semibold text-[var(--foreground)]">{stat.count}</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
+                      <div className="w-full bg-[var(--glass-bg)] rounded-full h-2">
+                        <div
                           className={`${stat.color} h-2 rounded-full transition-all`}
                           style={{ width: `${stat.percentage}%` }}
                         />
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">{stat.percentage}% of total</p>
+                      <p className="text-xs text-[var(--foreground-muted)] mt-1">{stat.percentage}% of total</p>
                     </div>
                   ))}
                 </div>
@@ -214,7 +215,7 @@ export const AdminDashboard = () => {
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
                     <Activity className="h-5 w-5 text-primary-600" />
-                    <h2 className="text-xl font-semibold text-gray-900">Recent Activity</h2>
+                    <h2 className="text-xl font-semibold text-[var(--foreground)]">Recent Activity</h2>
                   </div>
                   <Button variant="ghost" size="sm">
                     View All
@@ -222,36 +223,42 @@ export const AdminDashboard = () => {
                 </div>
                 <div className="space-y-4">
                   {recentActivity.map((activity, index) => (
-                    <div 
-                      key={index} 
-                      className="flex items-center gap-4 p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+                    <div
+                      key={index}
+                      className="flex items-center gap-4 p-4 rounded-lg border border-[var(--glass-border)] hover:bg-[var(--card-hover)] transition-colors"
                     >
                       <div className={`p-2 rounded-lg ${
-                        activity.type === 'security' 
-                          ? 'bg-red-100' 
+                        activity.type === 'security'
+                          ? 'bg-red-500/10'
                           : activity.type === 'system'
-                          ? 'bg-purple-100'
-                          : 'bg-blue-100'
+                          ? 'bg-violet-500/10'
+                          : 'bg-blue-500/10'
                       }`}>
                         <div className={
-                          activity.type === 'security' 
-                            ? 'text-red-600' 
+                          activity.type === 'security'
+                            ? 'text-red-400'
                             : activity.type === 'system'
-                            ? 'text-purple-600'
-                            : 'text-blue-600'
+                            ? 'text-violet-400'
+                            : 'text-blue-400'
                         }>
                           {activity.icon}
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                        <p className="text-xs text-gray-500 mt-1">{activity.user}</p>
+                        <p className="text-sm font-medium text-[var(--foreground)]">{activity.action}</p>
+                        <p className="text-xs text-[var(--foreground-muted)] mt-1">{activity.user}</p>
                       </div>
                       <div className="text-right">
-                        <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600 capitalize">
+                        <Badge variant={
+                          activity.type === 'security'
+                            ? 'security'
+                            : activity.type === 'system'
+                            ? 'system'
+                            : 'user'
+                        }>
                           {activity.type}
-                        </span>
-                        <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
+                        </Badge>
+                        <p className="text-xs text-[var(--foreground-muted)] mt-1">{activity.time}</p>
                       </div>
                     </div>
                   ))}
@@ -260,31 +267,31 @@ export const AdminDashboard = () => {
             </div>
 
             {/* System Alerts */}
-            <Card variant="elevated" padding="lg" className="bg-gradient-to-r from-orange-50 to-red-50">
+            <Card variant="elevated" padding="lg" className="bg-amber-500/10 border border-amber-500/20">
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-orange-100 rounded-lg">
-                  <AlertCircle className="h-6 w-6 text-orange-600" />
+                <div className="p-3 bg-amber-500/10 rounded-lg">
+                  <AlertCircle className="h-6 w-6 text-amber-400" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  <h3 className="text-lg font-semibold text-[var(--foreground)] mb-4">
                     System Alerts & Notifications
                   </h3>
                   <div className="space-y-3">
                     {systemAlerts.map((alert, index) => (
-                      <div 
+                      <div
                         key={index}
                         className={`p-4 rounded-lg border ${
                           alert.severity === 'warning'
-                            ? 'bg-yellow-50 border-yellow-200'
-                            : 'bg-blue-50 border-blue-200'
+                            ? 'bg-amber-500/10 border-amber-500/20'
+                            : 'bg-blue-500/10 border-blue-500/20'
                         }`}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-900">{alert.title}</p>
-                            <p className="text-xs text-gray-600 mt-1">{alert.message}</p>
+                            <p className="text-sm font-medium text-[var(--foreground)]">{alert.title}</p>
+                            <p className="text-xs text-[var(--foreground-muted)] mt-1">{alert.message}</p>
                           </div>
-                          <span className="text-xs text-gray-500">{alert.time}</span>
+                          <span className="text-xs text-[var(--foreground-muted)]">{alert.time}</span>
                         </div>
                       </div>
                     ))}
@@ -305,4 +312,3 @@ export const AdminDashboard = () => {
     </>
   );
 };
-

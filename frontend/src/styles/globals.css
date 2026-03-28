@@ -177,14 +177,25 @@
   * {
     @apply border-gray-200;
   }
-  
+
+  html {
+    color-scheme: dark;
+  }
+
+  html.light {
+    color-scheme: light;
+  }
+
   body {
-    @apply bg-gray-50 text-gray-900 antialiased;
+    @apply antialiased;
+    background-color: var(--background);
+    color: var(--foreground);
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
-  
+
   h1, h2, h3, h4, h5, h6 {
     @apply font-semibold;
+    color: var(--foreground);
   }
 }
 
@@ -192,47 +203,38 @@
   .container-custom {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
-  
-  .card {
-    @apply bg-white rounded-xl shadow-soft p-6;
+
+  .glass-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    box-shadow: var(--glass-shadow);
+    @apply backdrop-blur-xl rounded-2xl;
   }
-  
-  .card-elevated {
-    @apply bg-white rounded-xl shadow-medium p-8;
+
+  .glass-card-hover:hover {
+    background: var(--card-hover);
   }
-  
-  .input-base {
-    @apply w-full px-4 py-3 border border-gray-300 rounded-lg 
-           focus:outline-none focus:ring-2 focus:ring-primary-500 
-           focus:border-transparent transition-all duration-200
-           disabled:bg-gray-100 disabled:cursor-not-allowed;
+
+  .glass-input {
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--foreground);
+    @apply backdrop-blur-sm rounded-lg transition-all duration-200;
   }
-  
-  .btn-base {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 
-           rounded-lg font-medium transition-all duration-200
-           focus:outline-none focus:ring-2 focus:ring-offset-2
-           disabled:opacity-50 disabled:cursor-not-allowed;
+
+  .glass-input:focus {
+    border-color: transparent;
+    box-shadow: 0 0 0 2px var(--input-focus);
+    @apply outline-none;
   }
-  
-  .btn-primary {
-    @apply btn-base bg-primary-600 text-white hover:bg-primary-700 
-           focus:ring-primary-500 active:bg-primary-800;
+
+  .glass-input::placeholder {
+    color: var(--foreground-muted);
+    opacity: 0.6;
   }
-  
-  .btn-secondary {
-    @apply btn-base bg-white text-primary-600 border-2 border-primary-600 
-           hover:bg-primary-50 focus:ring-primary-500;
-  }
-  
-  .btn-ghost {
-    @apply btn-base bg-transparent text-gray-700 hover:bg-gray-100 
-           focus:ring-gray-500;
-  }
-  
-  .btn-danger {
-    @apply btn-base bg-red-600 text-white hover:bg-red-700 
-           focus:ring-red-500 active:bg-red-800;
+
+  .glass-input:disabled {
+    @apply opacity-50 cursor-not-allowed;
   }
 }
 

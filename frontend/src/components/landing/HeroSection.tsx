@@ -9,7 +9,7 @@ import {
   Activity,
   Code,
 } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/utils/constants';
 import { isAuthenticated } from '@/utils/sessionCheck';
 

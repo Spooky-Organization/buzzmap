@@ -1,5 +1,5 @@
 import { useNotifications } from '@/contexts/NotificationContext';
-import { cn } from '@/utils/cn';
+import { cn } from '@/lib/utils';
 
 interface LiveStatusProps {
   className?: string;

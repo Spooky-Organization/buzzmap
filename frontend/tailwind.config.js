@@ -4,9 +4,32 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
+        background: 'var(--background)',
+        'background-secondary': 'var(--background-secondary)',
+        foreground: 'var(--foreground)',
+        'foreground-muted': 'var(--foreground-muted)',
+        glass: {
+          bg: 'var(--glass-bg)',
+          border: 'var(--glass-border)',
+        },
+        card: {
+          bg: 'var(--card-bg)',
+          border: 'var(--card-border)',
+          hover: 'var(--card-hover)',
+        },
+        sidebar: {
+          bg: 'var(--sidebar-bg)',
+          border: 'var(--sidebar-border)',
+        },
+        input: {
+          bg: 'var(--input-bg)',
+          border: 'var(--input-border)',
+          focus: 'var(--input-focus)',
+        },
         primary: {
           DEFAULT: '#3B82F6',
           50: '#EFF6FF',
@@ -44,9 +67,12 @@ export default {
       boxShadow: {
         'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
         'medium': '0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+        'glass': 'var(--glass-shadow)',
+      },
+      backdropBlur: {
+        'glass': 'var(--glass-blur)',
       },
     },
   },
   plugins: [],
 }
-

@@ -10,30 +10,40 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
+## Tech Stack
+- **Frontend:** React, TypeScript, Tailwind CSS, Vite
+- **Backend:** Express.js, Node.js, TypeScript
+- **Database:** PostgreSQL with Prisma ORM
+- **Cache:** Redis
+- **Email:** Resend
+- **DevOps:** Docker, Docker Compose
+
+---
+
 [Features](#-features) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Architecture](#-architecture)
 
 </div>
 
 ---
 
-## 🎯 Overview
+## Overview
 
 **Dashboard Template** is a complete, enterprise-grade authentication system that saves weeks of development time. Built with modern technologies and security best practices, it provides everything you need for secure user authentication, authorization, and session management out of the box.
 
 ### Why Choose This Template?
 
-- ⚡ **Save Weeks of Development** - Get a production-ready auth system in minutes, not months
-- 🔒 **Enterprise Security** - OWASP Top 10 compliant with comprehensive security measures
-- 🚀 **Production Ready** - Battle-tested code with best practices built-in
-- 📦 **Complete Solution** - Frontend UI, backend API, database, and deployment configs included
-- 🎨 **Modern Stack** - TypeScript, React 18, Express, PostgreSQL, Redis, Docker
-- 📚 **Well Documented** - Comprehensive documentation for developers and stakeholders
+- **Save Weeks of Development** - Get a production-ready auth system in minutes, not months
+- **Enterprise Security** - OWASP Top 10 compliant with comprehensive security measures
+- **Production Ready** - Battle-tested code with best practices built-in
+- **Complete Solution** - Frontend UI, backend API, database, and deployment configs included
+- **Modern Stack** - TypeScript, React 18, Express, PostgreSQL, Redis, Docker
+- **Well Documented** - Comprehensive documentation for developers and stakeholders
 
 ---
 
-## ✨ Features
+## Features
 
-### 🔐 Authentication & Security
+### Authentication & Security
 
 - **JWT-Based Authentication** - Secure token-based auth with automatic refresh
 - **Multi-Factor Authentication (MFA)** - TOTP-based 2FA with backup codes and QR code generation
@@ -45,8 +55,9 @@
 - **Input Sanitization** - XSS protection with DOMPurify and HTML entity encoding
 - **Security Headers** - Helmet middleware with comprehensive security headers
 
-### 🎨 Frontend Features
+### Frontend Features
 
+- **Real-Time Updates** - Server-Sent Events (SSE) client for live notifications and dashboard updates
 - **Modern UI/UX** - Beautiful, responsive design with Tailwind CSS
 - **13+ Implemented Pages** - Complete authentication flow and dashboards
 - **Role-Based Dashboards** - Customized dashboards for each user role
@@ -55,8 +66,9 @@
 - **Mobile Responsive** - Fully responsive design for all devices
 - **Accessible** - WCAG 2.1 AA compliant components
 
-### 🚀 Backend Features
+### Backend Features
 
+- **Real-Time with SSE** - Server-Sent Events for live updates (notifications, activity logs, dashboard metrics)
 - **RESTful API** - 30+ well-documented API endpoints
 - **API Versioning** - Versioned routes (`/api/v1`) with backward compatibility
 - **Performance Monitoring** - Built-in performance metrics and monitoring
@@ -64,7 +76,7 @@
 - **Database Migrations** - Automated Prisma migrations
 - **Logging** - Structured logging for debugging and monitoring
 
-### 🐳 DevOps & Deployment
+### DevOps & Deployment
 
 - **Docker Support** - Complete Docker setup for development and production
 - **Docker Compose** - Orchestrated multi-container setup
@@ -75,7 +87,7 @@
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -134,7 +146,7 @@ npm run dev
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Authentication-Template/
@@ -173,7 +185,7 @@ Authentication-Template/
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ### High-Level Overview
 
@@ -226,7 +238,7 @@ The frontend uses a **component-based architecture**:
 
 ---
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -266,7 +278,7 @@ See [Environment Setup Documentation](docs/ENVIRONMENT_SETUP.md) for complete co
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 ### For Developers
 
@@ -286,7 +298,7 @@ See [Environment Setup Documentation](docs/ENVIRONMENT_SETUP.md) for complete co
 
 ---
 
-## 🛠️ Development
+## Development
 
 ### Available Scripts
 
@@ -334,20 +346,20 @@ npm run lint         # Run ESLint
 
 ---
 
-## 🔒 Security Features
+## Security Features
 
 ### OWASP Top 10 Compliance
 
-- ✅ **Injection Protection** - Parameterized queries, input validation
-- ✅ **Broken Authentication** - Secure password hashing, JWT rotation
-- ✅ **Sensitive Data Exposure** - Encrypted tokens, secure storage
-- ✅ **XML External Entities** - Not applicable (JSON only)
-- ✅ **Broken Access Control** - Role-based authorization middleware
-- ✅ **Security Misconfiguration** - Security headers, secure defaults
-- ✅ **XSS Protection** - DOMPurify sanitization, CSP headers
-- ✅ **Insecure Deserialization** - JSON validation, type checking
-- ✅ **Using Components with Known Vulnerabilities** - Regular dependency updates
-- ✅ **Insufficient Logging** - Comprehensive logging and monitoring
+- **Injection Protection** - Parameterized queries, input validation
+- **Broken Authentication** - Secure password hashing, JWT rotation
+- **Sensitive Data Exposure** - Encrypted tokens, secure storage
+- **XML External Entities** - Not applicable (JSON only)
+- **Broken Access Control** - Role-based authorization middleware
+- **Security Misconfiguration** - Security headers, secure defaults
+- **XSS Protection** - DOMPurify sanitization, CSP headers
+- **Insecure Deserialization** - JSON validation, type checking
+- **Using Components with Known Vulnerabilities** - Regular dependency updates
+- **Insufficient Logging** - Comprehensive logging and monitoring
 
 ### Additional Security Measures
 
@@ -360,7 +372,7 @@ npm run lint         # Run ESLint
 
 ---
 
-## 📊 API Overview
+## API Overview
 
 The backend provides **30+ RESTful endpoints** organized by functionality:
 
@@ -394,7 +406,7 @@ See [API Documentation](docs/API_DOCUMENTATION.md) for complete endpoint referen
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ### Running Tests
 
@@ -425,7 +437,7 @@ npm test
 
 ---
 
-## 🚢 Deployment
+## Deployment
 
 ### Production Deployment
 
@@ -454,7 +466,7 @@ See [Docker Setup](docs/DOCKER_SETUP.md) and [Environment Setup](docs/ENVIRONMEN
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Please follow these guidelines:
 
@@ -476,13 +488,13 @@ We welcome contributions! Please follow these guidelines:
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Built with modern technologies and best practices
 - Inspired by industry-standard authentication patterns
@@ -490,7 +502,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ---
 
-## 📞 Support
+## Support
 
 For questions, issues, or contributions:
 
@@ -500,16 +512,16 @@ For questions, issues, or contributions:
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 ### Current Status
 
-- ✅ Complete authentication system
-- ✅ Multi-factor authentication
-- ✅ Role-based access control
-- ✅ Frontend UI/UX
-- ✅ Docker deployment
-- ✅ Comprehensive documentation
+- Complete authentication system
+- Multi-factor authentication
+- Role-based access control
+- Frontend UI/UX
+- Docker deployment
+- Comprehensive documentation
 
 ### Future Enhancements
 

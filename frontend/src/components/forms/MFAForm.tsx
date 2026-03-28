@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ShieldCheck, Key, XCircle } from 'lucide-react';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { validationManager } from '@/utils/validation';
 import { ValidationErrorCode, getErrorMessage } from '@/utils/errorCodes';
 import { toast } from 'sonner';
@@ -57,7 +57,7 @@ export const MFAForm = ({
   const handleTOTPPaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
     const pastedData = e.clipboardData.getData('text').trim();
-    
+
     if (/^\d{6}$/.test(pastedData)) {
       const digits = pastedData.split('');
       const newCode = [...totpCode];
@@ -67,7 +67,7 @@ export const MFAForm = ({
         }
       });
       setTotpCode(newCode);
-      
+
       // Focus last input
       if (inputRefs.current[5]) {
         inputRefs.current[5]?.focus();
@@ -77,7 +77,7 @@ export const MFAForm = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (useBackupCode) {
       const validation = validationManager.validateBackupCode(backupCode);
       if (!validation.valid) {
@@ -105,8 +105,8 @@ export const MFAForm = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {email && (
-        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <div className="flex items-center gap-2 text-sm text-gray-700">
+        <div className="p-4 bg-[var(--glass-bg)] rounded-lg border border-[var(--glass-border)]">
+          <div className="flex items-center gap-2 text-sm text-[var(--foreground)]">
             <span className="font-medium">Email:</span>
             <span>{email}</span>
           </div>
@@ -116,7 +116,7 @@ export const MFAForm = ({
       {!useBackupCode ? (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-sm font-medium text-[var(--foreground)] mb-3">
               Enter 6-digit code from your authenticator app
             </label>
             <div className="flex gap-2 justify-center">
@@ -131,12 +131,12 @@ export const MFAForm = ({
                   onChange={(e) => handleTOTPChange(index, e.target.value)}
                   onKeyDown={(e) => handleTOTPKeyDown(index, e)}
                   onPaste={index === 0 ? handleTOTPPaste : undefined}
-                  className="w-12 h-14 text-center text-2xl font-semibold border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  className="w-12 h-14 text-center text-2xl font-semibold border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all bg-[var(--input-bg)] border-[var(--input-border)] text-[var(--foreground)]"
                   aria-label={`Digit ${index + 1} of 6`}
                 />
               ))}
             </div>
-            <p className="mt-2 text-xs text-gray-500 text-center">
+            <p className="mt-2 text-xs text-[var(--foreground-muted)] text-center">
               Enter the 6-digit code from your authenticator app
             </p>
           </div>
@@ -145,7 +145,7 @@ export const MFAForm = ({
             <button
               type="button"
               onClick={() => setUseBackupCode(true)}
-              className="w-full text-sm text-primary-600 hover:text-primary-700 flex items-center justify-center gap-2 py-2"
+              className="w-full text-sm text-primary-400 hover:text-primary-300 flex items-center justify-center gap-2 py-2"
             >
               <Key className="h-4 w-4" />
               Use backup code instead
@@ -155,7 +155,7 @@ export const MFAForm = ({
       ) : (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[var(--foreground)] mb-2">
               Enter your backup code
             </label>
             <Input
@@ -175,7 +175,7 @@ export const MFAForm = ({
               setUseBackupCode(false);
               setBackupCode('');
             }}
-            className="w-full text-sm text-primary-600 hover:text-primary-700 flex items-center justify-center gap-2 py-2"
+            className="w-full text-sm text-primary-400 hover:text-primary-300 flex items-center justify-center gap-2 py-2"
           >
             <ShieldCheck className="h-4 w-4" />
             Use authenticator app code instead
@@ -184,8 +184,8 @@ export const MFAForm = ({
       )}
 
       {error && !useBackupCode && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-600">{error}</p>
+        <div className="p-3 bg-red-500/15 border border-red-500/30 rounded-lg">
+          <p className="text-sm text-red-400">{error}</p>
         </div>
       )}
 
@@ -203,4 +203,3 @@ export const MFAForm = ({
     </form>
   );
 };
-

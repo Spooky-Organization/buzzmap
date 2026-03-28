@@ -9,7 +9,7 @@ import {
   Code,
   Package,
 } from 'lucide-react';
-import { Card } from '@/components/ui/Card';
+import { Card } from '@/components/ui/glass-card';
 
 const features = [
   {

@@ -4,9 +4,8 @@ import { useForm } from 'react-hook-form';
 import { Save, X, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { CheckCircle } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { PasswordInput } from '@/components/ui/PasswordInput';
-import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/button';
+import { PasswordInput } from '@/components/ui/password-input';
 import { validationManager } from '@/utils/validation';
 import { ValidationErrorCode, getErrorMessage } from '@/utils/errorCodes';
 import { ROUTES } from '@/utils/constants';
@@ -47,7 +46,7 @@ export const ChangePassword = () => {
     const validationResults = await Promise.all(
       fieldsToValidate.map(field => trigger(field))
     );
-    
+
     if (validationResults.some(result => !result)) {
       setIsLoading(false);
       toast.error('Please fix the errors in the form', {
@@ -88,7 +87,7 @@ export const ChangePassword = () => {
       navigate(ROUTES.PROFILE);
     } catch (error: unknown) {
       const apiError = error as ApiError;
-      
+
       if (apiError.details?.field) {
         setError(apiError.details.field as keyof ChangePasswordFormData, {
           type: 'manual',
@@ -109,11 +108,11 @@ export const ChangePassword = () => {
       <AutoSEO />
       <div className="max-w-2xl">
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900">Change Password</h1>
-              <p className="mt-2 text-gray-600">Update your password to keep your account secure.</p>
+              <h1 className="text-3xl font-bold text-[var(--foreground)]">Change Password</h1>
+              <p className="mt-2 text-[var(--foreground-muted)]">Update your password to keep your account secure.</p>
             </div>
 
-            <Card variant="elevated" padding="lg">
+            <div className="glass-card p-6">
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 <PasswordInput
                   label="Current Password"
@@ -192,9 +191,8 @@ export const ChangePassword = () => {
                   </Button>
                 </div>
               </form>
-            </Card>
+            </div>
       </div>
     </>
   );
 };
-

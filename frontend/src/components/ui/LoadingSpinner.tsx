@@ -1,5 +1,5 @@
 import { Loader2 } from 'lucide-react';
-import { cn } from '@/utils/cn';
+import { cn } from '@/lib/utils';
 
 export interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg';
@@ -15,9 +15,8 @@ export const LoadingSpinner = ({ size = 'md', className }: LoadingSpinnerProps) 
 
   return (
     <Loader2
-      className={cn('animate-spin text-primary-600', sizeStyles[size], className)}
+      className={cn('animate-spin text-primary-400', sizeStyles[size], className)}
       aria-label="Loading"
     />
   );
 };
-

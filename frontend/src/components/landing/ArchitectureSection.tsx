@@ -10,7 +10,7 @@ import {
   Shield,
   Package,
 } from 'lucide-react';
-import { Card } from '@/components/ui/Card';
+import { Card } from '@/components/ui/glass-card';
 
 const frontendStack = [
   { name: 'React 18', icon: Globe },

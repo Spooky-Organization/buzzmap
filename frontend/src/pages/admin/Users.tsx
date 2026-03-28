@@ -14,9 +14,11 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { CheckCircle } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/glass-card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { type UserRole } from '@/utils/constants';
 import { AutoSEO } from '@/components/seo/SEO';
 
@@ -145,33 +147,20 @@ export const Users = () => {
     navigate(`/admin/users/${userId}?edit=true`);
   };
 
-  const getRoleBadgeColor = (role: UserRole) => {
-    switch (role) {
-      case 'ADMIN':
-        return 'bg-red-100 text-red-800';
-      case 'ACCOUNTANT':
-        return 'bg-blue-100 text-blue-800';
-      case 'USER':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   return (
     <>
       <AutoSEO />
           <div className="container-custom max-w-7xl">
             {/* Disclaimer Banner */}
-            <Card variant="default" padding="md" className="mb-6 bg-yellow-50 border-yellow-200">
+            <Card variant="default" padding="md" className="mb-6 bg-amber-500/10 border-amber-500/20">
               <div className="flex items-start gap-3">
-                <Info className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <Info className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-yellow-900">
+                  <p className="text-sm font-medium text-[var(--foreground)]">
                     Sample/Mock Admin Users Page
                   </p>
-                  <p className="text-xs text-yellow-800 mt-1">
-                    This is a mock admin users page with sample/placeholder data to demonstrate user management functionality. 
+                  <p className="text-xs text-[var(--foreground-muted)] mt-1">
+                    This is a mock admin users page with sample/placeholder data to demonstrate user management functionality.
                     All user data, statistics, and operations shown here are for demonstration purposes only.
                   </p>
                 </div>
@@ -181,11 +170,11 @@ export const Users = () => {
             {/* Header */}
             <div className="mb-8 flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+                <h1 className="text-3xl font-bold text-[var(--foreground)] flex items-center gap-2">
                   <UserCog className="h-8 w-8 text-primary-600" />
                   User Management
                 </h1>
-                <p className="mt-2 text-gray-600">
+                <p className="mt-2 text-[var(--foreground-muted)]">
                   Manage users, roles, and permissions
                 </p>
               </div>
@@ -213,7 +202,7 @@ export const Users = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-[var(--foreground)] mb-2">
                     Role
                   </label>
                   <select
@@ -222,7 +211,7 @@ export const Users = () => {
                       setRoleFilter(e.target.value as UserRole | 'ALL');
                       setCurrentPage(1);
                     }}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-4 py-2 glass-input"
                   >
                     <option value="ALL">All Roles</option>
                     <option value="USER">User</option>
@@ -231,7 +220,7 @@ export const Users = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-[var(--foreground)] mb-2">
                     Status
                   </label>
                   <select
@@ -240,7 +229,7 @@ export const Users = () => {
                       setStatusFilter(e.target.value as 'ALL' | 'VERIFIED' | 'UNVERIFIED');
                       setCurrentPage(1);
                     }}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-4 py-2 glass-input"
                   >
                     <option value="ALL">All Status</option>
                     <option value="VERIFIED">Verified</option>
@@ -254,9 +243,9 @@ export const Users = () => {
             <Card variant="elevated" padding="none">
               {paginatedUsers.length === 0 ? (
                 <div className="p-12 text-center">
-                  <UserX className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No users found</h3>
-                  <p className="text-gray-500">
+                  <UserX className="h-12 w-12 text-[var(--foreground-muted)] mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-[var(--foreground)] mb-2">No users found</h3>
+                  <p className="text-[var(--foreground-muted)]">
                     {searchQuery || roleFilter !== 'ALL' || statusFilter !== 'ALL'
                       ? 'Try adjusting your filters'
                       : 'No users in the system'}
@@ -266,91 +255,81 @@ export const Users = () => {
                 <>
                   <div className="overflow-x-auto">
                     <table className="w-full">
-                      <thead className="bg-gray-50 border-b border-gray-200">
+                      <thead className="bg-[var(--glass-bg)] border-b border-[var(--glass-border)]">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
                             User
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
                             Role
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
                             Status
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
                             Last Login
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
                             Created
                           </th>
-                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-right text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wider">
                             Actions
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
+                      <tbody className="divide-y divide-[var(--glass-border)]">
                         {paginatedUsers.map((user) => (
-                          <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                          <tr key={user.id} className="hover:bg-[var(--card-hover)] transition-colors">
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center">
-                                <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center mr-3">
-                                  <span className="text-primary-600 font-semibold">
-                                    {user.firstName[0]}{user.lastName[0]}
-                                  </span>
-                                </div>
+                                <Avatar className="mr-3">
+                                  <AvatarFallback>{user.firstName[0]}{user.lastName[0]}</AvatarFallback>
+                                </Avatar>
                                 <div>
-                                  <div className="text-sm font-medium text-gray-900">
+                                  <div className="text-sm font-medium text-[var(--foreground)]">
                                     {user.firstName} {user.lastName}
                                   </div>
-                                  <div className="text-sm text-gray-500">{user.email}</div>
+                                  <div className="text-sm text-[var(--foreground-muted)]">{user.email}</div>
                                 </div>
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(
-                                  user.role
-                                )}`}
-                              >
+                              <Badge variant={user.role.toLowerCase() as 'admin' | 'accountant' | 'user'}>
                                 {user.role}
-                              </span>
+                              </Badge>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               {user.isEmailVerified ? (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                  Verified
-                                </span>
+                                <Badge variant="verified">Verified</Badge>
                               ) : (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                  Unverified
-                                </span>
+                                <Badge variant="unverified">Unverified</Badge>
                               )}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--foreground-muted)]">
                               {user.lastLogin || 'Never'}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--foreground-muted)]">
                               {new Date(user.createdAt).toLocaleDateString()}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   onClick={() => handleView(user.id)}
-                                  className="text-primary-600 hover:text-primary-900 p-1 rounded transition-colors"
+                                  className="text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--card-hover)] p-2 rounded-lg transition-colors"
                                   aria-label="View user"
                                 >
                                   <Eye className="h-5 w-5" />
                                 </button>
                                 <button
                                   onClick={() => handleEdit(user.id)}
-                                  className="text-blue-600 hover:text-blue-900 p-1 rounded transition-colors"
+                                  className="text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--card-hover)] p-2 rounded-lg transition-colors"
                                   aria-label="Edit user"
                                 >
                                   <Edit className="h-5 w-5" />
                                 </button>
                                 <button
                                   onClick={() => handleDelete(user.id, `${user.firstName} ${user.lastName}`)}
-                                  className="text-red-600 hover:text-red-900 p-1 rounded transition-colors"
+                                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition-colors"
                                   aria-label="Delete user"
                                 >
                                   <Trash2 className="h-5 w-5" />
@@ -365,8 +344,8 @@ export const Users = () => {
 
                   {/* Pagination */}
                   {totalPages > 1 && (
-                    <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                      <div className="text-sm text-gray-700">
+                    <div className="px-6 py-4 border-t border-[var(--glass-border)] flex items-center justify-between">
+                      <div className="text-sm text-[var(--foreground-muted)]">
                         Showing {startIndex + 1} to {Math.min(endIndex, filteredUsers.length)} of{' '}
                         {filteredUsers.length} users
                       </div>
@@ -388,7 +367,7 @@ export const Users = () => {
                               className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                                 currentPage === page
                                   ? 'bg-primary-600 text-white'
-                                  : 'text-gray-700 hover:bg-gray-100'
+                                  : 'text-[var(--foreground-muted)] hover:bg-[var(--card-hover)]'
                               }`}
                             >
                               {page}
@@ -415,4 +394,3 @@ export const Users = () => {
     </>
   );
 };
-
