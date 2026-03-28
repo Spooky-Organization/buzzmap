@@ -172,21 +172,21 @@ export const useSSE = (options: SSEOptions) => {
       try {
         const data = JSON.parse(e.data);
         onNotification?.(data as NotificationPayload);
-      } catch {}
+      } catch { /* empty */ }
     });
 
     eventSource.addEventListener('session_created', (e: MessageEvent) => {
       try {
         const data = JSON.parse(e.data);
         onSessionCreated?.(data as SessionPayload);
-      } catch {}
+      } catch { /* empty */ }
     });
 
     eventSource.addEventListener('session_revoked', (e: MessageEvent) => {
       try {
         const data = JSON.parse(e.data);
         onSessionRevoked?.(data as SessionPayload);
-      } catch {}
+      } catch { /* empty */ }
     });
 
     eventSource.addEventListener('heartbeat', () => {
