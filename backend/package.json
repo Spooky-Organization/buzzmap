@@ -10,7 +10,7 @@
     "generate-secrets": "node scripts/generate-secrets.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "ts-node prisma/seed.ts",
+    "db:seed": "npx ts-node prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:push": "prisma db push",
     "docker:up": "docker-compose up -d",

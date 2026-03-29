@@ -8,13 +8,17 @@ import { errorHandler, notFoundHandler, generalLimiter, sanitizeAll } from "../m
 import { performanceMonitor } from "../modules/auth_module/src/utils/performanceMonitor";
 
 // Import routes
-import { 
-  authRoutesV1, 
-  userRoutesV1, 
-  mfaRoutesV1, 
+import {
+  authRoutesV1,
+  userRoutesV1,
+  mfaRoutesV1,
   performanceRoutesV1,
-  sseRoutesV1
+  sseRoutesV1,
+  handshakeRoute,
 } from "../modules/auth_module/src/routes";
+
+// Import encryption middleware
+import { payloadEncryption } from "../modules/auth_module/src/middleware/payloadEncryption";
 
 // Import environment validation
 import { getEnv } from "../modules/auth_module/src/utils/envValidation";
@@ -37,7 +41,7 @@ app.use(
     origin: getEnv('CORS_ORIGIN'),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Session-ID'],
     exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
   })
 );
@@ -98,11 +102,20 @@ app.use(compression({
 // Middleware: General rate limiting
 app.use(generalLimiter);
 
+// Handshake route — MUST be before sanitizeAll because the request body
+// contains raw ECDH public key bytes (base64url), not user-supplied text.
+// validator.escape() and xss() can corrupt binary-encoded strings.
+app.use("/api/handshake", handshakeRoute);
+
 // Middleware: Input sanitization
 app.use(sanitizeAll);
 
 // Middleware: Performance monitoring
 app.use(performanceMonitor);
+
+// Middleware: Payload encryption/decryption (ECDH session-based AES-256-GCM)
+// Must come after body parsing and sanitization, before route handlers
+app.use(payloadEncryption);
 
 // Health check route
 app.get("/api/health", (_req, res) => {

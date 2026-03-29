@@ -22,6 +22,9 @@ export const API_ROUTES = {
   // Health Check
   HEALTH: '/api/health',
 
+  // ECDH Key Exchange — plaintext, establishes crypto session
+  HANDSHAKE: '/api/handshake',
+
   // Authentication Routes
   AUTH: {
     // Public routes

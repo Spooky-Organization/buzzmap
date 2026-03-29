@@ -10,6 +10,13 @@ import { API_BASE_URL } from '@/utils/constants';
 import { TokenManager } from '@/auth/tokenManager';
 import { API_ROUTES } from './apiRoutes';
 import type { ApiError } from './types';
+import {
+  generateClientKeyPair,
+  deriveSessionKey,
+  encryptPayload,
+  decryptPayload,
+  type EncryptedPayload,
+} from './crypto';
 
 // Re-export API_ROUTES for convenience
 export { API_ROUTES, getSSEUrl, getFullUrl } from './apiRoutes';
@@ -59,6 +66,20 @@ export const API_ENDPOINTS = {
   },
 } as const;
 
+// Routes that must never be encrypted (handshake itself, health, SSE streams)
+const BYPASS_ENCRYPTION = new Set<string>([API_ROUTES.HEALTH]);
+const BYPASS_PREFIXES = ['/api/handshake', '/api/v1/sse'];
+
+function isEncryptionBypass(url: string): boolean {
+  if (BYPASS_ENCRYPTION.has(url)) return true;
+  return BYPASS_PREFIXES.some((p) => url.startsWith(p));
+}
+
+interface CryptoSession {
+  sessionId: string;
+  key: CryptoKey;
+}
+
 class ApiClient {
   private static instance: ApiClient;
   private client: AxiosInstance;
@@ -68,6 +89,11 @@ class ApiClient {
     resolve: (value?: unknown) => void;
     reject: (error?: unknown) => void;
   }> = [];
+
+  // Crypto session — set after successful handshake
+  private cryptoSession: CryptoSession | null = null;
+  // Single promise so concurrent callers await the same handshake
+  private cryptoInitPromise: Promise<void> | null = null;
 
   private constructor() {
     this.tokenManager = TokenManager.getInstance();
@@ -95,6 +121,35 @@ class ApiClient {
     return ApiClient.instance;
   }
 
+  /**
+   * Perform the ECDH handshake and store the derived session key.
+   * Safe to call multiple times — only one handshake is ever in flight.
+   */
+  public initCrypto(): Promise<void> {
+    if (!this.cryptoInitPromise) {
+      this.cryptoInitPromise = this._doHandshake().catch((err) => {
+        // Reset so the next call can retry
+        this.cryptoInitPromise = null;
+        console.warn('[crypto] Handshake failed, running without encryption:', err);
+      });
+    }
+    return this.cryptoInitPromise;
+  }
+
+  private async _doHandshake(): Promise<void> {
+    const { publicKeyB64, privateKey } = await generateClientKeyPair();
+
+    // POST directly via axios instance to avoid our own interceptors re-running
+    const response = await this.client.post<{ sessionId: string; publicKey: string }>(
+      API_ROUTES.HANDSHAKE,
+      { publicKey: publicKeyB64 }
+    );
+
+    const { sessionId, publicKey: serverPublicKeyB64 } = response.data;
+    const key = await deriveSessionKey(serverPublicKeyB64, privateKey);
+    this.cryptoSession = { sessionId, key };
+  }
+
   private getAccessToken(): string | null {
     const session = this.tokenManager.getStoredSession();
     return session?.accessToken || null;
@@ -102,18 +157,58 @@ class ApiClient {
 
   private setupInterceptors(): void {
     this.client.interceptors.request.use(
-      (config: InternalAxiosRequestConfig) => {
+      async (config: InternalAxiosRequestConfig) => {
+        // Auth token
         const token = this.getAccessToken();
         if (token && config.headers) {
           config.headers.Authorization = `Bearer ${token}`;
         }
+
+        // Encrypt request body when a crypto session is active
+        const url = config.url ?? '';
+        if (
+          this.cryptoSession &&
+          !isEncryptionBypass(url) &&
+          config.method !== 'get' &&
+          config.data !== undefined &&
+          config.data !== null
+        ) {
+          const encrypted: EncryptedPayload = await encryptPayload(config.data, this.cryptoSession.key);
+          config.data = encrypted;
+          config.headers['X-Session-ID'] = this.cryptoSession.sessionId;
+        } else if (this.cryptoSession && !isEncryptionBypass(url)) {
+          // GET requests — attach session ID so the server can encrypt the response
+          config.headers['X-Session-ID'] = this.cryptoSession.sessionId;
+        }
+
         return config;
       },
       (error) => Promise.reject(error)
     );
 
     this.client.interceptors.response.use(
-      (response: AxiosResponse) => response,
+      async (response: AxiosResponse) => {
+        // Decrypt response body when a session is active and the server returned an encrypted envelope
+        const url = response.config.url ?? '';
+        if (
+          this.cryptoSession &&
+          !isEncryptionBypass(url) &&
+          response.data &&
+          typeof response.data.payload === 'string' &&
+          typeof response.data.iv === 'string'
+        ) {
+          try {
+            response.data = await decryptPayload(
+              response.data.payload as string,
+              response.data.iv as string,
+              this.cryptoSession.key
+            );
+          } catch {
+            // Decryption failed — return raw data so callers can surface the issue
+          }
+        }
+        return response;
+      },
       async (error) => {
         const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 

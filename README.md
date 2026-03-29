@@ -54,6 +54,8 @@
 - **Rate Limiting** - Multi-tier rate limiting (100/15min general, 5/15min auth, 3/hour password reset)
 - **Input Sanitization** - XSS protection with DOMPurify and HTML entity encoding
 - **Security Headers** - Helmet middleware with comprehensive security headers
+- **Production-Grade Encryption** - bcrypt (cost 12), AES-256-GCM for MFA secrets, TLS 1.3
+- **Account Protection** - Automatic lockout after 4 failed attempts, permanent ban after 6 attempts
 
 ### Frontend Features
 
@@ -235,6 +237,7 @@ The frontend uses a **component-based architecture**:
 - **Input Sanitization** - XSS protection at multiple layers
 - **Security Headers** - Helmet middleware configuration
 - **Session Management** - Redis-backed secure sessions
+- **Encryption Layer** - bcrypt (cost 12), AES-256-GCM, TLS 1.3
 
 ---
 
@@ -287,6 +290,7 @@ See [Environment Setup Documentation](docs/ENVIRONMENT_SETUP.md) for complete co
 - **[Backend README](frontend/public/docs/README.md)** - Backend structure, module organization, and guidelines
 - **[Docker Setup](docs/DOCKER_SETUP.md)** - Docker configuration and deployment
 - **[Environment Setup](docs/ENVIRONMENT_SETUP.md)** - Comprehensive environment configuration guide
+- **[Encryption Documentation](docs/ENCRYPTION.md)** - Encryption mechanisms, key management, and security implementation
 
 ### For Business Stakeholders
 
@@ -369,6 +373,8 @@ npm run lint         # Run ESLint
 - **Password Policies** - Strength requirements and validation
 - **Token Security** - Secure storage, automatic rotation, expiration
 - **Session Management** - Redis-backed secure session storage
+- **Encryption** - bcrypt (cost 12), AES-256-GCM for MFA secrets, TLS 1.3
+- **Account Lockout** - Auto-lock after 4 failed attempts, permanent ban after 6
 
 ---
 

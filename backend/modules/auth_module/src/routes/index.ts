@@ -4,12 +4,14 @@ import userRoutesV1 from "./v1/userRoutes";
 import mfaRoutesV1 from "./v1/mfaRoutes";
 import performanceRoutesV1 from "./v1/performanceRoutes";
 import sseRoutesV1 from "./v1/sseRoutes";
+import handshakeRoute from "./v1/handshakeRoute";
 
 // Export versioned routes
-export { 
-  authRoutesV1, 
-  userRoutesV1, 
-  mfaRoutesV1, 
+export {
+  authRoutesV1,
+  userRoutesV1,
+  mfaRoutesV1,
   performanceRoutesV1,
-  sseRoutesV1
+  sseRoutesV1,
+  handshakeRoute,
 };
