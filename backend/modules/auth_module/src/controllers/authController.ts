@@ -33,6 +33,9 @@ import {
   invalidateSession 
 } from "../utils/cache";
 import { publishEvent, syncUserSession } from "../utils/eventEmitter";
+import { CustomerFactory } from "../factories/CustomerFactory";
+import { BusinessOwnerFactory } from "../factories/BusinessOwnerFactory";
+import { sanitizeEmail, sanitizeName } from "../middleware";
 
 // Account security constants (OWASP A02)
 const MAX_LOGIN_ATTEMPTS = 4;
@@ -127,6 +130,102 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     tokens: {
       accessToken,
       refreshToken,
+    },
+  });
+});
+
+/**
+ * Register a new customer
+ * POST /api/auth/register/customer
+ */
+export const registerCustomer = asyncHandler(async (req: Request, res: Response) => {
+  const { email, phone, password, firstName, lastName, interests } = req.body;
+  
+  const sanitizedEmail = sanitizeEmail(email);
+  const sanitizedFirstName = firstName ? sanitizeName(firstName) : undefined;
+  const sanitizedLastName = lastName ? sanitizeName(lastName) : undefined;
+
+  const existingUser = await prisma.user.findUnique({
+    where: { email: sanitizedEmail },
+  });
+
+  if (existingUser) {
+    throw new ApiError("User with this email already exists", 409);
+  }
+
+  const result = await CustomerFactory.create({
+    email: sanitizedEmail,
+    phone,
+    password,
+    firstName: sanitizedFirstName || '',
+    lastName: sanitizedLastName || '',
+    interests,
+  });
+
+  await publishEvent("USER_REGISTERED", { userId: result.id });
+
+  res.status(201).json({
+    message: "Customer registered successfully",
+    user: {
+      id: result.id,
+      email: result.email,
+      firstName: result.firstName,
+      lastName: result.lastName,
+      role: result.role,
+      interests: result.interests,
+    },
+    tokens: {
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+    },
+  });
+});
+
+/**
+ * Register a new business owner
+ * POST /api/auth/register/business
+ */
+export const registerBusiness = asyncHandler(async (req: Request, res: Response) => {
+  const { email, phone, password, firstName, lastName, businessName, businessCategory, businessType } = req.body;
+  
+  const sanitizedEmail = sanitizeEmail(email);
+  const sanitizedFirstName = firstName ? sanitizeName(firstName) : undefined;
+  const sanitizedLastName = lastName ? sanitizeName(lastName) : undefined;
+
+  const existingUser = await prisma.user.findUnique({
+    where: { email: sanitizedEmail },
+  });
+
+  if (existingUser) {
+    throw new ApiError("User with this email already exists", 409);
+  }
+
+  const result = await BusinessOwnerFactory.create({
+    email: sanitizedEmail,
+    phone,
+    password,
+    firstName: sanitizedFirstName || '',
+    lastName: sanitizedLastName || '',
+    businessName,
+    businessCategory,
+    businessType,
+  });
+
+  await publishEvent("BUSINESS_OWNER_REGISTERED", { userId: result.id, businessId: result.business.id });
+
+  res.status(201).json({
+    message: "Business owner registered successfully",
+    user: {
+      id: result.id,
+      email: result.email,
+      firstName: result.firstName,
+      lastName: result.lastName,
+      role: result.role,
+    },
+    business: result.business,
+    tokens: {
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
     },
   });
 });

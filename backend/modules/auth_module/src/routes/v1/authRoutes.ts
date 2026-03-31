@@ -1,6 +1,8 @@
 import { Router } from "express";
 import {
   register,
+  registerCustomer,
+  registerBusiness,
   login,
   completeLogin,
   verifyEmail,
@@ -26,6 +28,9 @@ import {
   methodRestriction,
 } from "../../middleware";
 
+import { customerRegistrationValidation } from "../../validators/customerRegistration";
+import { businessRegistrationValidation } from "../../validators/businessRegistration";
+
 const router = Router();
 
 // Public routes - Method restricted
@@ -35,6 +40,22 @@ router.post(
   authLimiter,
   validateRegistration,
   register
+);
+
+router.post(
+  "/register/customer",
+  methodRestriction({ allowed: ["POST"] }),
+  authLimiter,
+  customerRegistrationValidation,
+  registerCustomer
+);
+
+router.post(
+  "/register/business",
+  methodRestriction({ allowed: ["POST"] }),
+  authLimiter,
+  businessRegistrationValidation,
+  registerBusiness
 );
 
 router.post(
