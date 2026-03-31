@@ -49,7 +49,7 @@ export const NavBar = () => {
             >
               <Shield className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-white">DashLabs</span>
+            <span className="text-xl font-bold text-white">BuzzMap</span>
           </Link>
 
           {/* Desktop Navigation */}

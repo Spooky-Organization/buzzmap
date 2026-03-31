@@ -23,7 +23,7 @@ export const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
             <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-secondary-600 rounded-xl flex items-center justify-center">
               <Shield className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-[var(--foreground)]">DashLabs</span>
+            <span className="text-xl font-bold text-[var(--foreground)]">BuzzMap</span>
           </Link>
         </div>
 

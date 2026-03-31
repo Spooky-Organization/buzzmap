@@ -12,7 +12,7 @@ export const Footer = () => {
               <Shield className="h-3 w-3 text-white" />
             </div>
             <span className="text-sm font-medium text-[var(--foreground)]">
-              DashLabs
+              BuzzMap
             </span>
           </div>
 

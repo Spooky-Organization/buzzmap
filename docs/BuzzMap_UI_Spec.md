@@ -105,7 +105,53 @@ All measurements in `rem`, `em`, `%`, `vh`, `vw`. **NO pixels.**
 </Button>
 ```
 
-### 2. Cards
+### 2. Form Components
+
+All forms must use `FieldGroup` + `Field` pattern with proper validation states.
+
+```tsx
+import { FieldGroup, Field, FieldLabel, FieldDescription } from "@/components/ui/field";
+import { InputGroup, InputGroupInput, InputGroupAddon } from "@/components/ui/input-group";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { cn } from "@/lib/utils";
+
+// Basic form structure
+<FieldGroup spacing={4}>
+  <Field>
+    <FieldLabel htmlFor="email">Email address</FieldLabel>
+    <Input id="email" type="email" placeholder="jane@example.com" />
+  </Field>
+  
+  <Field data-invalid>
+    <FieldLabel htmlFor="password">Password</FieldLabel>
+    <Input id="password" type="password" aria-invalid />
+    <FieldDescription className="text-destructive">Password is required</FieldDescription>
+  </Field>
+</FieldGroup>
+
+// Horizontal field for settings
+<Field orientation="horizontal">
+  <FieldLabel htmlFor="notifications">Enable notifications</FieldLabel>
+  <Switch id="notifications" />
+</Field>
+
+// Input with icon prefix
+<InputGroup>
+  <InputGroupAddon placement="prefix">
+    <SearchIcon className="size-4" />
+  </InputGroupAddon>
+  <InputGroupInput placeholder="Search..." />
+</InputGroup>
+
+// Toggle group for options
+<ToggleGroup type="single" value={category} onValueChange={(val) => val && setCategory(val)}>
+  <ToggleGroupItem value="food">Food</ToggleGroupItem>
+  <ToggleGroupItem value="tech">Tech</ToggleGroupItem>
+  <ToggleGroupItem value="fashion">Fashion</ToggleGroupItem>
+</ToggleGroup>
+```
+
+### 3. Cards
 
 **POV Card (Core content unit)**
 ```tsx
@@ -219,10 +265,12 @@ All measurements in `rem`, `em`, `%`, `vh`, `vw`. **NO pixels.**
 
     {/* Search (Desktop) */}
     <div className="hidden md:flex flex-1 max-w-md mx-8">
-      <div className="relative w-full">
-        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-        <Input className="pl-10 bg-muted/50" placeholder="Search businesses, products..." />
-      </div>
+      <InputGroup>
+        <InputGroupAddon placement="prefix">
+          <SearchIcon className="size-4 text-muted-foreground" />
+        </InputGroupAddon>
+        <InputGroupInput className="bg-muted/50" placeholder="Search businesses, products..." />
+      </InputGroup>
     </div>
 
     {/* Actions */}
@@ -300,36 +348,38 @@ Step 1: Credentials
       <DialogDescription>Create your account to discover trusted local businesses</DialogDescription>
     </DialogHeader>
     
-    <form className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="firstName">First name</Label>
-          <Input id="firstName" placeholder="Jane" />
+    <form className="flex flex-col gap-4">
+      <FieldGroup spacing={4}>
+        <div className="grid grid-cols-2 gap-4">
+          <Field>
+            <FieldLabel htmlFor="firstName">First name</FieldLabel>
+            <Input id="firstName" placeholder="Jane" />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="lastName">Last name</FieldLabel>
+            <Input id="lastName" placeholder="Wanjiku" />
+          </Field>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="lastName">Last name</Label>
-          <Input id="lastName" placeholder="Wanjiku" />
-        </div>
-      </div>
+      </FieldGroup>
       
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+      <Field>
+        <FieldLabel htmlFor="email">Email</FieldLabel>
         <Input id="email" type="email" placeholder="jane@example.com" />
-      </div>
+      </Field>
       
-      <div className="space-y-2">
-        <Label htmlFor="phone">Phone number</Label>
+      <Field>
+        <FieldLabel htmlFor="phone">Phone number</FieldLabel>
         <InputGroup>
-          <InputGroupAddon>+254</InputGroupAddon>
+          <InputGroupAddon placement="prefix">+254</InputGroupAddon>
           <InputGroupInput id="phone" type="tel" placeholder="712 345 678" />
         </InputGroup>
-      </div>
+      </Field>
       
-      <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
+      <Field>
+        <FieldLabel htmlFor="password">Password</FieldLabel>
         <PasswordInput id="password" placeholder="Create a strong password" />
         <PasswordRequirements password={password} />
-      </div>
+      </Field>
       
       <Button type="submit" className="w-full" onClick={() => setStep(2)}>
         Continue
@@ -630,18 +680,18 @@ Step 3: Verification
       
       {/* Category Filters */}
       <ScrollArea className="mt-4 -mx-4 px-4">
-        <div className="flex gap-2">
+        <ToggleGroup
+          type="single"
+          value={selectedCategory}
+          onValueChange={(val) => val && setSelectedCategory(val)}
+          className="justify-start gap-2"
+        >
           {categories.map((cat) => (
-            <Button
-              key={cat.id}
-              variant={selectedCategory === cat.id ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setSelectedCategory(cat.id)}
-            >
+            <ToggleGroupItem key={cat.id} value={cat.id} size="sm">
               {cat.name}
-            </Button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
       </ScrollArea>
     </div>
   </header>
@@ -718,13 +768,8 @@ Step 3: Verification
       </Avatar>
       <div className="flex-1">
         <p className="font-semibold">{currentConversation?.participant.firstName}</p>
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <span className={cn(
-            "size-2 rounded-full",
-            isOnline ? "bg-green-500" : "bg-gray-400"
-          )} />
-          {isOnline ? 'Online' : 'Last seen recently'}
-        </div>
+        <LiveStatus isOnline={isOnline} />
+      </div>
       </div>
     </header>
     
@@ -805,14 +850,16 @@ Step 3: Verification
   {/* Search Header */}
   <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
     <div className="container py-4">
-      <div className="relative">
-        <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
-        <Input
-          className="pl-12 h-12 text-lg"
+      <InputGroup>
+        <InputGroupAddon placement="prefix">
+          <SearchIcon className="size-5 text-muted-foreground" />
+        </InputGroupAddon>
+        <InputGroupInput
+          className="h-12 text-lg"
           placeholder="Search businesses, products, reviews..."
           autoFocus
         />
-      </div>
+      </InputGroup>
       
       {/* Filters */}
       <div className="flex gap-2 mt-4 overflow-x-auto scrollbar-hide">
@@ -1270,10 +1317,15 @@ Using **Lucide React** icons consistently:
 ```
 frontend/src/
 ├── components/
-│   ├── ui/                    # shadcn components
+│   ├── ui/                    # shadcn components + BuzzMap extensions
 │   │   ├── button.tsx
 │   │   ├── card.tsx
 │   │   ├── dialog.tsx
+│   │   ├── field.tsx          # FieldGroup, Field, FieldLabel
+│   │   ├── input-group.tsx    # InputGroup, InputGroupInput, InputGroupAddon
+│   │   ├── toggle-group.tsx  # ToggleGroup, ToggleGroupItem
+│   │   ├── LiveStatus.tsx     # Online/offline status indicator
+│   │   ├── PasswordRequirements.tsx
 │   │   └── ...
 │   ├── layout/
 │   │   ├── Header.tsx        # Main navigation

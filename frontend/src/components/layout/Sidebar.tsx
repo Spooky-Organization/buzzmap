@@ -193,7 +193,7 @@ export const Sidebar = ({
                   <Shield className="h-5 w-5 text-white" />
                 </div>
                 <h1 className="text-xl font-bold text-[var(--foreground)] whitespace-nowrap">
-                  DashLabs
+                  BuzzMap
                 </h1>
               </Link>
               <button

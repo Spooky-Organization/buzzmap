@@ -159,7 +159,7 @@ You agree to indemnify, defend, and hold harmless SpookieLabsInc, its officers, 
 For questions about these Terms and Conditions, please contact us:
 
 **SpookieLabsInc**  
-Website: [https://www.spookielabsinc.site](https://www.spookielabsinc.site)  
+Website: [https://buzzmap.com](https://buzzmap.com)  
 Email: [Contact information to be provided]
 
 ## 13. Changes to Terms
@@ -171,7 +171,7 @@ Email: [Contact information to be provided]
 
 ---
 
-**© <span id="copyright-year"></span> Matthew Makundi, Founder [SpookieLabsInc](https://www.spookielabsinc.site)**
+**© <span id="copyright-year"></span> Buzzmap [SpookieLabsInc](https://buzzmap.com)**
 
 *All rights reserved.*
 

@@ -1,4 +1,4 @@
-# Dashboard Template
+# BuzzMap
 
 <div align="center">
 
@@ -28,7 +28,7 @@
 
 ## Overview
 
-**Dashboard Template** is a complete, enterprise-grade authentication system that saves weeks of development time. Built with modern technologies and security best practices, it provides everything you need for secure user authentication, authorization, and session management out of the box.
+**BuzzMap** is a complete, enterprise-grade authentication system that saves weeks of development time. Built with modern technologies and security best practices, it provides everything you need for secure user authentication, authorization, and session management out of the box.
 
 ### Why Choose This Template?
 
@@ -249,7 +249,7 @@ The frontend uses a **component-based architecture**:
 
 ```env
 VITE_API_BASE_URL=http://localhost:5000/api/v1
-VITE_APP_NAME=Dashboard Template
+VITE_APP_NAME=BuzzMap
 VITE_ENVIRONMENT=development
 ```
 

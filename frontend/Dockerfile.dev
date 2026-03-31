@@ -22,6 +22,9 @@ COPY . .
 # Ensure node_modules binaries have execute permissions
 RUN chmod +x node_modules/.bin/* 2>/dev/null || true
 
+# Set application name
+ENV VITE_APP_NAME=BuzzMap
+
 # Expose Vite dev server port
 EXPOSE 3000
 

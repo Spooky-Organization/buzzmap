@@ -25,8 +25,8 @@ export const generateAccessToken = (
 
   return jwt.sign(payload, JWT_SECRET, {
     expiresIn: JWT_EXPIRES_IN,
-    issuer: "dashboard-template",
-    audience: "dashboard-template-users",
+    issuer: "buzzmap",
+    audience: "buzzmap-api",
   } as jwt.SignOptions);
 };
 
@@ -47,8 +47,8 @@ export const generateRefreshToken = (
 
   return jwt.sign(payload, JWT_REFRESH_SECRET, {
     expiresIn: JWT_REFRESH_EXPIRES_IN,
-    issuer: "dashboard-template",
-    audience: "dashboard-template-users",
+    issuer: "buzzmap",
+    audience: "buzzmap-api",
   } as jwt.SignOptions);
 };
 
@@ -58,8 +58,8 @@ export const generateRefreshToken = (
 export const verifyAccessToken = (token: string): JWTPayload => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET, {
-      issuer: "dashboard-template",
-      audience: "dashboard-template-users",
+      issuer: "buzzmap",
+      audience: "buzzmap-api",
     }) as JWTPayload;
 
     if (decoded.type !== "access") {
@@ -84,8 +84,8 @@ export const verifyAccessToken = (token: string): JWTPayload => {
 export const verifyRefreshToken = (token: string): JWTPayload => {
   try {
     const decoded = jwt.verify(token, JWT_REFRESH_SECRET, {
-      issuer: "dashboard-template",
-      audience: "dashboard-template-users",
+      issuer: "buzzmap",
+      audience: "buzzmap-api",
     }) as JWTPayload;
 
     if (decoded.type !== "refresh") {

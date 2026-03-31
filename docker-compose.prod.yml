@@ -9,7 +9,7 @@ services:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL}
         VITE_APP_NAME: ${VITE_APP_NAME}
         VITE_ENVIRONMENT: ${VITE_ENVIRONMENT}
-    container_name: dashboard_frontend_prod
+    container_name: buzzmap_frontend_prod
     restart: unless-stopped
     env_file:
       - .env
@@ -41,7 +41,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile.prod
       target: production
-    container_name: dashboard_backend_prod
+    container_name: buzzmap_backend_prod
     restart: unless-stopped
     env_file:
       - .env

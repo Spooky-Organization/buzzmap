@@ -2,7 +2,7 @@
 
 ## Overview
 
-This Authentication Template supports two distinct environments: **Development** and **Production**. Each environment is configured with Docker Compose to orchestrate multiple services including frontend, backend, database, cache, and development tools.
+This BuzzMap supports two distinct environments: **Development** and **Production**. Each environment is configured with Docker Compose to orchestrate multiple services including frontend, backend, database, cache, and development tools.
 
 ## Table of Contents
 
@@ -95,7 +95,7 @@ The development environment is optimized for **fast iteration**, **hot reloading
 **Environment Variables**:
 - `NODE_ENV=development`
 - `VITE_API_BASE_URL=http://localhost:5000/api/v1` (runtime)
-- `VITE_APP_NAME=Authentication Template`
+- `VITE_APP_NAME=BuzzMap`
 - `VITE_ENVIRONMENT=development`
 
 **Health Check**:
@@ -330,7 +330,7 @@ The production environment is optimized for **performance**, **security**, and *
 **Build Arguments** (passed during build):
 ```yaml
 VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:5000/api/v1}
-VITE_APP_NAME: ${VITE_APP_NAME:-Authentication Template}
+VITE_APP_NAME: ${VITE_APP_NAME:-BuzzMap}
 VITE_ENVIRONMENT: production
 ```
 
@@ -622,7 +622,7 @@ docker-compose -f docker-compose.prod.yml down -v
   - Default: `http://localhost:5000/api/v1`
   - Set in: `.env.development` or `docker-compose.dev.yml` → `environment`
 - `VITE_APP_NAME`: Application name
-  - Default: `Authentication Template`
+  - Default: `BuzzMap`
   - Set in: `.env.development` or `docker-compose.dev.yml` → `environment`
 - `VITE_ENVIRONMENT`: Environment identifier
   - Value: `development`
@@ -899,7 +899,7 @@ PRISMA_STUDIO_PORT=5555
 
 # Frontend Environment Variables
 VITE_API_BASE_URL=http://localhost:5000/api/v1
-VITE_APP_NAME=Authentication Template
+VITE_APP_NAME=BuzzMap
 VITE_ENVIRONMENT=development
 ```
 
@@ -915,7 +915,7 @@ PRISMA_STUDIO_PORT=5556
 # Frontend Environment Variables (Build-time)
 # IMPORTANT: Update VITE_API_BASE_URL with your production API URL
 VITE_API_BASE_URL=https://api-authtemplate.spookielabsinc.site/api/v1
-VITE_APP_NAME=Authentication Template
+VITE_APP_NAME=BuzzMap
 VITE_ENVIRONMENT=production
 ```
 

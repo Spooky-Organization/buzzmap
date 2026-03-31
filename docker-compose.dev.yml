@@ -4,7 +4,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.dev
       target: development
-    container_name: dashboard_frontend_dev
+    container_name: buzzmap_frontend_dev
     restart: unless-stopped
     env_file:
       - .env.development
@@ -52,7 +52,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile.dev
       target: development
-    container_name: dashboard_backend_dev
+    container_name: buzzmap_backend_dev
     restart: unless-stopped
     env_file:
       - .env.development

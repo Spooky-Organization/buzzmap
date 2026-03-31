@@ -47,11 +47,11 @@ export const LandingFooter = () => {
               <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-secondary-600 rounded-xl flex items-center justify-center">
                 <Shield className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-white">DashLabs</span>
+              <span className="text-xl font-bold text-white">BuzzMap</span>
             </Link>
             <p className="text-sm text-gray-400 mb-6 max-w-xs">
-              Production-ready dashboard template with enterprise-grade security, 
-              real-time features, and modern architecture.
+              BuzzMap - Trust-Driven Social Marketplace for East Africa with 
+              enterprise-grade security, real-time features, and modern architecture.
             </p>
             <div className="flex items-center gap-4">
               {socialLinks.map((link) => (

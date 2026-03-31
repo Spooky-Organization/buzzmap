@@ -26,7 +26,7 @@ export const CTASection = () => {
 
         {/* Description */}
         <p className="text-lg text-gray-400 mb-10 max-w-2xl mx-auto">
-          Join thousands of developers using DashLabs to build secure, scalable applications. 
+          Join thousands of users using BuzzMap to build trust-driven social marketplaces. 
           Star the project on GitHub to show your support.
         </p>
 

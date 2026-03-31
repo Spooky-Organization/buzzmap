@@ -59,7 +59,7 @@ export const publishEvent = async (
     case "USER_REGISTERED":
       await publishNotification(userId, {
         type: "success",
-        title: "Welcome to Dashboard Template!",
+        title: "Welcome to BuzzMap!",
         message: "Your account has been created successfully.",
       });
       break;

@@ -75,7 +75,7 @@ export const Header = ({ user, onLogout, onMenuToggle }: HeaderProps) => {
               <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-600 rounded-lg flex items-center justify-center">
                 <Shield className="h-4 w-4 text-white" />
               </div>
-              <h1 className="text-xl font-bold text-white">DashLabs</h1>
+              <h1 className="text-xl font-bold text-white">BuzzMap</h1>
             </Link>
           </div>
           
