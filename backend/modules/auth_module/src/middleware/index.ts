@@ -9,7 +9,9 @@ export {
   requireAdminOrAccountant,
   requireAuth,
   requireOwnershipOrAdmin,
+  requirePermission,
 } from "./authorization";
+export { requirePermission as checkPermission } from "./checkPermission";
 
 // Method restriction middleware
 export {
