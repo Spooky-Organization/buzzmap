@@ -109,7 +109,9 @@ export function Navbar() {
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => signOut({ redirectTo: '/login' })}
+                onClick={() => {
+                  setTimeout(() => signOut({ redirectTo: '/login' }), 0);
+                }}
               >
                 Sign out
               </DropdownMenuItem>
