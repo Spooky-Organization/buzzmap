@@ -25,7 +25,7 @@ services:
     networks:
       - buzzmap-network
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:${FRONTEND_PORT} || exit 1"]
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:${FRONTEND_PORT}').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))\""]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -48,7 +48,7 @@ services:
     networks:
       - buzzmap-network
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:${BACKEND_PORT}/health || exit 1"]
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:${BACKEND_PORT}/health').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))\""]
       interval: 30s
       timeout: 5s
       retries: 3
