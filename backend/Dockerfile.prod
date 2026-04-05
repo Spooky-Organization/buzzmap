@@ -7,8 +7,12 @@ RUN apk add --no-cache python3 make g++
 WORKDIR /app
 
 # Layer 1: deps only (best cache hit)
+# Force all deps during build — Coolify passes NODE_ENV=production as a build-arg
+# which causes npm ci to skip devDependencies (needed for tsc, @types/*)
+ENV NODE_ENV=development
 COPY package*.json ./
 RUN npm ci && npm cache clean --force
+ENV NODE_ENV=production
 
 # Layer 2: Prisma generate
 COPY prisma ./prisma
