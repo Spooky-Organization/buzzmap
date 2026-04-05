@@ -1,89 +1,52 @@
-# Production Dockerfile - Multi-stage build for optimized production image
-# Using Node.js 20 LTS to match @types/node ^20.9.0 and ensure compatibility with all dependencies
+## ---- Builder ----
+FROM node:22-alpine AS builder
 
-# Stage 1: Build dependencies and compile TypeScript
-FROM node:20-alpine AS builder
-
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install all dependencies (including dev dependencies for build) and clean cache
-# Add retry logic for better reliability in CI/CD environments
-# Use --include=dev to ensure devDependencies are installed even when NODE_ENV=production
-RUN npm config set fetch-retries 5 && \
-    npm config set fetch-retry-mintimeout 20000 && \
-    npm config set fetch-retry-maxtimeout 120000 && \
-    npm ci --include=dev || (echo "npm ci failed, retrying with npm install..." && npm install) && \
-    npm cache clean --force
-
-# Copy source code and configuration files
-COPY . .
-
-# Ensure node_modules binaries have execute permissions, then generate Prisma client and build TypeScript
-RUN chmod +x node_modules/.bin/* 2>/dev/null || true && \
-    npm run db:generate && \
-    npm run build
-
-# Stage 2: Production runtime - minimal image
-FROM node:20-alpine AS production
-
-# Install system dependencies
-RUN apk add --no-cache dumb-init wget && \
-    rm -rf /var/cache/apk/*
+# System deps for bcrypt native build
+RUN apk add --no-cache python3 make g++
 
 WORKDIR /app
 
-# Copy package files
+# Layer 1: deps only (best cache hit)
 COPY package*.json ./
+RUN npm ci && npm cache clean --force
 
-# Install production dependencies and Prisma CLI (needed for Prisma Studio and migrations)
-# Prisma version matches package.json devDependencies
-# Add retry logic for network reliability in CI/CD environments
-RUN npm config set fetch-retries 5 && \
-    npm config set fetch-retry-mintimeout 20000 && \
-    npm config set fetch-retry-maxtimeout 120000
+# Layer 2: Prisma generate
+COPY prisma ./prisma
+COPY prisma.config.ts ./
+RUN npx prisma generate
 
-# Install all dependencies (compression is a production dependency)
-RUN npm ci || npm install
-
-# Set application name
-ENV APP_NAME=BuzzMap
-
-# Install ts-node and tsconfig-paths for seed script (production doesn't include devDeps by default)
-RUN npm install --save-dev ts-node tsconfig-paths
-
-# Set PATH to include node_modules/.bin
-ENV PATH="/app/node_modules/.bin:$PATH"
-
-# Install Prisma CLI globally
-RUN npm install -g prisma@^6.10.1
-
-# Clean up
-RUN npm cache clean --force && \
-    rm -rf /tmp/* /var/cache/apk/*
-
-# Copy built application and necessary files from builder stage
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-# Copy Prisma schema and migrations (migrations must be committed to git for production)
-COPY --from=builder /app/prisma ./prisma
+# Layer 3: compile TypeScript
 COPY tsconfig.json ./
-COPY scripts/ ./scripts/
+COPY src ./src
+RUN npx tsc --project tsconfig.json
 
-# Create logs directory
-RUN mkdir -p /app/logs
+# Layer 4: prune devDependencies for smaller runtime image
+RUN npm prune --omit=dev
 
-# Expose port
-EXPOSE ${BACKEND_PORT}
+## ---- Runner ----
+FROM node:22-alpine AS runner
 
-# Health check uses container PORT (set at runtime); shell form CMD so ${PORT:-5000} expands at runtime
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider "http://localhost:${PORT:-5000}/api/health" || exit 1
+WORKDIR /app
 
-# Use dumb-init to handle signals properly
-ENTRYPOINT ["dumb-init", "--"]
+ENV NODE_ENV=production
 
-# Start the application with migration deployment and seed
-CMD ["sh", "-c", "cd /app && npx prisma migrate deploy --schema prisma/schema.prisma && npx ts-node prisma/seed.ts && node dist/core/server.js"]
+RUN npm install -g tsx && npm cache clean --force
+
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 expressjs
+
+# Only copy what's needed to run
+COPY --from=builder --chown=expressjs:nodejs /app/dist ./dist
+COPY --from=builder --chown=expressjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=expressjs:nodejs /app/package.json ./package.json
+# Prisma client needs the generated engine in node_modules
+COPY --from=builder --chown=expressjs:nodejs /app/prisma ./prisma
+
+COPY --from=builder --chown=expressjs:nodejs /app/prisma.config.ts ./prisma.config.ts
+COPY --chown=expressjs:nodejs entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+USER expressjs
+
+ENTRYPOINT ["entrypoint.sh"]
+CMD ["node", "dist/index.js"]

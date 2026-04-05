@@ -1,65 +1,20 @@
-import { forwardRef, type InputHTMLAttributes, type ReactNode } from 'react';
-import { cn } from '@/lib/utils';
+import * as React from "react"
+import { Input as InputPrimitive } from "@base-ui/react/input"
 
-export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  labelClass?: string;
-  error?: string;
-  icon?: ReactNode;
-  helperText?: string;
+import { cn } from "@/lib/utils"
+
+function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+  return (
+    <InputPrimitive
+      type={type}
+      data-slot="input"
+      className={cn(
+        "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
+        className
+      )}
+      {...props}
+    />
+  )
 }
 
-const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, labelClass, error, icon, helperText, className, id, ...props }, ref) => {
-    const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
-
-    return (
-      <div className="space-y-2">
-        {label && (
-          <label
-            htmlFor={inputId}
-            className={cn('block text-sm font-medium text-[var(--foreground)]', labelClass)}
-          >
-            {label}
-          </label>
-        )}
-        <div className="relative">
-          {icon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--foreground-muted)]">
-              {icon}
-            </div>
-          )}
-          <input
-            ref={ref}
-            id={inputId}
-            className={cn(
-              'glass-input w-full px-4 py-3',
-              icon ? 'pl-10' : 'pl-4',
-              error && 'border-red-500 focus:ring-red-500',
-              className
-            )}
-            aria-invalid={error ? 'true' : 'false'}
-            aria-describedby={
-              error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined
-            }
-            {...props}
-          />
-        </div>
-        {error && (
-          <p id={`${inputId}-error`} className="text-sm text-red-400 flex items-center gap-1">
-            <span className="text-red-500">•</span>
-            {error}
-          </p>
-        )}
-        {helperText && !error && (
-          <p id={`${inputId}-helper`} className="text-sm text-[var(--foreground-muted)]">
-            {helperText}
-          </p>
-        )}
-      </div>
-    );
-  }
-);
-Input.displayName = 'Input';
-
-export { Input };
+export { Input }

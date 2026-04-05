@@ -1,42 +1,24 @@
-# Development Dockerfile with Hot Reload Support
-# Optimized for fast iteration and development workflow
-# Using Node.js 20 LTS to match @types/node ^20.9.0 and ensure compatibility with all dependencies
-FROM node:20-alpine AS development
+FROM node:22-alpine
 
-# Install system dependencies
-RUN apk add --no-cache dumb-init wget
+# System deps for bcrypt native build
+RUN apk add --no-cache python3 make g++
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files first for better layer caching
+# Layer 1: dependency install (cached unless package*.json changes)
 COPY package*.json ./
+RUN npm ci --include=dev && npm cache clean --force
 
-# Install dependencies and clean cache in one layer
-RUN npm ci && \
-    npm cache clean --force
+# Layer 2: Prisma generate (cached unless schema changes)
+COPY prisma ./prisma
+COPY prisma.config.ts ./
+RUN npx prisma generate
 
-# Set application name
-ENV APP_NAME=BuzzMap
-
-# Copy source code and configuration files
+# Layer 3: source (overridden by volume mount in dev anyway)
 COPY . .
 
-# Ensure node_modules binaries have execute permissions, then generate Prisma client and set up directories
-RUN chmod +x node_modules/.bin/* 2>/dev/null || true && \
-    npm run db:generate && \
-    mkdir -p /app/logs
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Expose port
-EXPOSE 5000
-
-# Health check for development
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:5000/api/health || exit 1
-
-# Use dumb-init to handle signals properly
-ENTRYPOINT ["dumb-init", "--"]
-
-# Start with hot reload (nodemon/ts-node-dev)
-# Note: Source code is mounted as volume, so changes reflect immediately
-CMD ["sh", "-c", "npx prisma migrate deploy && npx ts-node prisma/seed.ts && npm run dev"]
+ENTRYPOINT ["entrypoint.sh"]
+CMD ["npx", "tsx", "watch", "src/index.ts"]

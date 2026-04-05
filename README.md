@@ -1,550 +1,226 @@
 # BuzzMap
 
-<div align="center">
+**For you, by you.**
 
-**Production-Ready Authentication System for Modern Applications**
+A social commerce platform that brings together POV video reviews, local business discovery, marketplace shopping, and real-time messaging -- all in one place. Customers find products through authentic video reviews, while business owners build their digital storefront and reach new audiences organically.
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+---
+
+## Key Features
+
+- **Dual Registration** -- sign up as a Customer or Business Owner, each with tailored dashboards and permissions
+- **POV Video Reviews** -- record and share point-of-view video reviews with star ratings
+- **Interest-Based Feed** -- personalized content feed driven by your selected interests
+- **Trending Discovery** -- surface trending reviews, products, and businesses in real time
+- **Business Product Shelf & Marketplace** -- business owners list products; customers browse and shop
+- **Cart & Order Management** -- full shopping cart, checkout flow, and order tracking
+- **Real-Time Notifications** -- instant updates via Socket.IO for orders, follows, and interactions
+- **In-App Messaging** -- direct and group conversations between users
+- **Search & Recommendations** -- find businesses, products, and creators with smart suggestions
+- **Social Graph** -- follow/unfollow users and businesses to curate your feed
+
+---
 
 ## Tech Stack
-- **Frontend:** React, TypeScript, Tailwind CSS, Vite
-- **Backend:** Express.js, Node.js, TypeScript
-- **Database:** PostgreSQL with Prisma ORM
-- **Cache:** Redis
-- **Email:** Resend
-- **DevOps:** Docker, Docker Compose
+
+| Category | Technologies |
+|---|---|
+| **Frontend** | Next.js 16, React 19, TypeScript, Tailwind CSS v4, shadcn/ui, NextAuth v5, TanStack Query, Zustand, Socket.IO Client, Framer Motion |
+| **Backend** | Express 5, TypeScript, Prisma v7, PostgreSQL 16, Redis 7, Socket.IO, Pino, Zod, Helmet |
+| **Storage** | RustFS (S3-compatible) via AWS SDK v3 |
+| **Infrastructure** | Docker, Docker Compose, Nginx (production reverse proxy) |
 
 ---
 
-[Features](#-features) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Architecture](#-architecture)
+## Architecture
 
-</div>
+BuzzMap is organized as a **monorepo** with two primary applications:
 
----
+- **`frontend/`** -- Next.js App Router with route groups (`(auth)`, `(customer)`, `business`) for role-based layouts
+- **`backend/`** -- Express API using a **modular MVCS (Model-View-Controller-Service)** pattern with 12 domain modules
 
-## Overview
+### Backend Modules
 
-**BuzzMap** is a complete, enterprise-grade authentication system that saves weeks of development time. Built with modern technologies and security best practices, it provides everything you need for secure user authentication, authorization, and session management out of the box.
-
-### Why Choose This Template?
-
-- **Save Weeks of Development** - Get a production-ready auth system in minutes, not months
-- **Enterprise Security** - OWASP Top 10 compliant with comprehensive security measures
-- **Production Ready** - Battle-tested code with best practices built-in
-- **Complete Solution** - Frontend UI, backend API, database, and deployment configs included
-- **Modern Stack** - TypeScript, React 18, Express, PostgreSQL, Redis, Docker
-- **Well Documented** - Comprehensive documentation for developers and stakeholders
-
----
-
-## Features
-
-### Authentication & Security
-
-- **JWT-Based Authentication** - Secure token-based auth with automatic refresh
-- **Multi-Factor Authentication (MFA)** - TOTP-based 2FA with backup codes and QR code generation
-- **Role-Based Access Control (RBAC)** - Flexible system with USER, ACCOUNTANT, and ADMIN roles
-- **Password Management** - Secure password reset, change, and strength validation
-- **Email Verification** - Complete email verification flow with Resend integration
-- **Session Management** - Secure session handling with Redis-backed storage
-- **Rate Limiting** - Multi-tier rate limiting (100/15min general, 5/15min auth, 3/hour password reset)
-- **Input Sanitization** - XSS protection with DOMPurify and HTML entity encoding
-- **Security Headers** - Helmet middleware with comprehensive security headers
-- **Production-Grade Encryption** - bcrypt (cost 12), AES-256-GCM for MFA secrets, TLS 1.3
-- **Account Protection** - Automatic lockout after 4 failed attempts, permanent ban after 6 attempts
-
-### Frontend Features
-
-- **Real-Time Updates** - Server-Sent Events (SSE) client for live notifications and dashboard updates
-- **Modern UI/UX** - Beautiful, responsive design with Tailwind CSS
-- **13+ Implemented Pages** - Complete authentication flow and dashboards
-- **Role-Based Dashboards** - Customized dashboards for each user role
-- **Form Validation** - Real-time validation with visual feedback
-- **Password Strength Indicators** - Visual password strength feedback
-- **Mobile Responsive** - Fully responsive design for all devices
-- **Accessible** - WCAG 2.1 AA compliant components
-
-### Backend Features
-
-- **Real-Time with SSE** - Server-Sent Events for live updates (notifications, activity logs, dashboard metrics)
-- **RESTful API** - 30+ well-documented API endpoints
-- **API Versioning** - Versioned routes (`/api/v1`) with backward compatibility
-- **Performance Monitoring** - Built-in performance metrics and monitoring
-- **Error Handling** - Comprehensive error handling with typed responses
-- **Database Migrations** - Automated Prisma migrations
-- **Logging** - Structured logging for debugging and monitoring
-
-### DevOps & Deployment
-
-- **Docker Support** - Complete Docker setup for development and production
-- **Docker Compose** - Orchestrated multi-container setup
-- **Multi-Stage Builds** - Optimized production builds
-- **Health Checks** - Service health monitoring
-- **Hot Reload** - Development environment with live code updates
-- **Environment Management** - Separate dev and prod configurations
-
----
-
-## Quick Start
-
-### Prerequisites
-
-- **Node.js** 20.x or higher
-- **Docker** and **Docker Compose** (recommended)
-- **PostgreSQL** 15+ (if not using Docker)
-- **Redis** 7+ (if not using Docker)
-
-### Option 1: Docker (Recommended)
-
-The fastest way to get started is using Docker:
-
-```bash
-# Clone the repository
-git clone https://github.com/Spooky-Organization/Authentication-Template.git
-cd Authentication-Template
-
-# Start development environment
-./dev.sh start
-
-# Access the application
-# Frontend: http://localhost:3014
-# Backend API: http://localhost:5000/api/v1
-# Prisma Studio: http://localhost:5555
-```
-
-### Option 2: Local Development
-
-```bash
-# Install dependencies
-cd backend && npm install
-cd ../frontend && npm install
-
-# Set up environment variables
-cp .env.example .env.development
-# Edit .env.development with your configuration
-
-# Start backend
-cd backend
-npm run db:generate
-npm run db:migrate
-npm run dev
-
-# Start frontend (in another terminal)
-cd frontend
-npm run dev
-```
-
-### First Steps
-
-1. **Register a new account** at `http://localhost:3014/register`
-2. **Verify your email** (check console logs in development)
-3. **Login** and explore the dashboard
-4. **Set up MFA** from the profile page
-5. **Explore the API** at `http://localhost:5000/api/v1`
+| Module | Responsibility |
+|---|---|
+| `auth` | Registration, login, JWT tokens, MFA, sessions |
+| `users` | User profiles, preferences, account management |
+| `business` | Business profiles, settings, follow/unfollow |
+| `feed` | Personalized and trending content feeds |
+| `posts` | Content creation, likes, comments |
+| `pov` | POV video reviews with ratings |
+| `products` | Product catalog and business shelf |
+| `orders` | Cart, checkout, order lifecycle |
+| `messaging` | Direct and group messaging |
+| `notifications` | Real-time notification delivery |
+| `search` | Full-text search across entities |
+| `recommendations` | Interest-based content suggestions |
 
 ---
 
 ## Project Structure
 
 ```
-Authentication-Template/
-├── frontend/                 # React frontend application
+buzzmap/
+├── frontend/                  # Next.js 16 application
 │   ├── src/
-│   │   ├── api/             # API client with interceptors
-│   │   ├── auth/            # Session and token management
-│   │   ├── components/      # Reusable UI components
-│   │   ├── pages/           # Page components
-│   │   ├── routes/          # Routing configuration
-│   │   └── utils/           # Utility functions
-│   └── public/              # Static assets
-│
-├── backend/                 # Express backend application
-│   ├── core/                # Express app configuration
-│   ├── modules/             # Modular code organization
-│   │   └── auth_module/     # Authentication module
-│   │       └── src/
-│   │           ├── controllers/ # Request handlers
-│   │           ├── middleware/  # Express middleware
-│   │           ├── routes/      # API routes
-│   │           └── utils/       # Utility functions
-│   └── prisma/              # Database schema and migrations
-│
-├── docs/                    # Comprehensive documentation
-│   ├── API_DOCUMENTATION.md  # Complete API reference
-│   ├── FRONTEND_README.md    # Frontend architecture
-│   ├── DOCKER_SETUP.md       # Docker setup guide
-│   └── ENVIRONMENT_SETUP.md  # Environment configuration
-│
-├── docker-compose.dev.yml   # Development Docker setup
-├── docker-compose.prod.yml  # Production Docker setup
-├── dev.sh                   # Development helper script
-└── prod.sh                  # Production helper script
+│   │   └── app/               # App Router (route groups, pages, layouts)
+│   ├── public/                # Static assets
+│   ├── Dockerfile.dev
+│   └── Dockerfile.prod
+├── backend/                   # Express API
+│   ├── src/
+│   │   ├── modules/           # 11 domain modules (MVCS pattern)
+│   │   └── ...                # Core server setup, config, shared utilities
+│   ├── prisma/                # Prisma schema and migrations
+│   ├── Dockerfile.dev
+│   └── Dockerfile.prod
+├── docker-compose.dev.yml     # Development environment
+├── docker-compose.prod.yml    # Production environment
+├── .env.example               # Environment variable template
+└── .gitignore
 ```
 
 ---
 
-## Architecture
+## Getting Started
 
-### High-Level Overview
+### Prerequisites
 
-```
-┌─────────────┐      HTTP/REST      ┌─────────────┐
-│   Frontend  │ ◄─────────────────► │   Backend   │
-│   (React)   │      API Calls       │  (Express)  │
-└─────────────┘                      └──────┬──────┘
-                                            │
-                            ┌───────────────┼───────────────┐
-                            │               │               │
-                            ▼               ▼               ▼
-                    ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
-                    │ PostgreSQL  │  │    Redis    │  │   Resend    │
-                    │  (Database) │  │   (Cache)   │  │   (Email)   │
-                    └─────────────┘  └─────────────┘  └─────────────┘
-```
+- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
+- [Node.js 20+](https://nodejs.org/) (for local development outside Docker)
 
-### Backend Architecture
+### Setup
 
-The backend follows a **modular architecture** pattern:
+1. **Clone the repository**
 
-- **`core/`** - Express application configuration and server setup
-- **`modules/`** - Modular code organization
-  - **`auth_module/`** - Self-contained authentication module
-    - Controllers for request handling
-    - Middleware for authentication, authorization, validation
-    - Routes organized by API version
-    - Utilities for password, email, MFA, etc.
-- **`prisma/`** - Database schema and migrations
+   ```bash
+   git clone https://github.com/Matthew-kabiu/Buzzmap.git
+   cd Buzzmap
+   ```
 
-### Frontend Architecture
+2. **Create your environment file**
 
-The frontend uses a **component-based architecture**:
+   ```bash
+   cp .env.example .env.dev
+   ```
 
-- **Singleton Patterns** - API Client, Session Manager, Token Manager
-- **Component Library** - Reusable UI components
-- **Layout System** - Common DashboardLayout for consistency
-- **Route Guards** - Authentication and role-based protection
-- **Form Validation** - Centralized validation manager
+3. **Fill in the environment variables** -- open `.env.dev` and provide values for database credentials, JWT secrets, storage keys, and other configuration (see [Environment Variables](#environment-variables) below).
 
-### Security Architecture
+4. **Start the development stack**
 
-- **Authentication Layer** - JWT tokens with refresh rotation
-- **Authorization Layer** - Role-based access control
-- **Rate Limiting** - Multi-tier Redis-backed protection
-- **Input Sanitization** - XSS protection at multiple layers
-- **Security Headers** - Helmet middleware configuration
-- **Session Management** - Redis-backed secure sessions
-- **Encryption Layer** - bcrypt (cost 12), AES-256-GCM, TLS 1.3
+   ```bash
+   docker compose -f docker-compose.dev.yml up --build
+   ```
+
+5. **Access the application**
+   - Frontend: `http://localhost:<FRONTEND_PORT>`
+   - Backend API: `http://localhost:<BACKEND_PORT>`
+   - RustFS Console: `http://localhost:<STORAGE_CONSOLE_PORT>`
 
 ---
 
-## Configuration
+## Environment Variables
 
-### Environment Variables
+All configuration is managed through a single `.env` file at the project root. See `.env.example` for the full template.
 
-#### Frontend (`.env.development` for dev, `.env.prod` for prod)
-
-```env
-VITE_API_BASE_URL=http://localhost:5000/api/v1
-VITE_APP_NAME=BuzzMap
-VITE_ENVIRONMENT=development
-```
-
-#### Backend (`.env.development` or `.env.prod`)
-
-```env
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/dbname
-
-# Redis
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=your_redis_password
-
-# JWT
-JWT_SECRET=your_jwt_secret
-JWT_REFRESH_SECRET=your_refresh_secret
-
-# Email (Resend)
-RESEND_API_KEY=your_resend_api_key
-RESEND_FROM_EMAIL=noreply@example.com
-
-# Server
-PORT=5000
-CORS_ORIGIN=http://localhost:3014
-```
-
-See [Environment Setup Documentation](docs/ENVIRONMENT_SETUP.md) for complete configuration details.
+| Category | Variables |
+|---|---|
+| **App** | `NODE_ENV`, `FRONTEND_URL`, `BACKEND_URL` |
+| **Database** | `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_NAME`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_URL` |
+| **Redis** | `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_URL` |
+| **Authentication** | `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `JWT_ACCESS_EXPIRY`, `JWT_REFRESH_EXPIRY` |
+| **Storage (RustFS)** | `STORAGE_ENDPOINT`, `STORAGE_PORT`, `STORAGE_CONSOLE_PORT`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`, `STORAGE_BUCKET_NAME`, `STORAGE_USE_SSL` |
+| **Socket.IO** | `SOCKET_CORS_ORIGIN` |
+| **Security** | `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX_REQUESTS`, `BCRYPT_SALT_ROUNDS` |
+| **Uploads** | `MAX_FILE_SIZE`, `ALLOWED_FILE_TYPES` |
+| **Server** | `BACKEND_PORT`, `FRONTEND_PORT` |
+| **Logging** | `LOG_LEVEL` |
 
 ---
 
-## Documentation
+## Docker Services
 
-### For Developers
+| Service | Image / Build | Purpose |
+|---|---|---|
+| **frontend** | `./frontend` (Dockerfile) | Next.js application |
+| **backend** | `./backend` (Dockerfile) | Express API server |
+| **postgres** | `postgres:16-alpine` | Primary database |
+| **redis** | `redis:7-alpine` | Session store, caching, rate limiting |
+| **rustfs** | `minio/minio:latest` | S3-compatible object storage for media |
 
-- **[API Documentation](docs/API_DOCUMENTATION.md)** - Complete API endpoint reference with examples
-- **[Frontend README](docs/FRONTEND_README.md)** - Frontend architecture, components, and setup
-- **[Backend README](frontend/public/docs/README.md)** - Backend structure, module organization, and guidelines
-- **[Docker Setup](docs/DOCKER_SETUP.md)** - Docker configuration and deployment
-- **[Environment Setup](docs/ENVIRONMENT_SETUP.md)** - Comprehensive environment configuration guide
-- **[Encryption Documentation](docs/ENCRYPTION.md)** - Encryption mechanisms, key management, and security implementation
-
-### For Business Stakeholders
-
-- **Security Compliance** - OWASP Top 10 compliant, enterprise-grade security
-- **Scalability** - Modular architecture designed for growth
-- **Maintainability** - Well-documented codebase with clear structure
-- **Time to Market** - Save weeks of development time
-- **Production Ready** - Battle-tested code with best practices
+All services communicate over a shared `buzzmap-network` bridge and use health checks to manage startup order.
 
 ---
 
 ## Development
 
-### Available Scripts
+The development stack uses `docker-compose.dev.yml`:
 
-#### Backend
-
-```bash
-npm run dev          # Start development server with hot reload
-npm run build        # Build TypeScript to JavaScript
-npm start            # Start production server
-npm run db:generate  # Generate Prisma client
-npm run db:migrate   # Run database migrations
-npm run db:studio    # Open Prisma Studio
-```
-
-#### Frontend
+- **Hot reload** -- source directories (`src/`, `public/`, `prisma/`) are bind-mounted into containers
+- **Named volumes** for `node_modules` to avoid host/container conflicts
+- **Exposed ports** for direct access to Postgres, Redis, and the RustFS console
+- Backend runs via `tsx watch` for instant TypeScript reloading
 
 ```bash
-npm run dev          # Start development server (http://localhost:3000)
-npm run build        # Build for production
-npm run preview      # Preview production build
-npm run lint         # Run ESLint
-```
+# Start
+docker compose -f docker-compose.dev.yml up --build
 
-### Docker Commands
+# Stop
+docker compose -f docker-compose.dev.yml down
 
-```bash
-# Development (uses .env.development automatically)
-./dev.sh start               # Start development environment (builds and runs in detached mode)
-./dev.sh stop                # Stop services
-./dev.sh restart             # Restart services
-./dev.sh logs -f             # Follow logs in real-time
-./dev.sh logs backend        # View logs for specific service
-./dev.sh status              # Check service status
-./dev.sh help                # Show all available commands
-
-# Production (uses .env.prod automatically)
-./prod.sh start              # Start production environment (builds and runs in detached mode)
-./prod.sh stop               # Stop services
-./prod.sh restart            # Restart services
-./prod.sh logs -f            # Follow logs in real-time
-./prod.sh logs backend       # View logs for specific service
-./prod.sh status             # Check service status
-./prod.sh help               # Show all available commands
+# Reset volumes (full clean)
+docker compose -f docker-compose.dev.yml down -v
 ```
 
 ---
 
-## Security Features
+## Production
 
-### OWASP Top 10 Compliance
+The production stack uses `docker-compose.prod.yml`:
 
-- **Injection Protection** - Parameterized queries, input validation
-- **Broken Authentication** - Secure password hashing, JWT rotation
-- **Sensitive Data Exposure** - Encrypted tokens, secure storage
-- **XML External Entities** - Not applicable (JSON only)
-- **Broken Access Control** - Role-based authorization middleware
-- **Security Misconfiguration** - Security headers, secure defaults
-- **XSS Protection** - DOMPurify sanitization, CSP headers
-- **Insecure Deserialization** - JSON validation, type checking
-- **Using Components with Known Vulnerabilities** - Regular dependency updates
-- **Insufficient Logging** - Comprehensive logging and monitoring
-
-### Additional Security Measures
-
-- **Rate Limiting** - Multi-tier protection against brute force attacks
-- **CORS Protection** - Configurable CORS policies
-- **Security Headers** - Helmet middleware with comprehensive headers
-- **Password Policies** - Strength requirements and validation
-- **Token Security** - Secure storage, automatic rotation, expiration
-- **Session Management** - Redis-backed secure session storage
-- **Encryption** - bcrypt (cost 12), AES-256-GCM for MFA secrets, TLS 1.3
-- **Account Lockout** - Auto-lock after 4 failed attempts, permanent ban after 6
-
----
-
-## API Overview
-
-The backend provides **30+ RESTful endpoints** organized by functionality:
-
-### Authentication Endpoints (9)
-- Register, Login, Logout
-- Password Reset & Recovery
-- Email Verification
-- Token Refresh
-- Change Password
-
-### MFA Endpoints (8)
-- Setup & Configuration
-- TOTP Verification
-- Login Flow Integration
-- Backup Codes Management
-- QR Code Generation
-
-### User Management Endpoints (7)
-- CRUD Operations
-- Role Management (Admin)
-- User Statistics
-- Admin Features
-
-### Performance Endpoints (4)
-- Metrics & Statistics
-- Endpoint Monitoring
-- System Summary
-- Health Checks
-
-See [API Documentation](docs/API_DOCUMENTATION.md) for complete endpoint reference.
-
----
-
-## Testing
-
-### Running Tests
+- **Multi-stage Docker builds** for optimized, minimal images
+- **Automatic restarts** (`restart: always`) on all services
+- **Redis AOF persistence** enabled for durability
+- Internal-only networking for Postgres, Redis, and RustFS (no exposed ports)
+- Environment loaded from `.env.prod`
 
 ```bash
-# Backend tests
-cd backend
-npm test
-
-# Frontend tests
-cd frontend
-npm test
+docker compose -f docker-compose.prod.yml up --build -d
 ```
 
-### Manual Testing
-
-1. **Authentication Flow**
-   - Register → Verify Email → Login → Dashboard
-   - Forgot Password → Reset Password → Login
-   - Change Password (authenticated)
-
-2. **MFA Flow**
-   - Setup MFA → Scan QR Code → Verify Setup
-   - Login with MFA → Enter TOTP Code
-
-3. **Role-Based Access**
-   - Test different user roles (USER, ACCOUNTANT, ADMIN)
-   - Verify dashboard access and navigation
-
 ---
 
-## Deployment
+## API Documentation
 
-### Production Deployment
+All backend API routes are served under the `/api/v1/` prefix.
 
-1. **Prepare Environment**
-   ```bash
-   # Edit .env.prod with production values
-   ```
+```
+Base URL: http://localhost:<BACKEND_PORT>/api/v1/
+```
 
-2. **Build and Deploy**
-   ```bash
-   ./prod.sh start
-   ```
+Route groups include:
 
-3. **Verify Deployment**
-   ```bash
-   curl http://localhost:3014/health      # Frontend
-   curl http://localhost:5001/api/health  # Backend
-   ```
+| Prefix | Module |
+|---|---|
+| `/api/v1/auth` | Authentication and registration |
+| `/api/v1/users` | User profiles and settings |
+| `/api/v1/feed` | Content feeds |
+| `/api/v1/posts` | Posts and interactions |
+| `/api/v1/pov` | POV video reviews |
+| `/api/v1/products` | Product catalog |
+| `/api/v1/orders` | Orders and order management |
+| `/api/v1/cart` | Shopping cart |
+| `/api/v1/business` | Business profiles and follows |
+| `/api/v1/messaging` | Conversations |
+| `/api/v1/notifications` | Notification streams |
+| `/api/v1/search` | Search |
+| `/api/v1/recommendations` | Recommendations |
 
-### Environment-Specific Configuration
-
-- **Development** - Hot reload, verbose errors, debugging tools
-- **Production** - Optimized builds, security headers, resource limits
-
-See [Docker Setup](docs/DOCKER_SETUP.md) and [Environment Setup](docs/ENVIRONMENT_SETUP.md) for detailed deployment guides.
-
----
-
-## Contributing
-
-We welcome contributions! Please follow these guidelines:
-
-1. **Fork the repository**
-2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
-3. **Follow code style** - TypeScript strict mode, ESLint rules
-4. **Write tests** for new features
-5. **Update documentation** as needed
-6. **Commit changes** (`git commit -m 'Add amazing feature'`)
-7. **Push to branch** (`git push origin feature/amazing-feature`)
-8. **Open a Pull Request**
-
-### Code Style
-
-- **TypeScript** - Strict mode enabled
-- **ESLint** - Follow configured rules
-- **Component Structure** - Follow existing patterns
-- **Module Organization** - Follow backend module structure guidelines
+For detailed route documentation, see [`backend/README.md`](./backend/README.md).
 
 ---
 
 ## License
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
----
-
-## Acknowledgments
-
-- Built with modern technologies and best practices
-- Inspired by industry-standard authentication patterns
-- Designed for scalability and maintainability
-
----
-
-## Support
-
-For questions, issues, or contributions:
-
-- **Documentation** - Check the [docs](docs/) directory
-- **Issues** - Open an issue on GitHub
-- **Discussions** - Join the GitHub Discussions
-
----
-
-## Roadmap
-
-### Current Status
-
-- Complete authentication system
-- Multi-factor authentication
-- Role-based access control
-- Frontend UI/UX
-- Docker deployment
-- Comprehensive documentation
-
-### Future Enhancements
-
-- [ ] Social authentication (OAuth)
-- [ ] Advanced analytics dashboard
-- [ ] Email templates customization
-- [ ] Webhook support
-- [ ] GraphQL API option
-- [ ] Mobile app support
-
----
-
-<div align="center">
-
-**© 2024 Matthew Makundi, Founder [SpookieLabsInc](https://www.spookielabsinc.site)**
-
-[⬆ Back to Top](#authentication-template)
-
-</div>
-
+This is proprietary software. All rights reserved. See [LICENSE](./LICENSE) for details.

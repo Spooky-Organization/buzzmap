@@ -4,365 +4,301 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
-enum UserRole {
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum Role {
   ADMIN
   CUSTOMER
   BUSINESS_OWNER
 }
 
+enum BusinessType {
+  PRODUCTS
+  SERVICES
+}
+
+enum PostType {
+  TEXT
+  IMAGE
+  VIDEO
+}
+
 enum OrderStatus {
   PENDING
   CONFIRMED
-  PREPARING
-  READY
   COMPLETED
   CANCELLED
-}
-
-enum CheckoutMethod {
-  IN_APP
-  MPESA
 }
 
 enum ConversationType {
   DIRECT
   GROUP
-  BUSINESS_CHAT
 }
 
 enum NotificationType {
+  POV_POSTED
+  ORDER_UPDATE
   NEW_FOLLOWER
-  NEW_MESSAGE
-  NEW_POV
-  ORDER_NEW
-  ORDER_STATUS
-  SYSTEM
+  MESSAGE
+  FRIEND_JOINED
 }
 
-enum MediaType {
-  IMAGE
-  VIDEO
+enum ReportTargetType {
+  POV
+  USER
+  BUSINESS
 }
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
 
 model User {
-  id                    String    @id @default(cuid())
-  email                 String    @unique
-  phone                 String?   @unique
-  password              String
-  firstName             String?
-  lastName              String?
-  role                  UserRole  @default(CUSTOMER)
-  interests             String[]
-  avatarUrl             String?
-  isEmailVerified       Boolean   @default(false)
-  isPhoneVerified       Boolean   @default(false)
-  emailVerificationToken String?
-  mfaEnabled            Boolean   @default(false)
-  mfaSecret             String?
-  mfaBackupCodes        String[]
-  failedAttempts        Int       @default(0)
-  lockedUntil           DateTime?
-  isBanned              Boolean   @default(false)
-  refreshToken          String?
-  lastLoginAt           DateTime?
-  isOnline              Boolean   @default(false)
-  lastSeenAt            DateTime?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  id        String   @id @default(uuid())
+  email     String   @unique
+  phone     String?  @unique
+  password  String
+  name      String
+  avatar    String?
+  role      Role
+  interests String[]
+  location  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  ownedBusiness         Business? @relation("BusinessOwner")
-  orders                Order[]
-  povs                  POV[]
-  comments              Comment[]
-  likes                 Like[]
-  messages              Message[]
-  notifications         Notification[]
-  sentFollows           Follow[]  @relation("Follower")
-  analyticsEvents       AnalyticsEvent[]
+  businessProfile          BusinessProfile?
+  povs                     POV[]
+  posts                    Post[]
+  comments                 Comment[]
+  likes                    Like[]
+  orders                   Order[]
+  cartItems                CartItem[]
+  follows                  Follow[]                  @relation("following")
+  followers                Follow[]                  @relation("followedBy")
+  sentMessages             Message[]
+  notifications            Notification[]
+  reports                  Report[]
   conversationParticipants ConversationParticipant[]
 }
 
-model Business {
-  id                    String    @id @default(cuid())
-  ownerId               String    @unique
-  name                  String
-  slug                  String    @unique
-  description           String?
-  category              String?
-  type                  String    @default("RETAIL")
-  location              String?
-  contactPhone          String?
-  contactEmail          String?
-  operatingHours       Json?
-  logoUrl               String?
-  coverImageUrl         String?
-  isVerified            Boolean   @default(false)
-  avgRating             Float     @default(0)
-  totalReviews          Int       @default(0)
-  totalRecommendations  Int       @default(0)
-  isActive              Boolean   @default(true)
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+model BusinessProfile {
+  id             String       @id @default(uuid())
+  userId         String       @unique
+  businessName   String
+  description    String
+  category       String
+  type           BusinessType
+  location       String
+  coordinates    String?
+  contactInfo    String
+  operatingHours Json
+  isVerified     Boolean      @default(false)
+  qrCode         String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
-  owner                 User      @relation("BusinessOwner", fields: [ownerId], references: [id])
-  products              Product[]
-  povs                  POV[]
-  orders                Order[]
-  recommendationAds    RecommendationAd[]
-}
-
-model Product {
-  id                    String    @id @default(cuid())
-  businessId            String
-  name                  String
-  description           String?
-  price                 Decimal
-  currency              String    @default("KES")
-  images                String[]
-  category              String?
-  stockQuantity         Int       @default(0)
-  isService             Boolean   @default(false)
-  isActive              Boolean   @default(true)
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-
-  business              Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  orderItems            OrderItem[]
-
-  @@index([businessId])
-  @@index([category])
+  user     User      @relation(fields: [userId], references: [id])
+  products Product[]
+  povs     POV[]
+  posts    Post[]
 }
 
 model POV {
-  id                    String    @id @default(cuid())
-  authorId              String
-  businessId            String
-  mediaUrl              String
-  mediaType             MediaType @default(IMAGE)
-  thumbnailUrl          String?
-  caption               String?
-  starRating            Int       @default(0)
-  recommends            Boolean   @default(true)
-  isSponsored           Boolean   @default(false)
-  viewCount             Int       @default(0)
-  likeCount             Int       @default(0)
-  commentCount          Int       @default(0)
-  isActive              Boolean   @default(true)
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  id            String   @id @default(uuid())
+  authorId      String
+  businessId    String
+  videoUrl      String
+  thumbnailUrl  String?
+  caption       String?
+  starRating    Int
+  recommends    Boolean
+  likesCount    Int      @default(0)
+  commentsCount Int      @default(0)
+  createdAt     DateTime @default(now())
 
-  author                User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  business              Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  comments              Comment[]
-  likes                 Like[]
-  recommendationAd      RecommendationAd?
+  author   User            @relation(fields: [authorId], references: [id])
+  business BusinessProfile @relation(fields: [businessId], references: [id])
+  comments Comment[]
+  likes    Like[]
 
+  @@index([businessId, createdAt])
   @@index([authorId])
-  @@index([businessId])
+}
+
+model Post {
+  id         String   @id @default(uuid())
+  authorId   String
+  businessId String?
+  type       PostType
+  content    String?
+  mediaUrls  String[]
+  createdAt  DateTime @default(now())
+
+  author   User             @relation(fields: [authorId], references: [id])
+  business BusinessProfile? @relation(fields: [businessId], references: [id])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  userId    String
+  povId     String
+  content   String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  pov  POV  @relation(fields: [povId], references: [id])
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  povId     String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  pov  POV  @relation(fields: [povId], references: [id])
+
+  @@unique([userId, povId])
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  businessId  String
+  name        String
+  description String
+  price       Float
+  currency    String   @default("KES")
+  images      String[]
+  stock       Int
+  category    String
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  business   BusinessProfile @relation(fields: [businessId], references: [id])
+  orderItems OrderItem[]
+  cartItems  CartItem[]
+
+  @@index([businessId, isAvailable])
+  @@index([category])
 }
 
 model Order {
-  id                    String    @id @default(cuid())
-  customerId            String
-  businessId            String
-  status                OrderStatus @default(PENDING)
-  totalAmount           Decimal
-  platformFee           Decimal   @default(0)
-  checkoutMethod        CheckoutMethod @default(IN_APP)
-  mpesaReceiptNumber    String?
-  notes                 String?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  id          String      @id @default(uuid())
+  customerId  String
+  status      OrderStatus @default(PENDING)
+  totalAmount Float
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
-  customer              User      @relation(fields: [customerId], references: [id])
-  business              Business  @relation(fields: [businessId], references: [id])
-  items                 OrderItem[]
-  payment               Payment?
+  customer User        @relation(fields: [customerId], references: [id])
+  items    OrderItem[]
 
-  @@index([customerId])
-  @@index([businessId])
-  @@index([status])
+  @@index([customerId, status])
 }
 
 model OrderItem {
-  id                    String    @id @default(cuid())
-  orderId               String
-  productId             String
-  quantity              Int       @default(1)
-  unitPrice             Decimal
-  subtotal              Decimal
+  id        String @id @default(uuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Float
 
-  order                 Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product               Product  @relation(fields: [productId], references: [id])
-
-  @@index([orderId])
-  @@index([productId])
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
 }
 
-model Payment {
-  id                    String    @id @default(cuid())
-  orderId               String    @unique
-  mpesaTransactionId   String?
-  phoneNumber           String?
-  amount                Decimal
-  status                String    @default("PENDING")
-  callbackPayload      Json?
-  createdAt             DateTime  @default(now())
+model CartItem {
+  id        String @id @default(uuid())
+  userId    String
+  productId String
+  quantity  Int    @default(1)
 
-  order                 Order     @relation(fields: [orderId], references: [id])
-}
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
 
-model Message {
-  id                    String    @id @default(cuid())
-  conversationId        String
-  senderId              String
-  content               String
-  mediaUrl              String?
-  readAt                DateTime?
-  createdAt             DateTime  @default(now())
-
-  conversation          Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender                User        @relation(fields: [senderId], references: [id])
-
-  @@index([conversationId])
-  @@index([senderId])
-}
-
-model Conversation {
-  id                    String    @id @default(cuid())
-  type                  ConversationType @default(DIRECT)
-  name                  String?
-  lastMessageAt         DateTime?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-
-  messages              Message[]
-  participants          ConversationParticipant[]
-
-  @@index([type])
-  @@index([lastMessageAt])
-}
-
-model ConversationParticipant {
-  id                    String    @id @default(cuid())
-  conversationId        String
-  userId                String
-  joinedAt              DateTime  @default(now())
-  lastReadAt            DateTime?
-
-  conversation          Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user                  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([conversationId, userId])
   @@index([userId])
 }
 
 model Follow {
-  id                    String    @id @default(cuid())
-  followerId            String
-  followableId          String
-  followableType        String    @default("BUSINESS")
-  createdAt             DateTime  @default(now())
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
 
-  follower              User      @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  follower  User @relation("following", fields: [followerId], references: [id])
+  following User @relation("followedBy", fields: [followingId], references: [id])
 
-  @@unique([followerId, followableId, followableType])
-  @@index([followerId])
-  @@index([followableId])
+  @@unique([followerId, followingId])
+}
+
+model Conversation {
+  id        String           @id @default(uuid())
+  type      ConversationType
+  name      String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+model ConversationParticipant {
+  id             String   @id @default(uuid())
+  conversationId String
+  userId         String
+  joinedAt       DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@unique([conversationId, userId])
+}
+
+model Message {
+  id             String    @id @default(uuid())
+  conversationId String
+  senderId       String
+  content        String?
+  mediaUrl       String?
+  readAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+  sender       User         @relation(fields: [senderId], references: [id])
+
+  @@index([conversationId, createdAt])
 }
 
 model Notification {
-  id                    String    @id @default(cuid())
-  userId                String
-  type                  NotificationType
-  title                 String
-  body                  String?
-  data                  Json?
-  isRead                Boolean   @default(false)
-  createdAt             DateTime  @default(now())
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
 
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
 
-  @@index([userId])
-  @@index([isRead])
+  @@index([userId, read, createdAt])
 }
 
-model RecommendationAd {
-  id                    String    @id @default(cuid())
-  businessId            String
-  povId                 String    @unique
-  budget                Decimal
-  spent                 Decimal   @default(0)
-  impressions           Int       @default(0)
-  clicks                Int       @default(0)
-  status                String    @default("PAUSED")
-  startDate             DateTime?
-  endDate               DateTime?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+model Report {
+  id         String           @id @default(uuid())
+  reporterId String
+  targetType ReportTargetType
+  targetId   String
+  reason     String
+  status     ReportStatus     @default(PENDING)
+  createdAt  DateTime         @default(now())
 
-  business              Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  pov                   POV       @relation(fields: [povId], references: [id], onDelete: Cascade)
-
-  @@index([businessId])
-  @@index([status])
-}
-
-model Comment {
-  id                    String    @id @default(cuid())
-  povId                 String
-  authorId              String
-  content               String
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-
-  pov                   POV       @relation(fields: [povId], references: [id], onDelete: Cascade)
-  author                User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-
-  @@index([povId])
-  @@index([authorId])
-}
-
-model Like {
-  id                    String    @id @default(cuid())
-  povId                 String
-  userId                String
-  createdAt             DateTime  @default(now())
-
-  pov                   POV       @relation(fields: [povId], references: [id], onDelete: Cascade)
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([povId, userId])
-  @@index([povId])
-  @@index([userId])
-}
-
-model Interest {
-  id                    String    @id @default(cuid())
-  name                  String    @unique
-  slug                  String    @unique
-  iconUrl              String?
-  createdAt             DateTime  @default(now())
-
-  @@index([slug])
-}
-
-model AnalyticsEvent {
-  id                    String    @id @default(cuid())
-  eventType             String
-  userId                String?
-  businessId            String?
-  productId             String?
-  metadata              Json?
-  createdAt             DateTime  @default(now())
-
-  user                  User?     @relation(fields: [userId], references: [id])
-
-  @@index([eventType])
-  @@index([userId])
-  @@index([businessId])
-  @@index([createdAt])
+  reporter User @relation(fields: [reporterId], references: [id])
 }

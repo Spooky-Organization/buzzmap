@@ -1,36 +1,44 @@
+# Dependencies
+node_modules
+
 # Environment variables
 .env
-.env.development
-!.env.example
+.env.dev
+.env.local
+.env.production
+.env.prod
 
-# Volumes (Database data and logs)
-volumes/
+# Next.js
+.next
+out
 
-# Cursor IDE
-.cursor/
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# Build output
+dist
+build
 
 # Logs
 *.log
-logs/
+npm-debug.log*
 
-# Node modules (if any in root)
-node_modules/
+# Testing
+coverage
 
-# Docs folder
-docs/
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Prisma
+prisma/*.db
+prisma/*.db-journal
+
+# Docker volumes
+pgdata
+
+# Misc
+*.tsbuildinfo

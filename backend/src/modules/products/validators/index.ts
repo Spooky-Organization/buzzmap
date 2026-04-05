@@ -1,0 +1,40 @@
+import { z } from 'zod';
+
+export const createProductSchema = z.object({
+  name: z.string().min(1).max(200),
+  description: z.string().min(1).max(2000),
+  price: z.number().positive(),
+  currency: z.string().length(3).optional(),
+  stock: z.number().int().min(0),
+  category: z.string().min(1).max(100),
+});
+
+export const updateProductSchema = z
+  .object({
+    name: z.string().min(1).max(200).optional(),
+    description: z.string().min(1).max(2000).optional(),
+    price: z.number().positive().optional(),
+    stock: z.number().int().min(0).optional(),
+    category: z.string().min(1).max(100).optional(),
+    isAvailable: z.boolean().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'At least one field must be provided for update',
+  });
+
+export const updateStockSchema = z.object({
+  quantity: z.number().int(),
+});
+
+export const productQuerySchema = z.object({
+  page: z
+    .string()
+    .optional()
+    .transform((v) => (v ? parseInt(v, 10) : 1))
+    .pipe(z.number().int().min(1)),
+  limit: z
+    .string()
+    .optional()
+    .transform((v) => (v ? parseInt(v, 10) : 20))
+    .pipe(z.number().int().min(1).max(100)),
+});
