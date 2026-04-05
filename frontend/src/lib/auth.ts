@@ -49,6 +49,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       session.accessToken = token.accessToken as string;
       return session;
     },
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith(baseUrl)) return url;
+      if (url.startsWith('/')) return `${baseUrl}${url}`;
+      return `${baseUrl}/login`;
+    },
   },
   pages: {
     signIn: '/login',

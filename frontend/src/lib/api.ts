@@ -31,13 +31,10 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !isSigningOut) {
       isSigningOut = true;
       try {
-        const redirectTo = typeof window !== 'undefined'
-          ? `${window.location.origin}/login`
-          : '/login';
-        await signOut({ redirectTo });
+        await signOut({ redirectTo: '/login' });
       } catch {
         if (typeof window !== 'undefined') {
-          window.location.href = `${window.location.origin}/login`;
+          window.location.href = '/login';
         }
       }
     }

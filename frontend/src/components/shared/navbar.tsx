@@ -109,7 +109,7 @@ export function Navbar() {
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => signOut({ redirectTo: `${window.location.origin}/login` })}
+                onClick={() => signOut({ redirectTo: '/login' })}
               >
                 Sign out
               </DropdownMenuItem>
