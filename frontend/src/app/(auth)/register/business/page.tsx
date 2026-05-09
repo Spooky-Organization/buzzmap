@@ -158,6 +158,14 @@ export default function BusinessRegisterPage() {
     setIsLoading(true);
 
     try {
+      const contactInfo = [
+        contactEmail.trim() || email.trim(),
+        contactPhone.trim() || phone.trim(),
+      ]
+        .filter(Boolean)
+        .join(' | ');
+      const hoursText = operatingHours.trim();
+
       await api.post('/api/v1/auth/register/business', {
         name: ownerName.trim(),
         email,
@@ -168,9 +176,8 @@ export default function BusinessRegisterPage() {
         category,
         type: businessType[0] || undefined,
         location: location.trim(),
-        contactEmail: contactEmail.trim() || undefined,
-        contactPhone: contactPhone.trim() || undefined,
-        operatingHours: operatingHours.trim() || undefined,
+        contactInfo,
+        operatingHours: hoursText ? { description: hoursText } : {},
       });
 
       toast.success('Business registered! Signing you in…');
