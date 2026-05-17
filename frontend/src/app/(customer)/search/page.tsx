@@ -2,16 +2,17 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search } from 'lucide-react';
+import { Compass, MapPin, Search, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { api } from '@/lib/api';
+import { apiRoutes, appRoutes } from '@/lib/routes';
 import Link from 'next/link';
 import { useDebounce } from '@/hooks/useDebounce';
+import { DashboardHero, DashboardHeroPill, DashboardPanel } from '@/components/dashboard/dashboard-surfaces';
 
 interface Business {
   id: string;
@@ -45,7 +46,7 @@ interface SearchResults {
 }
 
 async function fetchSearchResults(query: string, category: string, location: string): Promise<SearchResults> {
-  const res = await api.get<SearchResults>('/api/v1/search', {
+  const res = await api.get<SearchResults>(apiRoutes.search.root, {
     params: { q: query, category: category || undefined, location: location || undefined },
   });
   return res.data;
@@ -69,7 +70,7 @@ function ResultSkeleton() {
 
 function BusinessResult({ business }: { business: Business }) {
   return (
-    <Link href={`/business/${business.id}`}>
+    <Link href={appRoutes.business.byId(business.id)}>
       <div className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors">
         <div className="size-10 shrink-0 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
           {business.logoUrl ? (
@@ -95,7 +96,7 @@ function BusinessResult({ business }: { business: Business }) {
 
 function ProductResult({ product }: { product: Product }) {
   return (
-    <Link href={`/business/${product.businessId}/products/${product.id}`}>
+    <Link href={appRoutes.business.byId(product.businessId)}>
       <div className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors">
         <div className="size-10 shrink-0 rounded-lg bg-muted overflow-hidden">
           {product.imageUrl ? (
@@ -126,7 +127,7 @@ function UserResult({ user }: { user: User }) {
     .slice(0, 2);
 
   return (
-    <Link href={`/profile/${user.id}`}>
+    <Link href={appRoutes.user.byId(user.id)}>
       <div className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors">
         <Avatar size="sm">
           <AvatarImage src={user.avatarUrl ?? undefined} alt={user.name} />
@@ -154,35 +155,59 @@ export default function SearchPage() {
   });
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-xl font-semibold">Search</h1>
+    <div className="flex w-full max-w-none flex-col gap-6">
+      <DashboardHero
+        eyebrow="Marketplace search"
+        title="Search businesses, products, and people from one surface."
+        description="Use search when you already have intent: narrow by category, location, or name, then jump into the exact business or product context you need."
+        icon={Compass}
+      >
+        <DashboardHeroPill
+          icon={Search}
+          label="Unified search"
+          value="3 result lanes"
+          note="Businesses, products, and users stay separated for clarity."
+        />
+        <DashboardHeroPill
+          icon={MapPin}
+          label="Location-aware"
+          value="Optional filter"
+          note="Add place context when you want tighter local results."
+        />
+      </DashboardHero>
 
-      {/* Search input */}
-      <div className="relative mb-4">
+      <DashboardPanel
+        title="Search Console"
+        description="Query the marketplace, refine the search, and compare results across role-aware tabs."
+        icon={Sparkles}
+      >
+      <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+      <div className="space-y-4">
+      <div className="relative">
         <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search businesses, products, or people…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="pl-8"
+          className="rounded-2xl border-border/70 bg-background/90 pl-8"
           autoFocus
         />
       </div>
 
-      {/* Filters */}
-      <div className="mb-6 flex gap-3">
+      <div className="flex gap-3">
         <Input
           placeholder="Category"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="flex-1"
+          className="flex-1 rounded-2xl border-border/70 bg-background/90"
         />
         <Input
           placeholder="Location"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
-          className="flex-1"
+          className="flex-1 rounded-2xl border-border/70 bg-background/90"
         />
+      </div>
       </div>
 
       {/* No query state */}
@@ -194,8 +219,9 @@ export default function SearchPage() {
 
       {/* Results */}
       {debouncedQuery.trim() && (
-        <Tabs defaultValue="businesses">
-          <TabsList className="mb-4">
+          <div className="xl:min-w-0">
+          <Tabs defaultValue="businesses">
+          <TabsList className="mb-4 rounded-2xl border border-border/70 bg-muted/50 p-1">
             <TabsTrigger value="businesses">
               Businesses
               {data && (
@@ -268,7 +294,10 @@ export default function SearchPage() {
             </>
           )}
         </Tabs>
+        </div>
       )}
+      </div>
+      </DashboardPanel>
     </div>
   );
 }

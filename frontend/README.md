@@ -361,9 +361,10 @@ The Axios instance (`src/lib/api.ts`) is pre-configured with:
 Copy `.env.example` and fill in the values:
 
 ```env
-NEXT_PUBLIC_API_URL=       # Backend API base URL (e.g., http://localhost:5000)
-NEXT_PUBLIC_SOCKET_URL=    # Socket.IO server URL (e.g., http://localhost:5000)
-AUTH_SECRET=               # NextAuth secret for JWT signing (generate with `npx auth secret`)
+NEXT_PUBLIC_API_URL=       # Backend API base URL from your deployment or local env
+NEXT_PUBLIC_SOCKET_URL=    # Socket.IO server URL from your deployment or local env
+NEXT_PUBLIC_SITE_URL=      # Canonical public site URL used for metadata and links
+AUTH_SECRET=               # NextAuth secret for JWT signing, supplied from env
 ```
 
 ---

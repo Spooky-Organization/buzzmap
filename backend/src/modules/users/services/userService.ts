@@ -1,6 +1,8 @@
 import { getPrisma } from '../../../shared/prisma/index.js';
 import { AppError } from '../../../shared/middleware/errorHandler.js';
+import bcrypt from 'bcrypt';
 import type {
+  ChangePasswordDTO,
   UpdateProfileDTO,
   UserProfileResponse,
   PublicUserProfileResponse,
@@ -8,6 +10,7 @@ import type {
   FollowerEntry,
   FollowingEntry,
 } from '../models/index.js';
+import { sanitizeOptionalText, sanitizePlainText, sanitizeStringArray } from '../../../shared/utils/sanitize.js';
 
 const businessProfileSelect = {
   id: true,
@@ -38,6 +41,7 @@ export async function getProfile(userId: string): Promise<UserProfileResponse> {
       role: true,
       interests: true,
       location: true,
+      phone: true,
       createdAt: true,
       businessProfile: { select: businessProfileSelect },
       _count: {
@@ -62,6 +66,7 @@ export async function getProfile(userId: string): Promise<UserProfileResponse> {
     role: user.role,
     interests: user.interests,
     location: user.location,
+    phone: user.phone,
     createdAt: user.createdAt,
     businessProfile: user.businessProfile,
     _count: {
@@ -73,30 +78,44 @@ export async function getProfile(userId: string): Promise<UserProfileResponse> {
 }
 
 export async function getPublicProfile(
-  userId: string
+  userId: string,
+  currentUserId: string
 ): Promise<PublicUserProfileResponse> {
   const prisma = getPrisma();
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      name: true,
-      avatar: true,
-      role: true,
-      interests: true,
-      location: true,
-      createdAt: true,
-      businessProfile: { select: businessProfileSelect },
-      _count: {
-        select: {
-          followers: true,
-          follows: true,
-          povs: true,
+  const [user, isFollowing] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        avatar: true,
+        role: true,
+        interests: true,
+        location: true,
+        createdAt: true,
+        businessProfile: { select: businessProfileSelect },
+        _count: {
+          select: {
+            followers: true,
+            follows: true,
+            povs: true,
+          },
         },
       },
-    },
-  });
+    }),
+    currentUserId === userId
+      ? Promise.resolve(null)
+      : prisma.follow.findUnique({
+          where: {
+            followerId_followingId: {
+              followerId: currentUserId,
+              followingId: userId,
+            },
+          },
+          select: { id: true },
+        }),
+  ]);
 
   if (!user) {
     throw new AppError(404, 'User not found');
@@ -110,6 +129,7 @@ export async function getPublicProfile(
     interests: user.interests,
     location: user.location,
     createdAt: user.createdAt,
+    isFollowing: !!isFollowing,
     businessProfile: user.businessProfile,
     _count: {
       followers: user._count.followers,
@@ -139,10 +159,10 @@ export async function updateProfile(
   const user = await prisma.user.update({
     where: { id: userId },
     data: {
-      ...(data.name !== undefined && { name: data.name }),
-      ...(data.avatar !== undefined && { avatar: data.avatar }),
-      ...(data.location !== undefined && { location: data.location }),
-      ...(data.phone !== undefined && { phone: data.phone }),
+      ...(data.name !== undefined && { name: sanitizePlainText(data.name) }),
+      ...(data.avatar !== undefined && { avatar: sanitizeOptionalText(data.avatar) }),
+      ...(data.location !== undefined && { location: sanitizeOptionalText(data.location) }),
+      ...(data.phone !== undefined && { phone: sanitizeOptionalText(data.phone) }),
     },
     select: {
       id: true,
@@ -152,6 +172,7 @@ export async function updateProfile(
       role: true,
       interests: true,
       location: true,
+      phone: true,
       createdAt: true,
       businessProfile: { select: businessProfileSelect },
       _count: {
@@ -172,6 +193,7 @@ export async function updateProfile(
     role: user.role,
     interests: user.interests,
     location: user.location,
+    phone: user.phone,
     createdAt: user.createdAt,
     businessProfile: user.businessProfile,
     _count: {
@@ -187,10 +209,11 @@ export async function updateInterests(
   interests: string[]
 ): Promise<UserProfileResponse> {
   const prisma = getPrisma();
+  const sanitizedInterests = sanitizeStringArray(interests) ?? [];
 
   const user = await prisma.user.update({
     where: { id: userId },
-    data: { interests },
+    data: { interests: sanitizedInterests },
     select: {
       id: true,
       email: true,
@@ -199,6 +222,7 @@ export async function updateInterests(
       role: true,
       interests: true,
       location: true,
+      phone: true,
       createdAt: true,
       businessProfile: { select: businessProfileSelect },
       _count: {
@@ -219,6 +243,7 @@ export async function updateInterests(
     role: user.role,
     interests: user.interests,
     location: user.location,
+    phone: user.phone,
     createdAt: user.createdAt,
     businessProfile: user.businessProfile,
     _count: {
@@ -227,6 +252,38 @@ export async function updateInterests(
       povs: user._count.povs,
     },
   };
+}
+
+export async function changePassword(
+  userId: string,
+  data: ChangePasswordDTO
+): Promise<void> {
+  const prisma = getPrisma();
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, password: true },
+  });
+
+  if (!user) {
+    throw new AppError(404, 'User not found');
+  }
+
+  const passwordMatch = await bcrypt.compare(data.currentPassword, user.password);
+  if (!passwordMatch) {
+    throw new AppError(400, 'Current password is incorrect');
+  }
+
+  const samePassword = await bcrypt.compare(data.newPassword, user.password);
+  if (samePassword) {
+    throw new AppError(400, 'New password must be different from the current password');
+  }
+
+  const hashedPassword = await bcrypt.hash(data.newPassword, 10);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { password: hashedPassword },
+  });
 }
 
 export async function followUser(
@@ -411,6 +468,7 @@ export async function detectFriends(
     interests: following.interests,
     location: following.location,
     createdAt: following.createdAt,
+    isFollowing: true,
     businessProfile: following.businessProfile,
     _count: {
       followers: following._count.followers,

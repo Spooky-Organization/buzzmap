@@ -13,6 +13,12 @@ const paginationFields = {
     .pipe(z.number().int().min(1).max(100)),
 };
 
+export const searchAllSchema = z.object({
+  q: z.string().trim().min(1).max(200).optional(),
+  category: z.string().trim().min(1).max(100).optional(),
+  location: z.string().trim().min(1).max(100).optional(),
+});
+
 export const searchBusinessesSchema = z.object({
   keyword: z.string().optional(),
   category: z.string().optional(),
@@ -44,3 +50,4 @@ export const searchUsersSchema = z.object({
 export type SearchBusinessesInput = z.infer<typeof searchBusinessesSchema>;
 export type SearchProductsInput = z.infer<typeof searchProductsSchema>;
 export type SearchUsersInput = z.infer<typeof searchUsersSchema>;
+export type SearchAllInput = z.infer<typeof searchAllSchema>;

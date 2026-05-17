@@ -1,98 +1,59 @@
 # Search Module
 
-## Module Objective
+## Purpose
 
-Provides full-text search capabilities across the BuzzMap platform, enabling authenticated users to discover businesses, products, and other users through keyword-based queries with filtering and pagination support.
+Provides authenticated search endpoints for businesses, products, users, and an aggregate search shortcut.
 
-## Architecture
-
-This module follows the **MVCS (Model-View-Controller-Service)** pattern:
-
-```
-routes.ts --> controllers/ --> services/ --> Prisma ORM
-                  |                              |
-            validators/                     models/
-```
-
-- **Routes** define HTTP endpoints and apply authentication middleware.
-- **Controllers** handle request parsing, input validation (via Zod schemas), and response formatting.
-- **Services** contain the core search logic, constructing Prisma queries and shaping results.
-- **Models** define TypeScript interfaces for search result types and pagination.
-- **Validators** define Zod schemas for query parameter validation and type coercion.
-
-## Files & Responsibilities
+## Files
 
 | File | Responsibility |
-|------|---------------|
-| `routes.ts` | Registers `GET` endpoints under the search prefix and applies the `authenticate` middleware |
-| `controllers/searchController.ts` | Validates incoming query parameters using Zod schemas, delegates to the service layer, and returns standardized JSON responses |
-| `services/searchService.ts` | Builds Prisma `where` clauses from filter parameters, executes paginated queries, and computes derived fields (e.g., `avgRating`) |
-| `models/index.ts` | Exports `BusinessSearchResult`, `ProductSearchResult`, `UserSearchResult`, and `PaginatedResult<T>` interfaces |
-| `validators/index.ts` | Exports Zod schemas (`searchBusinessesSchema`, `searchProductsSchema`, `searchUsersSchema`) with shared pagination fields, string-to-number coercion, and input constraints |
+|---|---|
+| `routes.ts` | Search routes and `GET`-only method restrictions |
+| `controllers/searchController.ts` | Query parsing and standardized responses |
+| `services/searchService.ts` | Prisma-backed search queries and result shaping |
+| `models/index.ts` | Search result DTOs and paginated result types |
+| `validators/index.ts` | Aggregate and typed search query validation |
 
-## API Routes
+## Routes
 
-| Method | Path | Description | Auth Required |
-|--------|------|-------------|---------------|
-| `GET` | `/businesses` | Search business profiles by keyword, category, and/or location | Yes |
-| `GET` | `/products` | Search products by keyword, category, and/or price range | Yes |
-| `GET` | `/users` | Search users by name keyword | Yes |
+Mounted under `/api/v1/search`.
 
-All endpoints return a standardized response:
+| Method | Path | Description | Auth |
+|---|---|---|---|
+| `GET` | `/` | Aggregate search across businesses, products, and users | Yes |
+| `GET` | `/businesses` | Business search | Yes |
+| `GET` | `/products` | Product search | Yes |
+| `GET` | `/users` | User search | Yes |
 
-```json
-{
-  "status": "success",
-  "data": {
-    "data": [],
-    "total": 0,
-    "page": 1,
-    "limit": 20,
-    "totalPages": 0
-  }
-}
-```
+Unsupported methods on `/`, `/businesses`, and `/products` return explicit `405` responses through `methodNotAllowed(...)`.
 
-### Query Parameters
+## Query Parameters
 
-**Business Search:** `keyword`, `category`, `location`, `page` (default: 1), `limit` (default: 20, max: 100)
+### Aggregate Search
 
-**Product Search:** `keyword`, `category`, `minPrice`, `maxPrice`, `page` (default: 1), `limit` (default: 20, max: 100)
+| Field | Notes |
+|---|---|
+| `q` | Optional keyword, `1-200` chars when present |
+| `category` | Optional category |
+| `location` | Optional location |
 
-**User Search:** `keyword`, `page` (default: 1), `limit` (default: 20, max: 100)
+The aggregate endpoint always fans out to fixed first-page slices:
 
-## Key Logic
+- businesses: page `1`, limit `10`
+- products: page `1`, limit `10`
+- users: page `1`, limit `10`
 
-### Case-Insensitive Search
+### Typed Search Endpoints
 
-All text-based filters use Prisma's `{ contains: value, mode: 'insensitive' }` to perform case-insensitive partial matching. This applies to business name, description, category, location, product name, product description, and user name fields.
+| Endpoint | Parameters |
+|---|---|
+| `/businesses` | `keyword`, `category`, `location`, `page`, `limit` |
+| `/products` | `keyword`, `category`, `minPrice`, `maxPrice`, `page`, `limit` |
+| `/users` | `keyword`, `page`, `limit` |
 
-### Business Search with Computed Fields
+## Implementation Notes
 
-Business search results include two computed fields that are not stored in the database:
-
-- **`avgRating`** -- Calculated on the fly from associated `Pov` records (`starRating`). Rounded to two decimal places. Returns `null` if no reviews exist.
-- **`reviewCount`** -- The total number of `Pov` records linked to the business.
-
-### Product Availability Filtering
-
-Product search automatically filters to `isAvailable: true`, ensuring only currently available products appear in results. Price range filtering supports open-ended ranges (min only, max only, or both).
-
-### User Search
-
-User search matches against the `name` field only and returns results sorted alphabetically (`name: 'asc'`), unlike business and product searches which sort by `createdAt: 'desc'`.
-
-### Pagination
-
-All search endpoints share a consistent pagination implementation using `skip`/`take` with Prisma. The total count and result set are fetched concurrently via `Promise.all` for performance. Pagination parameters are validated and coerced from query strings via shared Zod fields.
-
-## Dependencies
-
-| Dependency | Purpose |
-|-----------|---------|
-| `express` | HTTP routing and middleware |
-| `zod` | Query parameter validation and type coercion |
-| `@prisma/client` | Database queries via `getPrisma()` singleton |
-| `../../shared/middleware/auth.js` | `authenticate` middleware for JWT verification |
-| `../../shared/middleware/errorHandler.js` | `AppError` class for standardized error responses |
-| `../../shared/utils/logger.js` | Structured debug logging for search operations |
+- Business and product searches use case-insensitive partial matches.
+- Product search filters to available products.
+- User search is name-based.
+- Paginated endpoints use offset pagination with `page` and `limit`.

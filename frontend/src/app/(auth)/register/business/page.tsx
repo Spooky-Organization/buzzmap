@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 
 import { api } from '@/lib/api';
+import { apiRoutes, appRoutes } from '@/lib/routes';
+import { AuthShell } from '@/components/auth/auth-shell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
@@ -32,14 +34,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from '@/components/ui/card';
 import {
   Field,
   FieldGroup,
@@ -102,6 +96,8 @@ export default function BusinessRegisterPage() {
   const [activeTab, setActiveTab] = useState('account');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const authLinkClass =
+    'inline-flex items-center gap-1 font-semibold text-[oklch(0.68_0.17_65)] underline-offset-4 transition-colors hover:text-[oklch(0.62_0.18_58)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[oklch(0.72_0.15_67)] rounded-sm';
 
   function validateAccount(): FormErrors {
     const next: FormErrors = {};
@@ -166,7 +162,7 @@ export default function BusinessRegisterPage() {
         .join(' | ');
       const hoursText = operatingHours.trim();
 
-      await api.post('/api/v1/auth/register/business', {
+      await api.post(apiRoutes.auth.registerBusiness, {
         name: ownerName.trim(),
         email,
         phone: phone.trim(),
@@ -190,11 +186,11 @@ export default function BusinessRegisterPage() {
 
       if (result?.error) {
         toast.error('Registered but could not sign in automatically. Please log in.');
-        router.push('/login');
+        router.push(appRoutes.auth.login);
         return;
       }
 
-      router.push('/business/dashboard');
+      router.push(appRoutes.business.dashboard);
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
@@ -206,18 +202,25 @@ export default function BusinessRegisterPage() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Register your Business</CardTitle>
-        <CardDescription>
-          Get your business on BuzzMap and reach local customers.
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent>
+    <AuthShell
+      mode="register"
+      audience="business"
+      eyebrow="Business registration"
+      title="Launch your business profile where trust is earned in public."
+      description="Create the owner account first, then configure the business details customers will discover, review, and order from."
+      footer={
+        <p className="w-full text-center text-sm text-muted-foreground">
+          Already have an account?{' '}
+          <Link href={appRoutes.auth.loginFor('business')} className={authLinkClass}>
+            <ArrowLeftIcon className="size-3" />
+            Sign in as a business
+          </Link>
+        </p>
+      }
+    >
         <form onSubmit={handleSubmit} noValidate>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="w-full mb-5">
+            <TabsList className="mb-5 grid w-full grid-cols-2 rounded-2xl border border-border/70 bg-muted/35 p-1">
               <TabsTrigger value="account" className="flex-1">
                 Account
               </TabsTrigger>
@@ -255,7 +258,7 @@ export default function BusinessRegisterPage() {
                   <Input
                     id="biz-email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="Email address"
                     autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -357,6 +360,7 @@ export default function BusinessRegisterPage() {
                   onClick={handleNextTab}
                   disabled={isLoading}
                 >
+                  <Building2Icon data-icon="inline-start" />
                   Next: Business Details
                 </Button>
               </FieldGroup>
@@ -463,7 +467,7 @@ export default function BusinessRegisterPage() {
                   <Input
                     id="contact-email"
                     type="email"
-                    placeholder="business@example.com"
+                    placeholder="Business contact email"
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
                     disabled={isLoading}
@@ -512,24 +516,16 @@ export default function BusinessRegisterPage() {
                       Registering…
                     </>
                   ) : (
-                    'Register Business'
+                    <>
+                      <Building2Icon data-icon="inline-start" />
+                      Register Business
+                    </>
                   )}
                 </Button>
               </FieldGroup>
             </TabsContent>
           </Tabs>
         </form>
-      </CardContent>
-
-      <CardFooter>
-        <p className="text-sm text-muted-foreground text-center w-full">
-          Already have an account?{' '}
-          <Link href="/login" className="text-accent hover:underline inline-flex items-center gap-1">
-            <ArrowLeftIcon className="size-3" />
-            Sign in
-          </Link>
-        </p>
-      </CardFooter>
-    </Card>
+    </AuthShell>
   );
 }

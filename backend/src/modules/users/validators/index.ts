@@ -7,6 +7,11 @@ export const updateProfileSchema = z.object({
   phone: z.string().optional(),
 });
 
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8),
+});
+
 export const updateInterestsSchema = z.object({
   interests: z.array(z.string()).min(1),
 });

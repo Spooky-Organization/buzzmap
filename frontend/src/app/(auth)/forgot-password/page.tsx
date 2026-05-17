@@ -2,20 +2,15 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { appRoutes } from '@/lib/routes';
 import { toast } from 'sonner';
 import { MailIcon, ArrowLeftIcon } from 'lucide-react';
 
+import { AuthShell } from '@/components/auth/auth-shell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from '@/components/ui/card';
 import {
   Field,
   FieldGroup,
@@ -25,10 +20,14 @@ import {
 } from '@/components/ui/field';
 
 export default function ForgotPasswordPage() {
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const audience = searchParams.get('audience') === 'business' ? 'business' : 'customer';
+  const authLinkClass =
+    'inline-flex items-center gap-1 font-semibold text-[oklch(0.68_0.17_65)] underline-offset-4 transition-colors hover:text-[oklch(0.62_0.18_58)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[oklch(0.72_0.15_67)] rounded-sm';
 
   function validate(): string {
     if (!email) return 'Email is required.';
@@ -66,15 +65,28 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Reset your password</CardTitle>
-        <CardDescription>
-          Enter your email and we&apos;ll send you a link to reset your password.
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent>
+    <AuthShell
+      mode="reset"
+      audience={audience}
+      eyebrow={audience === 'business' ? 'Business recovery' : 'Customer recovery'}
+      title={audience === 'business' ? 'Recover your business access quickly.' : 'Recover your customer account securely.'}
+      description={
+        audience === 'business'
+          ? 'Use the business email tied to your owner account and we will send a reset link if the account exists.'
+          : 'Use the email tied to your BuzzMap customer profile and we will send a reset link if the account exists.'
+      }
+      footer={
+        <p className="w-full text-center text-sm text-muted-foreground">
+          <Link
+            href={appRoutes.auth.loginFor(audience)}
+            className={authLinkClass}
+          >
+            <ArrowLeftIcon className="size-3" />
+            Back to sign in
+          </Link>
+        </p>
+      }
+    >
         {submitted ? (
           <div className="flex flex-col gap-4 text-center py-4">
             <p className="text-sm text-muted-foreground">
@@ -85,7 +97,7 @@ export default function ForgotPasswordPage() {
               Didn&apos;t receive it? Check your spam folder or{' '}
               <button
                 type="button"
-                className="text-accent hover:underline"
+                className="font-semibold text-[oklch(0.68_0.17_65)] underline-offset-4 transition-colors hover:text-[oklch(0.62_0.18_58)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[oklch(0.72_0.15_67)] rounded-sm"
                 onClick={() => setSubmitted(false)}
               >
                 try again
@@ -104,7 +116,7 @@ export default function ForgotPasswordPage() {
                 <Input
                   id="reset-email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder="Email address"
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -131,22 +143,15 @@ export default function ForgotPasswordPage() {
                     Sending…
                   </>
                 ) : (
-                  'Send Reset Link'
+                  <>
+                    <MailIcon data-icon="inline-start" />
+                    Send Reset Link
+                  </>
                 )}
               </Button>
             </FieldGroup>
           </form>
         )}
-      </CardContent>
-
-      <CardFooter>
-        <p className="text-sm text-muted-foreground text-center w-full">
-          <Link href="/login" className="text-accent hover:underline inline-flex items-center gap-1">
-            <ArrowLeftIcon className="size-3" />
-            Back to sign in
-          </Link>
-        </p>
-      </CardFooter>
-    </Card>
+    </AuthShell>
   );
 }

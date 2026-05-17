@@ -33,6 +33,11 @@ Thumbs.db
 *.swp
 *.swo
 
+# Local agent and AI tooling
+.agents/
+.claude/
+.codex/
+
 # Prisma
 prisma/*.db
 prisma/*.db-journal
@@ -42,3 +47,27 @@ pgdata
 
 # Misc
 *.tsbuildinfo
+
+# Sensitive internal docs
+VISION.md
+docs/STACK.md
+docs/PROJECT_ARCHITECTURE.md
+docs/AUDIT.md
+docs/SECURITY_AUDIT.md
+docs/CODEX_ONBOARDING.md
+docs/PRIORITIZED_REMEDIATION_PLAN.md
+CHANGELOG.md
+
+# >>> stride (auto-managed, do not edit) >>>
+.claude/commands/linear/
+.claude/hooks/do_commit.sh
+.claude/hooks/pretooluse/block_bare_git_commit.sh
+.claude/hooks/userpromptsubmit/inject_design_principles.sh
+.claude/skills/commit/
+.claude/skills/craft/
+.claude/skills/vision/
+.claude/stride/docs/concepts/
+.claude/stride/docs/patterns/git/
+.claude/stride/docs/principles/
+.claude/tools/
+# <<< stride <<<

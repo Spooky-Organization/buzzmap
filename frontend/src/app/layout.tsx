@@ -1,13 +1,7 @@
 import type { Metadata } from 'next';
-import { Outfit } from 'next/font/google';
 import { Providers } from '@/providers';
 import { Toaster } from 'sonner';
 import './globals.css';
-
-const outfit = Outfit({
-  variable: '--font-outfit',
-  subsets: ['latin'],
-});
 
 export const metadata: Metadata = {
   title: {
@@ -26,9 +20,11 @@ export const metadata: Metadata = {
     'product reviews',
     'local shopping',
   ],
-  authors: [{ name: 'Matthew Kabiu' }],
-  creator: 'Matthew Kabiu',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  authors: [{ name: 'theBuzzmap' }],
+  creator: 'theBuzzmap',
+  ...(process.env.NEXT_PUBLIC_SITE_URL
+    ? { metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL) }
+    : {}),
   openGraph: {
     type: 'website',
     siteName: 'BuzzMap',
@@ -55,10 +51,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${outfit.variable} h-full antialiased`}
-    >
+    <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
         <Providers>
           {children}

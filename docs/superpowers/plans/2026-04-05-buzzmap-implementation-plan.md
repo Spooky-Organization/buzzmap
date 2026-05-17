@@ -39,7 +39,7 @@
 13. Create `backend/Dockerfile.dev` (tsx watch) and `backend/Dockerfile.prod` (multi-stage tsc)
 
 **Review findings fixed:**
-- Hardcoded `:9001` in minio command replaced with `${STORAGE_CONSOLE_PORT}`
+- Hardcoded MinIO console binding replaced with `${STORAGE_CONSOLE_PORT}`
 - Minio ports mapped as `${STORAGE_PORT}:${STORAGE_PORT}` with `--address ":${STORAGE_PORT}"`
 - Added healthchecks to frontend, backend, and rustfs services in dev compose
 - Added `restart: always` to rustfs in prod compose

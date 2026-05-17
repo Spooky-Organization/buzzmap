@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
-import { Plus, Edit, Trash2, MoreVertical, Store } from 'lucide-react';
+import { Plus, Edit, Trash2, MoreVertical, Store, PackagePlus, Save, Boxes, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
 import { api } from '@/lib/api';
+import { apiRoutes } from '@/lib/routes';
+import {
+  DashboardHero,
+  DashboardHeroPill,
+  DashboardMetricCard,
+} from '@/components/dashboard/dashboard-surfaces';
 
 interface Product {
   id: string;
@@ -51,6 +57,7 @@ const emptyForm: ProductForm = { name: '', description: '', price: '', stock: ''
 
 export default function ShelfPage() {
   const { data: session } = useSession();
+  const isBusinessOwner = session?.user.role === 'BUSINESS_OWNER';
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -59,10 +66,10 @@ export default function ShelfPage() {
   const { data, isLoading } = useQuery<{ products: Product[] }>({
     queryKey: ['business-products'],
     queryFn: async () => {
-      const res = await api.get('/api/v1/products/business');
-      return { products: res.data.products ?? [] };
+      const res = await api.get(apiRoutes.products.businessMine);
+      return { products: res.data.data ?? [] };
     },
-    enabled: !!session,
+    enabled: isBusinessOwner,
   });
 
   const saveProduct = useMutation({
@@ -74,9 +81,9 @@ export default function ShelfPage() {
         stock: parseInt(form.stock, 10),
       };
       if (editingProduct) {
-        await api.patch(`/api/v1/products/${editingProduct.id}`, payload);
+        await api.patch(apiRoutes.products.byId(editingProduct.id), payload);
       } else {
-        await api.post('/api/v1/products', payload);
+        await api.post(apiRoutes.products.root, payload);
       }
     },
     onSuccess: () => {
@@ -91,7 +98,7 @@ export default function ShelfPage() {
 
   const deleteProduct = useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/api/v1/products/${id}`);
+      await api.delete(apiRoutes.products.byId(id));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['business-products'] });
@@ -102,7 +109,7 @@ export default function ShelfPage() {
 
   const toggleAvailability = useMutation({
     mutationFn: async ({ id, isAvailable }: { id: string; isAvailable: boolean }) => {
-      await api.patch(`/api/v1/products/${id}`, { isAvailable });
+      await api.patch(apiRoutes.products.byId(id), { isAvailable });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['business-products'] }),
     onError: () => toast.error('Failed to update availability'),
@@ -126,9 +133,55 @@ export default function ShelfPage() {
   };
 
   const products = data?.products ?? [];
+  const availableCount = products.filter((product) => product.isAvailable).length;
+  const totalStock = products.reduce((sum, product) => sum + product.stock, 0);
 
   return (
     <div className="flex flex-col gap-6">
+      <DashboardHero
+        eyebrow="Product shelf"
+        title="Curate the storefront inventory like a real shelf."
+        description="Manage listings, availability, and stock from one shelf-focused page that supports public discovery and order readiness."
+        icon={Boxes}
+      >
+        <DashboardHeroPill
+          icon={Store}
+          label="Listings"
+          value={`${products.length} products`}
+          note="The current number of products attached to this business."
+        />
+        <DashboardHeroPill
+          icon={Tag}
+          label="Availability"
+          value={`${availableCount} visible`}
+          note="Products currently marked available to customers."
+        />
+      </DashboardHero>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <DashboardMetricCard
+          label="Products"
+          value={String(products.length)}
+          note="Inventory items currently attached to the business."
+          icon={Store}
+          accent="from-sky-500/15 via-primary/[0.08] to-transparent"
+        />
+        <DashboardMetricCard
+          label="Available"
+          value={String(availableCount)}
+          note="Products customers can actively order right now."
+          icon={Tag}
+          accent="from-emerald-500/15 via-primary/[0.08] to-transparent"
+        />
+        <DashboardMetricCard
+          label="Stock"
+          value={String(totalStock)}
+          note="Total stock represented across shelf products."
+          icon={Boxes}
+          accent="from-amber-500/18 via-primary/[0.08] to-transparent"
+        />
+      </div>
+
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold text-primary">Product Shelf</h1>
@@ -189,8 +242,22 @@ export default function ShelfPage() {
                 disabled={saveProduct.isPending || !form.name || !form.price}
                 onClick={() => saveProduct.mutate()}
               >
-                {saveProduct.isPending && <Spinner data-icon="inline-start" />}
-                {editingProduct ? 'Save Changes' : 'Add Product'}
+                {saveProduct.isPending ? (
+                  <>
+                    <Spinner data-icon="inline-start" />
+                    {editingProduct ? 'Save Changes' : 'Add Product'}
+                  </>
+                ) : editingProduct ? (
+                  <>
+                    <Save data-icon="inline-start" />
+                    Save Changes
+                  </>
+                ) : (
+                  <>
+                    <PackagePlus data-icon="inline-start" />
+                    Add Product
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -222,7 +289,7 @@ export default function ShelfPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {products.map((product) => (
-            <Card key={product.id}>
+            <Card key={product.id} className="border-border/70 bg-card/80 shadow-[0_18px_50px_-42px_rgba(15,37,64,0.65)]">
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex flex-col gap-1">

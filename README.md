@@ -110,13 +110,13 @@ buzzmap/
 4. **Start the development stack**
 
    ```bash
-   docker compose -f docker-compose.dev.yml up --build
+   docker compose --env-file .env.dev -f docker-compose.dev.yml up --build
    ```
 
 5. **Access the application**
-   - Frontend: `http://localhost:<FRONTEND_PORT>`
-   - Backend API: `http://localhost:<BACKEND_PORT>`
-   - RustFS Console: `http://localhost:<STORAGE_CONSOLE_PORT>`
+   - Frontend: use the URL defined by `FRONTEND_URL`
+   - Backend API: use the URL defined by `BACKEND_URL`
+   - RustFS Console: construct the console URL from `STORAGE_ENDPOINT` and `STORAGE_CONSOLE_PORT`
 
 ---
 
@@ -126,16 +126,17 @@ All configuration is managed through a single `.env` file at the project root. S
 
 | Category | Variables |
 |---|---|
-| **App** | `NODE_ENV`, `FRONTEND_URL`, `BACKEND_URL` |
-| **Database** | `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_NAME`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_URL` |
-| **Redis** | `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_URL` |
+| **App** | `NODE_ENV`, `FRONTEND_URL`, `BACKEND_URL`, `NEXT_PUBLIC_SITE_URL`, `FRONTEND_BIND_HOST`, `BACKEND_BIND_HOST` |
+| **Database** | `DATABASE_HOST`, `DATABASE_BIND_HOST`, `DATABASE_PORT`, `DATABASE_INTERNAL_PORT`, `DATABASE_NAME`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_URL` |
+| **Redis** | `REDIS_HOST`, `REDIS_BIND_HOST`, `REDIS_PORT`, `REDIS_INTERNAL_PORT`, `REDIS_PASSWORD`, `REDIS_URL` |
 | **Authentication** | `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `JWT_ACCESS_EXPIRY`, `JWT_REFRESH_EXPIRY` |
-| **Storage (RustFS)** | `STORAGE_ENDPOINT`, `STORAGE_PORT`, `STORAGE_CONSOLE_PORT`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`, `STORAGE_BUCKET_NAME`, `STORAGE_USE_SSL` |
+| **Storage (RustFS)** | `STORAGE_ENDPOINT`, `STORAGE_BIND_HOST`, `STORAGE_CONSOLE_BIND_HOST`, `STORAGE_PORT`, `STORAGE_CONSOLE_PORT`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`, `STORAGE_BUCKET_NAME`, `STORAGE_USE_SSL` |
 | **Socket.IO** | `SOCKET_CORS_ORIGIN` |
 | **Security** | `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX_REQUESTS`, `BCRYPT_SALT_ROUNDS` |
 | **Uploads** | `MAX_FILE_SIZE`, `ALLOWED_FILE_TYPES` |
 | **Server** | `BACKEND_PORT`, `FRONTEND_PORT` |
 | **Logging** | `LOG_LEVEL` |
+| **Seed** | `RUN_DB_SEED`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_NAME`, `SEED_ADMIN_PASSWORD`, `SEED_SAMPLE_DATA`, `SEED_SAMPLE_PASSWORD` |
 
 ---
 
@@ -159,19 +160,27 @@ The development stack uses `docker-compose.dev.yml`:
 
 - **Hot reload** -- source directories (`src/`, `public/`, `prisma/`) are bind-mounted into containers
 - **Named volumes** for `node_modules` to avoid host/container conflicts
-- **Exposed ports** for direct access to Postgres, Redis, and the RustFS console
+- **Env-controlled port bindings** for direct access to Postgres, Redis, and the RustFS console
 - Backend runs via `tsx watch` for instant TypeScript reloading
+- Backend startup runs Prisma migrations first and then runs `prisma db seed` when `RUN_DB_SEED=true`
+- Kenyan demo data can be added on startup by setting `SEED_SAMPLE_DATA=true`; sample passwords live in `.env.dev`, not in code
 
 ```bash
 # Start
-docker compose -f docker-compose.dev.yml up --build
+docker compose --env-file .env.dev -f docker-compose.dev.yml up --build
 
 # Stop
-docker compose -f docker-compose.dev.yml down
+docker compose --env-file .env.dev -f docker-compose.dev.yml down
 
 # Reset volumes (full clean)
-docker compose -f docker-compose.dev.yml down -v
+docker compose --env-file .env.dev -f docker-compose.dev.yml down -v
 ```
+
+Sample data notes:
+
+- The seed keeps the existing admin path and adds Kenyan demo users, businesses, products, POVs, follows, orders, conversations, and notifications on top.
+- Demo account emails are stable for repeatable local testing, while the admin and sample passwords are read from `SEED_ADMIN_PASSWORD` and `SEED_SAMPLE_PASSWORD`.
+- The seeded businesses currently represent Nairobi, Mombasa, and Eldoret contexts to match the intended market.
 
 ---
 
@@ -196,7 +205,7 @@ docker compose -f docker-compose.prod.yml up --build -d
 All backend API routes are served under the `/api/v1/` prefix.
 
 ```
-Base URL: http://localhost:<BACKEND_PORT>/api/v1/
+Base URL: ${BACKEND_URL}/api/v1/
 ```
 
 Route groups include:

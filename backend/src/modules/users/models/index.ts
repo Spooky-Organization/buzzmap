@@ -5,6 +5,11 @@ export interface UpdateProfileDTO {
   phone?: string;
 }
 
+export interface ChangePasswordDTO {
+  currentPassword: string;
+  newPassword: string;
+}
+
 export interface UpdateInterestsDTO {
   interests: string[];
 }
@@ -33,6 +38,7 @@ export interface UserProfileResponse {
   role: string;
   interests: string[];
   location: string | null;
+  phone: string | null;
   createdAt: Date;
   businessProfile?: BusinessProfileSummary | null;
   _count?: {
@@ -50,6 +56,7 @@ export interface PublicUserProfileResponse {
   interests: string[];
   location: string | null;
   createdAt: Date;
+  isFollowing: boolean;
   businessProfile?: BusinessProfileSummary | null;
   _count?: {
     followers: number;

@@ -2,6 +2,7 @@ import { getPrisma } from '../../../shared/prisma/index.js';
 import { uploadToStorage } from '../../../shared/storage/upload.js';
 import { AppError } from '../../../shared/middleware/errorHandler.js';
 import type { CreatePostDTO, PostResponse, PaginatedPostsResult } from '../models/index.js';
+import { sanitizeOptionalText } from '../../../shared/utils/sanitize.js';
 
 const postSelect = {
   id: true,
@@ -51,7 +52,7 @@ export async function createPost(
       authorId,
       businessId: data.businessId ?? null,
       type: data.type,
-      content: data.content ?? null,
+      content: sanitizeOptionalText(data.content) ?? null,
       mediaUrls,
     },
     select: postSelect,

@@ -11,16 +11,17 @@ import {
   ClipboardList,
   LayoutDashboard,
 } from 'lucide-react';
+import { appRoutes } from '@/lib/routes';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { href: '/feed', label: 'Feed', icon: Home },
-  { href: '/search', label: 'Search', icon: Search },
-  { href: '/pov/create', label: 'Create POV', icon: Video },
-  { href: '/messages', label: 'Messages', icon: MessageSquare },
-  { href: '/cart', label: 'Cart', icon: ShoppingCart },
-  { href: '/orders', label: 'Orders', icon: ClipboardList },
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: appRoutes.customer.feed, label: 'Feed', icon: Home },
+  { href: appRoutes.customer.search, label: 'Search', icon: Search },
+  { href: appRoutes.customer.povCreate, label: 'Create POV', icon: Video },
+  { href: appRoutes.customer.messages, label: 'Messages', icon: MessageSquare },
+  { href: appRoutes.customer.cart, label: 'Cart', icon: ShoppingCart },
+  { href: appRoutes.customer.orders, label: 'Orders', icon: ClipboardList },
+  { href: appRoutes.customer.dashboard, label: 'Dashboard', icon: LayoutDashboard },
 ];
 
 export function SidebarContent() {

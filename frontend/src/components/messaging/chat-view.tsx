@@ -23,6 +23,7 @@ interface ChatViewProps {
   isTyping?: boolean;
   isSending?: boolean;
   onSend: (content: string) => void;
+  onTyping?: () => void;
 }
 
 export function ChatView({
@@ -31,6 +32,7 @@ export function ChatView({
   isTyping = false,
   isSending = false,
   onSend,
+  onTyping,
 }: ChatViewProps) {
   const [input, setInput] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -82,7 +84,12 @@ export function ChatView({
             <Input
               placeholder="Type a message..."
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+                if (e.target.value.trim()) {
+                  onTyping?.();
+                }
+              }}
               onKeyDown={handleKeyDown}
               disabled={isSending}
               className="flex-1"

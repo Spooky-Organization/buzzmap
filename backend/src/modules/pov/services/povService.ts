@@ -3,6 +3,7 @@ import { uploadToStorage, deleteFromStorage, getSignedUrl } from '../../../share
 import { AppError } from '../../../shared/middleware/errorHandler.js';
 import { logger } from '../../../shared/utils/logger.js';
 import type { CreatePOVDTO, POVResponse, CommentResponse, PaginatedResult } from '../models/index.js';
+import { sanitizeOptionalText, sanitizePlainText } from '../../../shared/utils/sanitize.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -95,7 +96,7 @@ export async function createPOV(
       authorId,
       businessId: data.businessId,
       videoUrl: videoKey,
-      caption: data.caption,
+      caption: sanitizeOptionalText(data.caption) ?? null,
       starRating: data.starRating,
       recommends: data.recommends,
     },
@@ -267,7 +268,7 @@ export async function addComment(
 
   const [comment] = await prisma.$transaction([
     prisma.comment.create({
-      data: { userId, povId, content },
+      data: { userId, povId, content: sanitizePlainText(content) },
       select: {
         id: true,
         content: true,

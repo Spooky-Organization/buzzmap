@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
+import { MapPinned, Save, Settings2, Store } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -20,15 +21,17 @@ import {
 } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { api } from '@/lib/api';
+import { apiRoutes } from '@/lib/routes';
+import { DashboardHero, DashboardHeroPill } from '@/components/dashboard/dashboard-surfaces';
 
-interface BusinessProfile {
-  name: string;
+interface BusinessProfileForm {
+  businessName: string;
   description: string;
   category: string;
   type: string;
   location: string;
-  contact: string;
-  website: string;
+  coordinates: string;
+  contactInfo: string;
   operatingHours: string;
 }
 
@@ -41,70 +44,147 @@ const CATEGORIES = [
   'OTHER',
 ];
 
-const BUSINESS_TYPES = ['PHYSICAL', 'ONLINE', 'HYBRID'];
+const BUSINESS_TYPES = ['PRODUCTS', 'SERVICES'];
 
-const emptyProfile: BusinessProfile = {
-  name: '',
+const emptyProfile: BusinessProfileForm = {
+  businessName: '',
   description: '',
   category: '',
-  type: 'PHYSICAL',
+  type: 'PRODUCTS',
   location: '',
-  contact: '',
-  website: '',
+  coordinates: '',
+  contactInfo: '',
   operatingHours: '',
 };
 
+interface BackendBusinessProfile {
+  businessName: string;
+  description: string | null;
+  category: string | null;
+  type: string | null;
+  location: string | null;
+  coordinates: string | null;
+  contactInfo: string | null;
+  operatingHours: Record<string, unknown> | null;
+}
+
+function formatOperatingHoursForEditor(
+  operatingHours: BackendBusinessProfile['operatingHours']
+): string {
+  if (!operatingHours) return '';
+
+  try {
+    return JSON.stringify(operatingHours, null, 2);
+  } catch {
+    return '';
+  }
+}
+
+function toBusinessProfileForm(
+  profile?: BackendBusinessProfile | null
+): BusinessProfileForm {
+  if (!profile) {
+    return emptyProfile;
+  }
+
+  return {
+    businessName: profile.businessName ?? '',
+    description: profile.description ?? '',
+    category: profile.category ?? '',
+    type: profile.type ?? 'PRODUCTS',
+    location: profile.location ?? '',
+    coordinates: profile.coordinates ?? '',
+    contactInfo: profile.contactInfo ?? '',
+    operatingHours: formatOperatingHoursForEditor(profile.operatingHours),
+  };
+}
+
 export default function BusinessSettingsPage() {
   const { data: session } = useSession();
-  const [form, setForm] = useState<BusinessProfile>(emptyProfile);
+  const isBusinessOwner = session?.user.role === 'BUSINESS_OWNER';
+  const [draft, setDraft] = useState<BusinessProfileForm | null>(null);
 
-  const { data, isLoading } = useQuery<BusinessProfile>({
+  const { data, isLoading } = useQuery<BackendBusinessProfile>({
     queryKey: ['business-profile'],
     queryFn: async () => {
-      const res = await api.get('/api/v1/business/profile');
+      const res = await api.get(apiRoutes.business.profile);
       return res.data;
     },
-    enabled: !!session,
+    enabled: isBusinessOwner,
   });
 
-  useEffect(() => {
-    if (data) setForm(data);
-  }, [data]);
+  const form = draft ?? toBusinessProfileForm(data);
 
   const saveProfile = useMutation({
     mutationFn: async () => {
-      await api.patch('/api/v1/business/profile', form);
+      let operatingHours: Record<string, unknown> | undefined;
+
+      if (form.operatingHours.trim()) {
+        operatingHours = JSON.parse(form.operatingHours) as Record<string, unknown>;
+      }
+
+      await api.patch(apiRoutes.business.profile, {
+        businessName: form.businessName,
+        description: form.description,
+        category: form.category,
+        type: form.type,
+        location: form.location,
+        coordinates: form.coordinates,
+        contactInfo: form.contactInfo,
+        ...(operatingHours ? { operatingHours } : {}),
+      });
     },
     onSuccess: () => toast.success('Profile saved'),
-    onError: () => toast.error('Failed to save profile'),
+    onError: (error) => {
+      if (error instanceof SyntaxError) {
+        toast.error('Operating hours must be valid JSON');
+        return;
+      }
+      toast.error('Failed to save profile');
+    },
   });
 
-  const update = (key: keyof BusinessProfile, value: string) =>
-    setForm((f) => ({ ...f, [key]: value }));
+  const update = (key: keyof BusinessProfileForm, value: string) =>
+    setDraft((current) => ({ ...(current ?? form), [key]: value }));
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-primary">Settings</h1>
-        <p className="text-muted-foreground">Manage your business profile</p>
-      </div>
+      <DashboardHero
+        eyebrow="Business settings"
+        title="Shape how the public business profile appears."
+        description="This profile drives directory visibility, public trust, contact clarity, and map presence. Keep the essentials current so discovery converts into confidence."
+        icon={Settings2}
+      >
+        <DashboardHeroPill
+          icon={Store}
+          label="Public profile"
+          value="Directory-facing"
+          note="Business name, description, category, and type drive how the profile reads."
+        />
+        <DashboardHeroPill
+          icon={MapPinned}
+          label="Location layer"
+          value="Map enabled"
+          note="Coordinates or a place query improve the embedded location experience."
+        />
+      </DashboardHero>
 
-      <Card className="max-w-2xl">
+      <Card className="w-full max-w-none border-border/70 bg-card/80 shadow-[0_22px_70px_-48px_rgba(15,37,64,0.68)]">
         <CardHeader>
           <CardTitle>Business Profile</CardTitle>
           <CardDescription>Update your public business information</CardDescription>
         </CardHeader>
         <CardContent>
-          <FieldGroup>
+          <FieldGroup className="grid gap-6 xl:grid-cols-2">
             <Field>
               <FieldLabel>Business Name</FieldLabel>
-              <Input
-                placeholder="Your business name"
-                value={form.name}
-                onChange={(e) => update('name', e.target.value)}
-                disabled={isLoading}
-              />
-            </Field>
+                <Input
+                  placeholder="Your business name"
+                  value={form.businessName}
+                  onChange={(e) => update('businessName', e.target.value)}
+                  disabled={isLoading}
+                />
+              </Field>
 
             <Field>
               <FieldLabel>Description</FieldLabel>
@@ -123,7 +203,7 @@ export default function BusinessSettingsPage() {
                 value={form.category}
                 onValueChange={(val) => update('category', val ?? '')}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full rounded-2xl border-border/70 bg-background/90">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -148,6 +228,7 @@ export default function BusinessSettingsPage() {
                 }}
                 variant="outline"
                 spacing={1}
+                className="rounded-2xl"
               >
                 {BUSINESS_TYPES.map((t) => (
                   <ToggleGroupItem key={t} value={t}>
@@ -168,29 +249,30 @@ export default function BusinessSettingsPage() {
             </Field>
 
             <Field>
-              <FieldLabel>Contact Number</FieldLabel>
+              <FieldLabel>Map Coordinates Or Place Query</FieldLabel>
               <Input
-                placeholder="+63 900 000 0000"
-                value={form.contact}
-                onChange={(e) => update('contact', e.target.value)}
+                placeholder="e.g. -0.5143,35.2698 or Eldoret Town, Uasin Gishu"
+                value={form.coordinates}
+                onChange={(e) => update('coordinates', e.target.value)}
                 disabled={isLoading}
               />
             </Field>
 
             <Field>
-              <FieldLabel>Website</FieldLabel>
+              <FieldLabel>Contact Info</FieldLabel>
               <Input
-                placeholder="https://yourbusiness.com"
-                value={form.website}
-                onChange={(e) => update('website', e.target.value)}
+                placeholder="+254 700 000000 | hello@business.com"
+                value={form.contactInfo}
+                onChange={(e) => update('contactInfo', e.target.value)}
                 disabled={isLoading}
               />
             </Field>
 
             <Field>
-              <FieldLabel>Operating Hours</FieldLabel>
-              <Input
-                placeholder="e.g. Mon–Fri 9AM–6PM"
+              <FieldLabel>Operating Hours JSON</FieldLabel>
+              <Textarea
+                className="min-h-32 font-mono text-xs"
+                placeholder='{"monday":"08:00-17:00","tuesday":"08:00-17:00"}'
                 value={form.operatingHours}
                 onChange={(e) => update('operatingHours', e.target.value)}
                 disabled={isLoading}
@@ -198,11 +280,21 @@ export default function BusinessSettingsPage() {
             </Field>
 
             <Button
+              className="rounded-2xl"
               disabled={saveProfile.isPending || isLoading}
               onClick={() => saveProfile.mutate()}
             >
-              {saveProfile.isPending && <Spinner data-icon="inline-start" />}
-              {saveProfile.isPending ? 'Saving...' : 'Save Changes'}
+              {saveProfile.isPending ? (
+                <>
+                  <Spinner data-icon="inline-start" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save data-icon="inline-start" />
+                  Save Changes
+                </>
+              )}
             </Button>
           </FieldGroup>
         </CardContent>

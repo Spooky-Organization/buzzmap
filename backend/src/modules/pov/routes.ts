@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { authenticate } from '../../shared/middleware/auth.js';
+import { authorize } from '../../shared/middleware/authorize.js';
 import { upload } from '../../shared/storage/upload.js';
 import * as povController from './controllers/povController.js';
 
 const router = Router();
 
-router.post('/', authenticate, upload.single('video'), povController.create);
+router.post('/', authenticate, authorize('CUSTOMER'), upload.single('video'), povController.create);
 router.get('/my', authenticate, povController.getMyPOVs);
 router.delete('/:id', authenticate, povController.deletePOV);
 router.get('/:id', authenticate, povController.getOne);

@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/shared/app-sidebar';
-import { Navbar } from '@/components/shared/navbar';
+import { CustomerLayoutShell } from '@/components/shared/customer-layout-shell';
 
 export const metadata: Metadata = {
   title: {
@@ -15,13 +13,5 @@ export default function CustomerLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <SidebarProvider defaultOpen={false}>
-      <AppSidebar />
-      <SidebarInset>
-        <Navbar />
-        <main className="flex-1 p-4 md:p-6">{children}</main>
-      </SidebarInset>
-    </SidebarProvider>
-  );
+  return <CustomerLayoutShell>{children}</CustomerLayoutShell>;
 }

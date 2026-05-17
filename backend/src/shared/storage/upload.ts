@@ -9,6 +9,36 @@ import { AppError } from '../middleware/errorHandler.js';
 
 const maxFileSizeBytes = parseInt(config.maxFileSize, 10);
 
+function hasPrefix(buffer: Buffer, prefix: number[]): boolean {
+  return prefix.every((byte, index) => buffer[index] === byte);
+}
+
+function matchesFileSignature(file: Express.Multer.File): boolean {
+  const { mimetype, buffer } = file;
+
+  if (!buffer || buffer.length < 12) {
+    return false;
+  }
+
+  switch (mimetype) {
+    case 'image/jpeg':
+      return hasPrefix(buffer, [0xff, 0xd8, 0xff]);
+    case 'image/png':
+      return hasPrefix(buffer, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    case 'image/webp':
+      return (
+        buffer.subarray(0, 4).toString('ascii') === 'RIFF' &&
+        buffer.subarray(8, 12).toString('ascii') === 'WEBP'
+      );
+    case 'video/mp4':
+      return buffer.subarray(4, 8).toString('ascii') === 'ftyp';
+    case 'video/webm':
+      return hasPrefix(buffer, [0x1a, 0x45, 0xdf, 0xa3]);
+    default:
+      return false;
+  }
+}
+
 export const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: maxFileSizeBytes },
@@ -27,6 +57,15 @@ export const upload = multer({
   },
 });
 
+function assertTrustedFile(file: Express.Multer.File): void {
+  if (!matchesFileSignature(file)) {
+    throw new AppError(
+      415,
+      `Uploaded file content does not match declared MIME type: ${file.mimetype}`
+    );
+  }
+}
+
 // ─── Storage helpers ──────────────────────────────────────────────────────────
 
 /**
@@ -39,6 +78,8 @@ export async function uploadToStorage(
   file: Express.Multer.File,
   folder: string
 ): Promise<string> {
+  assertTrustedFile(file);
+
   const ext = file.originalname.split('.').pop() ?? 'bin';
   const key = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 

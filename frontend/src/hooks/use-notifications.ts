@@ -3,6 +3,7 @@ import { useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSocket } from '@/providers/socket-provider';
 import { api } from '@/lib/api';
+import { apiRoutes } from '@/lib/routes';
 
 export interface Notification {
   id: string;
@@ -28,7 +29,7 @@ export function useNotifications(page = 1, limit = 20) {
   const query = useQuery<NotificationsResponse>({
     queryKey: ['notifications', page, limit],
     queryFn: async () => {
-      const res = await api.get('/api/v1/notifications', {
+      const res = await api.get(apiRoutes.notifications.root, {
         params: { page, limit },
       });
       return res.data;
@@ -38,14 +39,14 @@ export function useNotifications(page = 1, limit = 20) {
   const unreadQuery = useQuery<number>({
     queryKey: ['notifications', 'unread-count'],
     queryFn: async () => {
-      const res = await api.get('/api/v1/notifications/unread-count');
-      return res.data.data?.count ?? 0;
+      const res = await api.get(apiRoutes.notifications.unreadCount);
+      return res.data.count ?? 0;
     },
   });
 
   const markReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
-      await api.patch(`/api/v1/notifications/${notificationId}/read`);
+      await api.patch(apiRoutes.notifications.markRead(notificationId));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
@@ -54,7 +55,7 @@ export function useNotifications(page = 1, limit = 20) {
 
   const markAllReadMutation = useMutation({
     mutationFn: async () => {
-      await api.patch('/api/v1/notifications/read-all');
+      await api.patch(apiRoutes.notifications.markAllRead);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });

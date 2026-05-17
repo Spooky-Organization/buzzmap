@@ -2,6 +2,7 @@ import { getPrisma } from '../prisma/index.js';
 import bcrypt from 'bcrypt';
 import { config } from '../../config/index.js';
 import type { Prisma } from '@prisma/client';
+import { sanitizePlainText, sanitizeOptionalText } from '../utils/sanitize.js';
 
 interface CreateBusinessOwnerInput {
   email: string;
@@ -27,9 +28,9 @@ export class BusinessOwnerFactory {
       const user = await tx.user.create({
         data: {
           email: input.email,
-          phone: input.phone,
+          phone: sanitizeOptionalText(input.phone),
           password: hashedPassword,
-          name: input.name,
+          name: sanitizePlainText(input.name),
           role: 'BUSINESS_OWNER',
           interests: [],
         },
@@ -38,13 +39,13 @@ export class BusinessOwnerFactory {
       await tx.businessProfile.create({
         data: {
           userId: user.id,
-          businessName: input.businessName,
-          description: input.description,
-          category: input.category,
+          businessName: sanitizePlainText(input.businessName),
+          description: sanitizePlainText(input.description),
+          category: sanitizePlainText(input.category),
           type: input.type,
-          location: input.location,
-          coordinates: input.coordinates,
-          contactInfo: input.contactInfo,
+          location: sanitizePlainText(input.location),
+          coordinates: sanitizeOptionalText(input.coordinates),
+          contactInfo: sanitizePlainText(input.contactInfo),
           operatingHours: input.operatingHours,
         },
       });

@@ -3,6 +3,7 @@ import { AppError } from '../../../shared/middleware/errorHandler.js';
 import {
   updateProfileSchema,
   updateInterestsSchema,
+  changePasswordSchema,
   paginationSchema,
 } from '../validators/index.js';
 import * as userService from '../services/userService.js';
@@ -34,8 +35,9 @@ export async function getUser(
   next: NextFunction
 ): Promise<void> {
   try {
+    assertAuthenticated(req);
     const { id } = req.params as { id: string };
-    const profile = await userService.getPublicProfile(id);
+    const profile = await userService.getPublicProfile(id, req.user.userId);
     res.status(200).json({ status: 'success', data: profile });
   } catch (err) {
     next(err);
@@ -67,6 +69,21 @@ export async function updateMyInterests(
     const { interests } = updateInterestsSchema.parse(req.body);
     const profile = await userService.updateInterests(req.user.userId, interests);
     res.status(200).json({ status: 'success', data: profile });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function changeMyPassword(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    assertAuthenticated(req);
+    const data = changePasswordSchema.parse(req.body);
+    await userService.changePassword(req.user.userId, data);
+    res.status(200).json({ status: 'success', message: 'Password updated successfully' });
   } catch (err) {
     next(err);
   }

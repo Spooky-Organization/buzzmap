@@ -3,9 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Home,
   Search,
-  Video,
   MessageSquare,
   ShoppingCart,
   Package,
@@ -18,20 +16,21 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { appRoutes } from '@/lib/routes';
+import { SidebarAccount } from '@/components/shared/sidebar-account';
+import { SidebarBrand } from '@/components/shared/sidebar-brand';
 
 const navItems = [
-  { href: '/feed', label: 'Feed', icon: Home },
-  { href: '/search', label: 'Search', icon: Search },
-  { href: '/pov/create', label: 'Create POV', icon: Plus },
-  { href: '/messages', label: 'Messages', icon: MessageSquare },
-  { href: '/cart', label: 'Cart', icon: ShoppingCart },
-  { href: '/orders', label: 'Orders', icon: Package },
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: appRoutes.customer.dashboard, label: 'Home', icon: LayoutDashboard },
+  { href: appRoutes.customer.search, label: 'Search', icon: Search },
+  { href: appRoutes.customer.povCreate, label: 'Create POV', icon: Plus },
+  { href: appRoutes.customer.messages, label: 'Messages', icon: MessageSquare },
+  { href: appRoutes.customer.cart, label: 'Cart', icon: ShoppingCart },
+  { href: appRoutes.customer.orders, label: 'Orders', icon: Package },
 ];
 
 export function AppSidebar() {
@@ -39,15 +38,11 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader>
-        <Link
-          href="/feed"
-          className="flex items-center gap-2 px-2 py-1 font-bold text-lg text-sidebar-primary"
-        >
-          <Video className="size-5 shrink-0" />
-          <span className="truncate group-data-[collapsible=icon]:hidden">BuzzMap</span>
-        </Link>
-      </SidebarHeader>
+      <SidebarBrand
+        href={appRoutes.customer.dashboard}
+        label="BuzzMap"
+        subtitle="Customer workspace for discovery, POV reviews, orders, and conversations."
+      />
 
       <SidebarContent>
         <SidebarGroup>
@@ -56,7 +51,8 @@ export function AppSidebar() {
             <SidebarMenu>
               {navItems.map(({ href, label, icon: Icon }) => {
                 const isActive =
-                  pathname === href || (href !== '/feed' && pathname.startsWith(href + '/'));
+                  pathname === href ||
+                  (href !== appRoutes.customer.dashboard && pathname.startsWith(href + '/'));
                 return (
                   <SidebarMenuItem key={href}>
                     <SidebarMenuButton
@@ -74,6 +70,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarAccount />
     </Sidebar>
   );
 }

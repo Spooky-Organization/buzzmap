@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Upload, Star, Video } from 'lucide-react';
+import { Camera, Upload, Star, Video } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -12,7 +12,9 @@ import { Field, FieldGroup, FieldLabel, FieldDescription } from '@/components/ui
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Input } from '@/components/ui/input';
 import { api } from '@/lib/api';
+import { apiRoutes, appRoutes } from '@/lib/routes';
 import { cn } from '@/lib/utils';
+import { DashboardHero, DashboardHeroPill } from '@/components/dashboard/dashboard-surfaces';
 
 export default function CreatePOVPage() {
   const router = useRouter();
@@ -70,12 +72,12 @@ export default function CreatePOVPage() {
       if (selectedBusinessId) formData.append('businessId', selectedBusinessId);
       if (videoFile) formData.append('video', videoFile);
 
-      await api.post('/api/v1/pov', formData, {
+      await api.post(apiRoutes.pov.root, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
       toast.success('POV posted successfully!');
-      router.push('/feed');
+      router.push(appRoutes.customer.feed);
     } catch {
       toast.error('Failed to post POV. Please try again.');
     } finally {
@@ -84,10 +86,28 @@ export default function CreatePOVPage() {
   }
 
   return (
-    <div className="mx-auto max-w-xl">
-      <h1 className="mb-6 text-xl font-semibold">Share Your POV</h1>
+    <div className="flex w-full max-w-none flex-col gap-6">
+      <DashboardHero
+        eyebrow="POV creation"
+        title="Turn a customer experience into a useful trust signal."
+        description="A good POV helps the next buyer see what the business actually feels like. Add honest detail, a fair rating, and enough context to be useful."
+        icon={Camera}
+      >
+        <DashboardHeroPill
+          icon={Video}
+          label="Format"
+          value="Video-first"
+          note="Short-form video remains the highest-signal review format on BuzzMap."
+        />
+        <DashboardHeroPill
+          icon={Star}
+          label="Review quality"
+          value="Rating required"
+          note="A star rating and recommendation help make the POV actionable."
+        />
+      </DashboardHero>
 
-      <Card>
+      <Card className="border-border/70 bg-card/80 shadow-[0_22px_70px_-48px_rgba(15,37,64,0.68)]">
         <CardHeader>
           <CardTitle>Create a Point of View</CardTitle>
           <CardDescription>
@@ -97,8 +117,9 @@ export default function CreatePOVPage() {
 
         <CardContent>
           <form onSubmit={handleSubmit}>
-            <FieldGroup>
+            <FieldGroup className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
               {/* Video Upload */}
+              <div className="space-y-6">
               <Field>
                 <FieldLabel>Video</FieldLabel>
                 <FieldDescription>Upload a short video of your experience (max 200 MB).</FieldDescription>
@@ -180,8 +201,10 @@ export default function CreatePOVPage() {
                   />
                 )}
               </Field>
+              </div>
 
               {/* Star Rating — single-select via ToggleGroup */}
+              <div className="space-y-6">
               <Field>
                 <FieldLabel>Rating</FieldLabel>
                 <FieldDescription>How would you rate this business out of 5 stars?</FieldDescription>
@@ -253,6 +276,7 @@ export default function CreatePOVPage() {
                 {isSubmitting ? <Spinner /> : null}
                 {isSubmitting ? 'Posting…' : 'Post POV'}
               </Button>
+              </div>
             </FieldGroup>
           </form>
         </CardContent>

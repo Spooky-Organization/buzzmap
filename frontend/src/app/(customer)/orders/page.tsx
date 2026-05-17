@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
-import { ClipboardList, ChevronRight } from 'lucide-react';
+import { ClipboardList, ChevronLeft, ChevronRight, PackageCheck, ShoppingBag, Workflow } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -32,6 +32,12 @@ import {
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
 import { Separator } from '@/components/ui/separator';
 import { api } from '@/lib/api';
+import { apiRoutes } from '@/lib/routes';
+import {
+  DashboardHero,
+  DashboardHeroPill,
+  DashboardMetricCard,
+} from '@/components/dashboard/dashboard-surfaces';
 
 interface OrderItem {
   id: string;
@@ -75,7 +81,7 @@ export default function OrdersPage() {
   const { data, isLoading } = useQuery<OrdersData>({
     queryKey: ['orders', page],
     queryFn: async () => {
-      const res = await api.get('/api/v1/orders/my', {
+      const res = await api.get(apiRoutes.orders.mine, {
         params: { page, limit: PAGE_SIZE },
       });
       return {
@@ -90,15 +96,63 @@ export default function OrdersPage() {
 
   const orders = data?.orders ?? [];
   const totalPages = data?.totalPages ?? 1;
+  const pending = orders.filter((order) => order.status === 'PENDING').length;
+  const confirmed = orders.filter((order) => order.status === 'CONFIRMED').length;
+  const totalValue = orders.reduce((sum, order) => sum + order.total, 0);
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-primary">Order History</h1>
-        <p className="text-muted-foreground">Track and manage your orders</p>
+      <DashboardHero
+        eyebrow="Customer orders"
+        title="Track order history without losing the buyer context."
+        description="Review past purchases, inspect line items, and monitor current statuses from one order surface designed for customers."
+        icon={Workflow}
+      >
+        <DashboardHeroPill
+          icon={ClipboardList}
+          label="Orders"
+          value={`${data?.total ?? 0} total`}
+          note="All customer orders currently visible through the order history endpoint."
+        />
+        <DashboardHeroPill
+          icon={PackageCheck}
+          label="Confirmed"
+          value={`${confirmed} in view`}
+          note="Orders already moving beyond the pending state."
+        />
+        <DashboardHeroPill
+          icon={ShoppingBag}
+          label="Value"
+          value={`KES ${Math.round(totalValue)}`}
+          note="Rounded value represented by the current page of orders."
+        />
+      </DashboardHero>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <DashboardMetricCard
+          label="Pending"
+          value={String(pending)}
+          note="Orders still awaiting confirmation."
+          icon={ClipboardList}
+          accent="from-amber-500/18 via-primary/[0.08] to-transparent"
+        />
+        <DashboardMetricCard
+          label="Confirmed"
+          value={String(confirmed)}
+          note="Orders that are actively progressing."
+          icon={PackageCheck}
+          accent="from-sky-500/15 via-primary/[0.08] to-transparent"
+        />
+        <DashboardMetricCard
+          label="Value"
+          value={`${Math.round(totalValue)}`}
+          note="Rounded value of orders on the current page."
+          icon={ShoppingBag}
+          accent="from-emerald-500/15 via-primary/[0.08] to-transparent"
+        />
       </div>
 
-      <Card>
+      <Card className="border-border/70 bg-card/80 shadow-[0_22px_70px_-48px_rgba(15,37,64,0.68)]">
         <CardHeader>
           <CardTitle>Orders</CardTitle>
           <CardDescription>
@@ -128,7 +182,7 @@ export default function OrdersPage() {
             <>
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="bg-muted/35">
                     <TableHead>Order ID</TableHead>
                     <TableHead>Business</TableHead>
                     <TableHead>Date</TableHead>
@@ -139,7 +193,7 @@ export default function OrdersPage() {
                 </TableHeader>
                 <TableBody>
                   {orders.map((order) => (
-                    <TableRow key={order.id}>
+                    <TableRow key={order.id} className="hover:bg-primary/[0.03]">
                       <TableCell className="font-mono text-xs">
                         {order.id.slice(0, 8)}...
                       </TableCell>
@@ -239,6 +293,7 @@ export default function OrdersPage() {
                       disabled={page <= 1}
                       onClick={() => setPage((p) => p - 1)}
                     >
+                      <ChevronLeft data-icon="inline-start" />
                       Previous
                     </Button>
                     <Button
@@ -247,6 +302,7 @@ export default function OrdersPage() {
                       disabled={page >= totalPages}
                       onClick={() => setPage((p) => p + 1)}
                     >
+                      <ChevronRight data-icon="inline-end" />
                       Next
                     </Button>
                   </div>

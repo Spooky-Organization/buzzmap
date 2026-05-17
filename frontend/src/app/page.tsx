@@ -24,6 +24,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { appRoutes } from '@/lib/routes';
 
 /* ─── animation helpers ─── */
 import type { Variants } from 'framer-motion';
@@ -225,10 +226,12 @@ export default function LandingPage() {
             <a href="#testimonials" className="text-sm text-muted-foreground transition-colors hover:text-foreground">Reviews</a>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/login" />}>
+            <Button variant="ghost" size="sm" nativeButton={false} render={<Link href={appRoutes.auth.login} />}>
+              <ArrowRight data-icon="inline-start" />
               Sign in
             </Button>
-            <Button size="sm" nativeButton={false} render={<Link href="/register/customer" />}>
+            <Button size="sm" nativeButton={false} render={<Link href={appRoutes.auth.registerCustomer} />}>
+              <Users data-icon="inline-start" />
               Get Started
             </Button>
           </div>
@@ -294,7 +297,7 @@ export default function LandingPage() {
               size="lg"
               className="bg-accent text-white hover:bg-[oklch(0.68_0.17_65)] shadow-lg shadow-accent/25 hover:shadow-xl active:scale-[0.98] transition-all"
               nativeButton={false}
-              render={<Link href="/register/customer" />}
+              render={<Link href={appRoutes.auth.registerCustomer} />}
             >
               Start Exploring
               <ArrowRight className="ml-2" />
@@ -304,7 +307,7 @@ export default function LandingPage() {
               variant="outline"
               className="border-primary-foreground/20 bg-transparent text-primary-foreground hover:bg-primary-foreground/10"
               nativeButton={false}
-              render={<Link href="/register/business" />}
+              render={<Link href={appRoutes.auth.registerBusiness} />}
             >
               <Play className="mr-2 size-4" />
               List Your Business
@@ -559,7 +562,7 @@ export default function LandingPage() {
               size="lg"
               className="bg-accent text-white hover:bg-[oklch(0.68_0.17_65)] shadow-lg shadow-accent/25 hover:shadow-xl active:scale-[0.98] transition-all"
               nativeButton={false}
-              render={<Link href="/register/customer" />}
+              render={<Link href={appRoutes.auth.registerCustomer} />}
             >
               Join as Customer
               <ArrowRight className="ml-2" />
@@ -569,8 +572,9 @@ export default function LandingPage() {
               variant="outline"
               className="border-primary-foreground/20 bg-transparent text-primary-foreground hover:bg-primary-foreground/10"
               nativeButton={false}
-              render={<Link href="/register/business" />}
+              render={<Link href={appRoutes.auth.registerBusiness} />}
             >
+              <ShoppingBag data-icon="inline-start" />
               Register Your Business
             </Button>
           </motion.div>
@@ -597,25 +601,25 @@ export default function LandingPage() {
             <div>
               <h4 className="mb-3 text-sm font-semibold text-foreground">Platform</h4>
               <ul className="flex flex-col gap-2">
-                <li><Link href="/feed" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Explore Feed</Link></li>
-                <li><Link href="/search" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Search Businesses</Link></li>
-                <li><Link href="/pov/create" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Create a POV</Link></li>
+                <li><Link href={appRoutes.customer.feed} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Explore Feed</Link></li>
+                <li><Link href={appRoutes.customer.search} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Search Businesses</Link></li>
+                <li><Link href={appRoutes.customer.povCreate} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Create a POV</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="mb-3 text-sm font-semibold text-foreground">Business</h4>
               <ul className="flex flex-col gap-2">
-                <li><Link href="/register/business" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Register Business</Link></li>
-                <li><Link href="/business/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Dashboard</Link></li>
-                <li><Link href="/business/analytics" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Analytics</Link></li>
+                <li><Link href={appRoutes.auth.registerBusiness} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Register Business</Link></li>
+                <li><Link href={appRoutes.business.dashboard} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Dashboard</Link></li>
+                <li><Link href={appRoutes.business.analytics} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Analytics</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="mb-3 text-sm font-semibold text-foreground">Account</h4>
               <ul className="flex flex-col gap-2">
-                <li><Link href="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Sign In</Link></li>
-                <li><Link href="/register/customer" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Create Account</Link></li>
-                <li><Link href="/forgot-password" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Reset Password</Link></li>
+                <li><Link href={appRoutes.auth.login} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Sign In</Link></li>
+                <li><Link href={appRoutes.auth.registerCustomer} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Create Account</Link></li>
+                <li><Link href={appRoutes.auth.forgotPassword} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Reset Password</Link></li>
               </ul>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { type Request, type Response, type NextFunction } from 'express';
 import { AppError } from '../../../shared/middleware/errorHandler.js';
 import {
+  searchAllSchema,
   searchBusinessesSchema,
   searchProductsSchema,
   searchUsersSchema,
@@ -22,9 +23,7 @@ export async function searchAll(
 ): Promise<void> {
   try {
     assertAuthenticated(req);
-    const keyword = typeof req.query.q === 'string' ? req.query.q : undefined;
-    const category = typeof req.query.category === 'string' ? req.query.category : undefined;
-    const location = typeof req.query.location === 'string' ? req.query.location : undefined;
+    const { q: keyword, category, location } = searchAllSchema.parse(req.query);
 
     const [businesses, products, users] = await Promise.all([
       searchService.searchBusinesses(keyword, category, location, 1, 10),

@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { apiRoutes } from '@/lib/routes';
 import { POVCard, type POVCardData } from './pov-card';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -13,7 +14,7 @@ interface FeedPage {
 
 async function fetchFeedPage({ pageParam }: { pageParam: string | null }): Promise<FeedPage> {
   const params = pageParam ? { cursor: pageParam } : {};
-  const res = await api.get<FeedPage>('/api/v1/feed', { params });
+  const res = await api.get<FeedPage>(apiRoutes.feed.root, { params });
   return res.data;
 }
 

@@ -17,7 +17,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.dev
     ports:
-      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
+      - "${FRONTEND_BIND_HOST}:${FRONTEND_PORT}:${FRONTEND_PORT}"
     volumes:
       - ./frontend/src:/app/src
       - ./frontend/public:/app/public
@@ -45,7 +45,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile.dev
     ports:
-      - "${BACKEND_PORT}:${BACKEND_PORT}"
+      - "${BACKEND_BIND_HOST}:${BACKEND_PORT}:${BACKEND_PORT}"
     volumes:
       - ./backend/src:/app/src
       - ./backend/prisma:/app/prisma
@@ -72,7 +72,7 @@ services:
   postgres:
     image: postgres:16-alpine
     ports:
-      - "${DATABASE_PORT}:5432"
+      - "${DATABASE_BIND_HOST}:${DATABASE_PORT}:${DATABASE_INTERNAL_PORT}"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
@@ -90,7 +90,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "${REDIS_PORT}:6379"
+      - "${REDIS_BIND_HOST}:${REDIS_PORT}:${REDIS_INTERNAL_PORT}"
     volumes:
       - redis_data:/data
     command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
@@ -105,8 +105,8 @@ services:
   rustfs:
     image: minio/minio:latest
     ports:
-      - "${STORAGE_PORT}:${STORAGE_PORT}"
-      - "${STORAGE_CONSOLE_PORT}:${STORAGE_CONSOLE_PORT}"
+      - "${STORAGE_BIND_HOST}:${STORAGE_PORT}:${STORAGE_PORT}"
+      - "${STORAGE_CONSOLE_BIND_HOST}:${STORAGE_CONSOLE_PORT}:${STORAGE_CONSOLE_PORT}"
     volumes:
       - rustfs_data:/data
     environment:

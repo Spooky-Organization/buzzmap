@@ -93,6 +93,11 @@ async function login(email: string, password: string): Promise<AuthResponse> {
   };
 }
 
+async function refresh(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
+  const payload = verifyRefreshToken(refreshToken);
+  return generateTokens(payload.userId, payload.role);
+}
+
 function verifyAccessToken(token: string): JwtPayload {
   try {
     const payload = jwt.verify(token, config.jwt.accessSecret) as JwtPayload;
@@ -114,6 +119,7 @@ function verifyRefreshToken(token: string): JwtPayload {
 export const authService = {
   register,
   login,
+  refresh,
   generateTokens,
   verifyAccessToken,
   verifyRefreshToken,

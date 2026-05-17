@@ -17,12 +17,25 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useNotifications } from '@/hooks/use-notifications';
+import { appRoutes } from '@/lib/routes';
 
 export function Navbar() {
   const { data: session } = useSession();
   const { unreadCount } = useNotifications();
 
   const user = session?.user;
+  const dashboardHref =
+    user?.role === 'ADMIN'
+      ? appRoutes.admin.overview
+      : user?.role === 'BUSINESS_OWNER'
+        ? appRoutes.business.dashboard
+        : appRoutes.customer.dashboard;
+  const notificationsHref =
+    user?.role === 'ADMIN'
+      ? appRoutes.admin.notifications
+      : user?.role === 'BUSINESS_OWNER'
+        ? appRoutes.business.notifications
+        : appRoutes.customer.notifications;
   const initials = user?.name
     ? user.name
         .split(' ')
@@ -39,7 +52,7 @@ export function Navbar() {
         <SidebarTrigger className="text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground" />
 
         {/* Logo */}
-        <Link href="/feed" className="flex items-center gap-2 font-bold text-lg text-accent">
+        <Link href={appRoutes.customer.feed} className="flex items-center gap-2 font-bold text-lg text-accent">
           BuzzMap
         </Link>
 
@@ -51,7 +64,7 @@ export function Navbar() {
             variant="ghost"
             size="icon"
             nativeButton={false}
-            render={<Link href="/search" aria-label="Search" />}
+            render={<Link href={appRoutes.customer.search} aria-label="Search" />}
             className="text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground"
           >
             <Search />
@@ -61,7 +74,7 @@ export function Navbar() {
             variant="ghost"
             size="icon"
             nativeButton={false}
-            render={<Link href="/messages" aria-label="Messages" />}
+            render={<Link href={appRoutes.customer.messages} aria-label="Messages" />}
             className="text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground"
           >
             <MessageSquare />
@@ -73,7 +86,7 @@ export function Navbar() {
               variant="ghost"
               size="icon"
               nativeButton={false}
-              render={<Link href="/notifications" aria-label="Notifications" />}
+              render={<Link href={notificationsHref} aria-label="Notifications" />}
               className="text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground"
             >
               <Bell />
@@ -97,20 +110,22 @@ export function Navbar() {
               </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuLabel>{user?.name ?? 'Account'}</DropdownMenuLabel>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>{user?.name ?? 'Account'}</DropdownMenuLabel>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <DropdownMenuItem render={<Link href="/dashboard" />}>
+                <DropdownMenuItem render={<Link href={dashboardHref} />}>
                   Dashboard
                 </DropdownMenuItem>
-                <DropdownMenuItem render={<Link href="/profile" />}>
+                <DropdownMenuItem render={<Link href={user?.id ? appRoutes.user.byId(user.id) : appRoutes.home} />}>
                   Profile
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => {
-                  setTimeout(() => signOut({ redirectTo: '/login' }), 0);
+                  setTimeout(() => signOut({ redirectTo: appRoutes.auth.login }), 0);
                 }}
               >
                 Sign out

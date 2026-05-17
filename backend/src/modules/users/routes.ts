@@ -9,6 +9,7 @@ router.use(authenticate);
 
 router.get('/me', userController.getMe);
 router.patch('/me', userController.updateMe);
+router.patch('/me/password', userController.changeMyPassword);
 router.patch('/me/interests', userController.updateMyInterests);
 router.get('/me/followers', userController.getMyFollowers);
 router.get('/me/following', userController.getMyFollowing);

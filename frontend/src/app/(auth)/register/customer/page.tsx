@@ -8,18 +8,12 @@ import { toast } from 'sonner';
 import { UserIcon, MailIcon, PhoneIcon, LockIcon, MapPinIcon, ArrowLeftIcon, EyeIcon, EyeOffIcon } from 'lucide-react';
 
 import { api } from '@/lib/api';
+import { apiRoutes, appRoutes } from '@/lib/routes';
+import { AuthShell } from '@/components/auth/auth-shell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from '@/components/ui/card';
 import {
   Field,
   FieldGroup,
@@ -63,6 +57,8 @@ export default function CustomerRegisterPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const authLinkClass =
+    'inline-flex items-center gap-1 font-semibold text-[oklch(0.68_0.17_65)] underline-offset-4 transition-colors hover:text-[oklch(0.62_0.18_58)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[oklch(0.72_0.15_67)] rounded-sm';
 
   function toggleInterest(value: string) {
     setInterests((prev) =>
@@ -97,7 +93,7 @@ export default function CustomerRegisterPage() {
     setIsLoading(true);
 
     try {
-      await api.post('/api/v1/auth/register/customer', {
+      await api.post(apiRoutes.auth.registerCustomer, {
         name: name.trim(),
         email,
         phone: phone.trim(),
@@ -116,11 +112,11 @@ export default function CustomerRegisterPage() {
 
       if (result?.error) {
         toast.error('Registered but could not sign in automatically. Please log in.');
-        router.push('/login');
+        router.push(appRoutes.auth.login);
         return;
       }
 
-      router.push('/feed');
+      router.push(appRoutes.customer.feed);
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
@@ -132,15 +128,22 @@ export default function CustomerRegisterPage() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Create your account</CardTitle>
-        <CardDescription>
-          Join BuzzMap and discover local businesses near you.
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent>
+    <AuthShell
+      mode="register"
+      audience="customer"
+      eyebrow="Customer registration"
+      title="Create a customer account for discovery, reviews, and orders."
+      description="Set up your BuzzMap customer profile to follow trusted businesses, share POV reviews, and manage orders from one local-commerce identity."
+      footer={
+        <p className="w-full text-center text-sm text-muted-foreground">
+          Already have an account?{' '}
+          <Link href={appRoutes.auth.loginFor('customer')} className={authLinkClass}>
+            <ArrowLeftIcon className="size-3" />
+            Sign in as a customer
+          </Link>
+        </p>
+      }
+    >
         <form onSubmit={handleSubmit} noValidate>
           <FieldGroup>
             {/* Name */}
@@ -171,7 +174,7 @@ export default function CustomerRegisterPage() {
               <Input
                 id="reg-email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="Email address"
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -322,22 +325,14 @@ export default function CustomerRegisterPage() {
                   Creating account…
                 </>
               ) : (
-                'Create Account'
+                <>
+                  <UserIcon data-icon="inline-start" />
+                  Create Account
+                </>
               )}
             </Button>
           </FieldGroup>
         </form>
-      </CardContent>
-
-      <CardFooter>
-        <p className="text-sm text-muted-foreground text-center w-full">
-          Already have an account?{' '}
-          <Link href="/login" className="text-accent hover:underline inline-flex items-center gap-1">
-            <ArrowLeftIcon className="size-3" />
-            Sign in
-          </Link>
-        </p>
-      </CardFooter>
-    </Card>
+    </AuthShell>
   );
 }

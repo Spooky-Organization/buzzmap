@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getSession, signOut } from 'next-auth/react';
+import { appRoutes } from './routes';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -31,10 +32,10 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !isSigningOut) {
       isSigningOut = true;
       try {
-        await signOut({ redirectTo: '/login' });
+        await signOut({ redirectTo: appRoutes.auth.login });
       } catch {
         if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+          window.location.href = appRoutes.auth.login;
         }
       }
     }

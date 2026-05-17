@@ -1,99 +1,70 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import {
-  LayoutDashboard,
-  Store,
-  ClipboardList,
-  Plus,
-  BarChart3,
-  Settings,
-  Hexagon,
-} from 'lucide-react';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarInset,
-  SidebarTrigger,
-} from '@/components/ui/sidebar';
+import { useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { AdminSidebar } from '@/components/admin/admin-sidebar';
+import { LoadingScreen } from '@/components/shared/loading-screen';
+import { appRoutes } from '@/lib/routes';
+import { DashboardLayoutShell } from '@/components/shared/dashboard-layout-shell';
+import { BusinessSidebar } from '@/components/business/business-sidebar';
+import { AppSidebar } from '@/components/shared/app-sidebar';
 
-const navItems = [
-  { href: '/business/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/business/shelf', label: 'Product Shelf', icon: Store },
-  { href: '/business/orders', label: 'Orders', icon: ClipboardList },
-  { href: '/business/posts/create', label: 'Create Post', icon: Plus },
-  { href: '/business/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/business/settings', label: 'Settings', icon: Settings },
-];
-
-function BusinessSidebar() {
-  const pathname = usePathname();
-
-  return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader>
-        <Link
-          href="/business/dashboard"
-          className="flex items-center gap-2 px-2 py-1 font-bold text-lg text-sidebar-primary"
-        >
-          <Hexagon className="size-5 shrink-0" />
-          <span className="truncate group-data-[collapsible=icon]:hidden">BuzzMap</span>
-        </Link>
-        <p className="px-2 text-xs text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">
-          Business Portal
-        </p>
-      </SidebarHeader>
-
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Management</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navItems.map(({ href, label, icon: Icon }) => {
-                const isActive =
-                  pathname === href || pathname.startsWith(href + '/');
-                return (
-                  <SidebarMenuItem key={href}>
-                    <SidebarMenuButton
-                      isActive={isActive}
-                      tooltip={label}
-                      render={<Link href={href} />}
-                    >
-                      <Icon />
-                      <span>{label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-    </Sidebar>
-  );
+function resolveSidebar(role?: string) {
+  if (role === 'ADMIN') return <AdminSidebar />;
+  if (role === 'BUSINESS_OWNER') return <BusinessSidebar />;
+  return <AppSidebar />;
 }
 
 export default function BusinessLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { data: session, status } = useSession();
+  const isPublicBusinessProfile = /^\/business\/[^/]+$/.test(pathname);
+
+  useEffect(() => {
+    if (isPublicBusinessProfile) {
+      return;
+    }
+
+    if (status === 'loading') return;
+
+    if (status === 'unauthenticated') {
+      router.replace(appRoutes.auth.login);
+      return;
+    }
+
+    if (session?.user.role !== 'BUSINESS_OWNER') {
+      router.replace(appRoutes.customer.dashboard);
+    }
+  }, [isPublicBusinessProfile, router, session?.user.role, status]);
+
+  if (isPublicBusinessProfile) {
+    if (status === 'authenticated') {
+      return (
+        <DashboardLayoutShell sidebar={resolveSidebar(session?.user.role)}>
+          {children}
+        </DashboardLayoutShell>
+      );
+    }
+
+    return <>{children}</>;
+  }
+
+  if (status === 'loading') {
+    return (
+      <LoadingScreen
+        title="Opening Business Portal"
+        message="We are verifying your account and loading your management workspace."
+      />
+    );
+  }
+
+  if (status !== 'authenticated' || session?.user.role !== 'BUSINESS_OWNER') {
+    return null;
+  }
+
   return (
-    <SidebarProvider defaultOpen={false}>
-      <BusinessSidebar />
-      <SidebarInset>
-        <header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b bg-background px-4">
-          <SidebarTrigger />
-          <span className="text-lg font-bold text-accent">BuzzMap</span>
-          <span className="text-sm text-muted-foreground">Business</span>
-        </header>
-        <main className="flex-1 p-4 md:p-6">{children}</main>
-      </SidebarInset>
-    </SidebarProvider>
+    <DashboardLayoutShell sidebar={<BusinessSidebar />}>{children}</DashboardLayoutShell>
   );
 }

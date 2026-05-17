@@ -1,22 +1,29 @@
 'use client';
 
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
-import Link from 'next/link';
 import {
-  ShoppingCart,
-  ClipboardList,
   Bell,
-  Video,
-  TrendingUp,
+  ClipboardList,
   Clock,
+  Compass,
+  Package2,
+  ShoppingCart,
+  TrendingUp,
+  Video,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { CustomerDashboardLoading } from '@/components/dashboard/loading-skeletons';
+import {
+  DashboardHero,
+  DashboardHeroPill,
+  DashboardMetricCard,
+  DashboardPanel,
+} from '@/components/dashboard/dashboard-surfaces';
 import { api } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { apiRoutes, appRoutes } from '@/lib/routes';
 
 interface DashboardData {
   recentPovs: Array<{
@@ -37,24 +44,30 @@ interface DashboardData {
 
 function orderStatusVariant(status: string): 'default' | 'secondary' | 'outline' | 'destructive' {
   switch (status) {
-    case 'CONFIRMED': return 'default';
-    case 'PENDING': return 'secondary';
-    case 'COMPLETED': return 'outline';
-    case 'CANCELLED': return 'destructive';
-    default: return 'secondary';
+    case 'CONFIRMED':
+      return 'default';
+    case 'PENDING':
+      return 'secondary';
+    case 'COMPLETED':
+      return 'outline';
+    case 'CANCELLED':
+      return 'destructive';
+    default:
+      return 'secondary';
   }
 }
 
 export default function CustomerDashboardPage() {
   const { data: session } = useSession();
+  const firstName = session?.user?.name?.split(' ')[0] ?? 'there';
 
   const { data, isLoading } = useQuery<DashboardData>({
     queryKey: ['customer-dashboard'],
     queryFn: async () => {
       const [povsRes, ordersRes, notifsRes] = await Promise.all([
-        api.get('/api/v1/pov/my', { params: { limit: 5 } }),
-        api.get('/api/v1/orders/my', { params: { limit: 5, status: 'PENDING,CONFIRMED' } }),
-        api.get('/api/v1/notifications', { params: { limit: 1 } }),
+        api.get(apiRoutes.pov.mine, { params: { limit: 5 } }),
+        api.get(apiRoutes.orders.mine, { params: { limit: 5, status: 'PENDING,CONFIRMED' } }),
+        api.get(apiRoutes.notifications.root, { params: { limit: 1 } }),
       ]);
       return {
         recentPovs: povsRes.data.povs ?? [],
@@ -65,160 +78,147 @@ export default function CustomerDashboardPage() {
     enabled: !!session,
   });
 
+  if (isLoading) {
+    return <CustomerDashboardLoading />;
+  }
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-primary">
-          Welcome back, {session?.user?.name?.split(' ')[0] ?? 'there'}
-        </h1>
-        <p className="text-muted-foreground">Here&apos;s what&apos;s happening</p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <StatCard
-          title="Active Orders"
-          value={isLoading ? null : (data?.activeOrders.length ?? 0)}
+      <DashboardHero
+        eyebrow="Customer dashboard"
+        title={`Welcome back, ${firstName}`}
+        description="Track active orders, keep your POV publishing momentum high, and stay close to the businesses and products moving in your orbit."
+        icon={Compass}
+      >
+        <DashboardHeroPill
           icon={ClipboardList}
-          href="/orders"
+          label="Open orders"
+          value={`${data?.activeOrders.length ?? 0} in motion`}
+          note="Pending and confirmed purchases that still need attention."
         />
-        <StatCard
-          title="Notifications"
-          value={isLoading ? null : (data?.unreadNotifications ?? 0)}
+        <DashboardHeroPill
           icon={Bell}
-          href="/notifications"
+          label="Unread alerts"
+          value={`${data?.unreadNotifications ?? 0} notifications`}
+          note="Fresh platform, order, and conversation updates for this account."
         />
-        <StatCard
-          title="My POVs"
-          value={isLoading ? null : (data?.recentPovs.length ?? 0)}
+        <DashboardHeroPill
           icon={Video}
-          href="/pov"
+          label="POV cadence"
+          value={`${data?.recentPovs.length ?? 0} recent posts`}
+          note="Your latest review activity that can keep businesses discoverable."
         />
-        <StatCard
-          title="Cart Items"
-          value={0}
+      </DashboardHero>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <DashboardMetricCard
+          label="Active Orders"
+          value={String(data?.activeOrders.length ?? 0)}
+          note="Go to orders and track fulfillment."
+          icon={ClipboardList}
+          accent="from-sky-500/15 via-primary/[0.08] to-transparent"
+          href={appRoutes.customer.orders}
+        />
+        <DashboardMetricCard
+          label="Notifications"
+          value={String(data?.unreadNotifications ?? 0)}
+          note="Check unread updates and keep the session clean."
+          icon={Bell}
+          accent="from-rose-500/15 via-primary/[0.08] to-transparent"
+          href={appRoutes.customer.notifications}
+        />
+        <DashboardMetricCard
+          label="Recent POVs"
+          value={String(data?.recentPovs.length ?? 0)}
+          note="Create a new POV or review past activity."
+          icon={Video}
+          accent="from-amber-500/18 via-primary/[0.08] to-transparent"
+          href={appRoutes.customer.povCreate}
+        />
+        <DashboardMetricCard
+          label="Cart"
+          value="Open"
+          note="Jump back into checkout-ready items."
           icon={ShoppingCart}
-          href="/cart"
+          accent="from-emerald-500/15 via-primary/[0.08] to-transparent"
+          href={appRoutes.customer.cart}
         />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Active Orders */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Active Orders</CardTitle>
-              <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/orders" />}>
-                View all
+      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.95fr]">
+        <DashboardPanel
+          title="Active Orders"
+          description="Orders still in flight, so you can stay on top of delivery and confirmation progress."
+          icon={Package2}
+          actionLabel="View orders"
+          actionHref={appRoutes.customer.orders}
+        >
+          {(data?.activeOrders.length ?? 0) === 0 ? (
+            <div className="rounded-3xl border border-dashed border-border/70 bg-background/85 px-4 py-10 text-center">
+              <p className="text-sm text-muted-foreground">No active orders right now.</p>
+              <Button className="mt-4" size="sm" nativeButton={false} render={<Link href={appRoutes.customer.feed} />}>
+                Browse the feed
               </Button>
             </div>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            {isLoading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))
-            ) : (data?.activeOrders.length ?? 0) === 0 ? (
-              <p className="py-4 text-center text-sm text-muted-foreground">
-                No active orders
-              </p>
-            ) : (
-              data?.activeOrders.map((order) => (
-                <div
-                  key={order.id}
-                  className="flex items-center justify-between rounded-lg border p-3"
-                >
-                  <div className="flex flex-col gap-0.5">
-                    <p className="text-sm font-medium">{order.businessName}</p>
+          ) : (
+            data?.activeOrders.map((order) => (
+              <div
+                key={order.id}
+                className="rounded-3xl border border-border/70 bg-background/90 px-4 py-4 transition-colors hover:border-primary/20 hover:bg-card"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-foreground">{order.businessName}</p>
                     <p className="flex items-center gap-1 text-xs text-muted-foreground">
                       <Clock className="size-3" />
                       {new Date(order.createdAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <Badge variant={orderStatusVariant(order.status)}>
-                      {order.status}
-                    </Badge>
-                    <span className="text-xs font-medium">
-                      ₱{order.total.toFixed(2)}
-                    </span>
+                  <div className="flex flex-col items-end gap-2">
+                    <Badge variant={orderStatusVariant(order.status)}>{order.status}</Badge>
+                    <span className="text-sm font-semibold text-primary">KES {order.total.toFixed(2)}</span>
                   </div>
                 </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+              </div>
+            ))
+          )}
+        </DashboardPanel>
 
-        {/* Recent POVs */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Recent POVs</CardTitle>
-              <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/pov" />}>
-                View all
+        <DashboardPanel
+          title="Recent POVs"
+          description="Your latest customer voice in the system, including the reviews that keep discovery credible."
+          icon={TrendingUp}
+          actionLabel="Create POV"
+          actionHref={appRoutes.customer.povCreate}
+        >
+          {(data?.recentPovs.length ?? 0) === 0 ? (
+            <div className="rounded-3xl border border-dashed border-border/70 bg-background/85 px-4 py-10 text-center">
+              <p className="text-sm text-muted-foreground">No POVs yet.</p>
+              <Button className="mt-4" size="sm" nativeButton={false} render={<Link href={appRoutes.customer.povCreate} />}>
+                Publish your first POV
               </Button>
             </div>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            {isLoading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))
-            ) : (data?.recentPovs.length ?? 0) === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-4">
-                <p className="text-sm text-muted-foreground">No POVs yet</p>
-                <Button size="sm" nativeButton={false} render={<Link href="/pov/create" />}>
-                  Create your first POV
-                </Button>
-              </div>
-            ) : (
-              data?.recentPovs.map((pov) => (
-                <div
-                  key={pov.id}
-                  className="flex items-center justify-between rounded-lg border p-3"
-                >
-                  <p className="line-clamp-1 text-sm font-medium">{pov.title}</p>
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <TrendingUp className="size-3" />
-                    {pov.viewCount}
-                  </span>
+          ) : (
+            data?.recentPovs.map((pov) => (
+              <div
+                key={pov.id}
+                className="flex items-center justify-between gap-3 rounded-3xl border border-border/70 bg-background/90 px-4 py-4 transition-colors hover:border-primary/20 hover:bg-card"
+              >
+                <div className="space-y-1">
+                  <p className="line-clamp-1 text-sm font-semibold text-foreground">{pov.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(pov.createdAt).toLocaleDateString()}
+                  </p>
                 </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                  <TrendingUp className="size-3.5 text-primary" />
+                  {pov.viewCount} views
+                </span>
+              </div>
+            ))
+          )}
+        </DashboardPanel>
       </div>
     </div>
-  );
-}
-
-function StatCard({
-  title,
-  value,
-  icon: Icon,
-  href,
-}: {
-  title: string;
-  value: number | null;
-  icon: React.ElementType;
-  href: string;
-}) {
-  return (
-    <Card className="transition-colors hover:ring-accent">
-      <Link href={href}>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col gap-1">
-              <p className="text-xs text-muted-foreground">{title}</p>
-              {value === null ? (
-                <Skeleton className="h-7 w-12" />
-              ) : (
-                <p className="text-2xl font-bold text-primary">{value}</p>
-              )}
-            </div>
-            <Icon className="size-8 text-accent" />
-          </div>
-        </CardContent>
-      </Link>
-    </Card>
   );
 }

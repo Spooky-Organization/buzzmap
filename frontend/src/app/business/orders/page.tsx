@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
-import { ChevronRight, ClipboardList } from 'lucide-react';
+import { ChevronRight, ClipboardList, PackageCheck, ShoppingBag, Workflow } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Card,
@@ -41,6 +41,12 @@ import {
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
 import { Separator } from '@/components/ui/separator';
 import { api } from '@/lib/api';
+import { apiRoutes } from '@/lib/routes';
+import {
+  DashboardHero,
+  DashboardHeroPill,
+  DashboardMetricCard,
+} from '@/components/dashboard/dashboard-surfaces';
 
 type OrderStatus = 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
 
@@ -62,10 +68,14 @@ interface Order {
 
 function statusVariant(status: OrderStatus): 'default' | 'secondary' | 'outline' | 'destructive' {
   switch (status) {
-    case 'CONFIRMED': return 'default';
-    case 'PENDING': return 'secondary';
-    case 'COMPLETED': return 'outline';
-    case 'CANCELLED': return 'destructive';
+    case 'CONFIRMED':
+      return 'default';
+    case 'PENDING':
+      return 'secondary';
+    case 'COMPLETED':
+      return 'outline';
+    case 'CANCELLED':
+      return 'destructive';
   }
 }
 
@@ -79,7 +89,7 @@ export default function BusinessOrdersPage() {
   const { data, isLoading } = useQuery<{ orders: Order[] }>({
     queryKey: ['business-orders'],
     queryFn: async () => {
-      const res = await api.get('/api/v1/orders/business');
+      const res = await api.get(apiRoutes.orders.business);
       return { orders: res.data.orders ?? [] };
     },
     enabled: !!session,
@@ -87,7 +97,7 @@ export default function BusinessOrdersPage() {
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: OrderStatus }) => {
-      await api.patch(`/api/v1/orders/${id}/status`, { status });
+      await api.patch(apiRoutes.orders.updateStatus(id), { status });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['business-orders'] });
@@ -97,15 +107,63 @@ export default function BusinessOrdersPage() {
   });
 
   const orders = data?.orders ?? [];
+  const pending = orders.filter((order) => order.status === 'PENDING').length;
+  const confirmed = orders.filter((order) => order.status === 'CONFIRMED').length;
+  const totalValue = orders.reduce((sum, order) => sum + order.total, 0);
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-primary">Orders</h1>
-        <p className="text-muted-foreground">Manage incoming customer orders</p>
+      <DashboardHero
+        eyebrow="Business orders"
+        title="Manage incoming orders without leaving the operator lane."
+        description="Track order flow, update statuses quickly, and inspect line items from one fulfillment surface built for businesses."
+        icon={Workflow}
+      >
+        <DashboardHeroPill
+          icon={ClipboardList}
+          label="Orders"
+          value={`${orders.length} total`}
+          note="All business orders currently returned from the order index."
+        />
+        <DashboardHeroPill
+          icon={PackageCheck}
+          label="Confirmed"
+          value={`${confirmed} active`}
+          note="Orders that are no longer pending and are moving through fulfillment."
+        />
+        <DashboardHeroPill
+          icon={ShoppingBag}
+          label="Value"
+          value={`KES ${Math.round(totalValue)}`}
+          note="Gross order value represented by the current order list."
+        />
+      </DashboardHero>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <DashboardMetricCard
+          label="Pending"
+          value={String(pending)}
+          note="New orders still awaiting confirmation."
+          icon={ClipboardList}
+          accent="from-amber-500/18 via-primary/[0.08] to-transparent"
+        />
+        <DashboardMetricCard
+          label="Confirmed"
+          value={String(confirmed)}
+          note="Orders already accepted into fulfillment."
+          icon={PackageCheck}
+          accent="from-sky-500/15 via-primary/[0.08] to-transparent"
+        />
+        <DashboardMetricCard
+          label="Order Value"
+          value={`${Math.round(totalValue)}`}
+          note="Rounded view of order value in the current dataset."
+          icon={ShoppingBag}
+          accent="from-emerald-500/15 via-primary/[0.08] to-transparent"
+        />
       </div>
 
-      <Card>
+      <Card className="border-border/70 bg-card/80 shadow-[0_22px_70px_-48px_rgba(15,37,64,0.68)]">
         <CardHeader>
           <CardTitle>Incoming Orders</CardTitle>
           <CardDescription>{isLoading ? '' : `${orders.length} orders`}</CardDescription>
@@ -124,15 +182,13 @@ export default function BusinessOrdersPage() {
                   <ClipboardList />
                 </EmptyMedia>
                 <EmptyTitle>No orders yet</EmptyTitle>
-                <EmptyDescription>
-                  Customer orders will appear here
-                </EmptyDescription>
+                <EmptyDescription>Customer orders will appear here</EmptyDescription>
               </EmptyHeader>
             </Empty>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="bg-muted/35">
                   <TableHead>Order ID</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Date</TableHead>
@@ -144,22 +200,16 @@ export default function BusinessOrdersPage() {
               </TableHeader>
               <TableBody>
                 {orders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-mono text-xs">
-                      {order.id.slice(0, 8)}...
-                    </TableCell>
+                  <TableRow key={order.id} className="hover:bg-primary/[0.03]">
+                    <TableCell className="font-mono text-xs">{order.id.slice(0, 8)}...</TableCell>
                     <TableCell>{order.customerName}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {new Date(order.createdAt).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={statusVariant(order.status)}>
-                        {order.status}
-                      </Badge>
+                      <Badge variant={statusVariant(order.status)}>{order.status}</Badge>
                     </TableCell>
-                    <TableCell className="text-right font-medium">
-                      ₱{order.total.toFixed(2)}
-                    </TableCell>
+                    <TableCell className="text-right font-medium">KES {order.total.toFixed(2)}</TableCell>
                     <TableCell>
                       <Select
                         value={order.status}
@@ -167,7 +217,7 @@ export default function BusinessOrdersPage() {
                           updateStatus.mutate({ id: order.id, status: value as OrderStatus })
                         }
                       >
-                        <SelectTrigger size="sm">
+                        <SelectTrigger size="sm" className="rounded-xl border-border/70 bg-background/90">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -217,9 +267,7 @@ export default function BusinessOrdersPage() {
                                 </div>
                                 <div className="flex justify-between">
                                   <span className="text-muted-foreground">Date</span>
-                                  <span>
-                                    {new Date(selectedOrder.createdAt).toLocaleString()}
-                                  </span>
+                                  <span>{new Date(selectedOrder.createdAt).toLocaleString()}</span>
                                 </div>
                               </div>
                               <Separator />
@@ -230,14 +278,14 @@ export default function BusinessOrdersPage() {
                                     <span className="text-muted-foreground">
                                       {item.productName} × {item.quantity}
                                     </span>
-                                    <span>₱{(item.price * item.quantity).toFixed(2)}</span>
+                                    <span>KES {(item.price * item.quantity).toFixed(2)}</span>
                                   </div>
                                 ))}
                               </div>
                               <Separator />
                               <div className="flex justify-between font-semibold">
                                 <span>Total</span>
-                                <span>₱{selectedOrder.total.toFixed(2)}</span>
+                                <span>KES {selectedOrder.total.toFixed(2)}</span>
                               </div>
                             </div>
                           )}

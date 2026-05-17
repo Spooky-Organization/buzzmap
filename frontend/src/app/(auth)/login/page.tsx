@@ -2,37 +2,37 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { signIn, signOut } from 'next-auth/react';
 import { toast } from 'sonner';
-import { LogInIcon, EyeIcon, EyeOffIcon } from 'lucide-react';
+import { LogInIcon, EyeIcon, EyeOffIcon, ArrowLeftIcon } from 'lucide-react';
 
+import { AuthShell } from '@/components/auth/auth-shell';
+import type { AuthAudience } from '@/components/auth/auth-audience-tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from '@/components/ui/card';
 import {
   Field,
   FieldGroup,
   FieldLabel,
   FieldError,
 } from '@/components/ui/field';
-import { Separator } from '@/components/ui/separator';
+import { appRoutes } from '@/lib/routes';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const audience = searchParams.get('audience') === 'business' ? 'business' : 'customer';
+  const registerHref = appRoutes.auth.registerFor(audience as AuthAudience);
+  const forgotPasswordHref = appRoutes.auth.forgotPasswordFor(audience as AuthAudience);
+  const authLinkClass =
+    'inline-flex items-center gap-1 font-semibold text-[oklch(0.68_0.17_65)] underline-offset-4 transition-colors hover:text-[oklch(0.62_0.18_58)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[oklch(0.72_0.15_67)] rounded-sm';
 
   function validate() {
     const next: typeof errors = {};
@@ -65,16 +65,30 @@ export default function LoginPage() {
         return;
       }
 
-      toast.success('Welcome back!');
-
       const { getSession } = await import('next-auth/react');
       const session = await getSession();
       const role = session?.user?.role;
 
-      if (role === 'BUSINESS_OWNER') {
-        router.push('/business/dashboard');
+      if (audience === 'customer' && role !== 'CUSTOMER') {
+        await signOut({ redirect: false });
+        toast.error('This account cannot access the selected sign-in lane.');
+        return;
+      }
+
+      if (audience === 'business' && role === 'CUSTOMER') {
+        await signOut({ redirect: false });
+        toast.error('This account cannot access the selected sign-in lane.');
+        return;
+      }
+
+      toast.success('Welcome back!');
+
+      if (role === 'ADMIN') {
+        router.push(appRoutes.admin.overview);
+      } else if (role === 'BUSINESS_OWNER') {
+        router.push(appRoutes.business.dashboard);
       } else {
-        router.push('/feed');
+        router.push(appRoutes.customer.feed);
       }
     } catch {
       toast.error('Something went wrong. Please try again.');
@@ -84,15 +98,26 @@ export default function LoginPage() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Sign in</CardTitle>
-        <CardDescription>
-          Enter your credentials to access your account.
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent>
+    <AuthShell
+      mode="login"
+      audience={audience}
+      eyebrow={audience === 'business' ? 'Business access' : 'Customer access'}
+      title={audience === 'business' ? 'Sign in to manage your business presence.' : 'Sign in to explore and shop local with confidence.'}
+      description={
+        audience === 'business'
+          ? 'Access orders, shelf updates, analytics, and customer conversations from one business workspace.'
+          : 'Continue discovering trusted businesses, POV reviews, orders, messages, and saved marketplace activity.'
+      }
+      footer={
+        <p className="w-full text-center text-sm text-muted-foreground">
+          Don&apos;t have an account?{' '}
+          <Link href={registerHref} className={authLinkClass}>
+            <ArrowLeftIcon className="size-3 rotate-180" />
+            {audience === 'business' ? 'Register your business' : 'Create a customer account'}
+          </Link>
+        </p>
+      }
+    >
         <form onSubmit={handleSubmit} noValidate>
           <FieldGroup>
             <Field data-invalid={!!errors.email || undefined}>
@@ -100,7 +125,7 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="Email address"
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -143,8 +168,8 @@ export default function LoginPage() {
 
             <div className="flex justify-end -mt-2">
               <Link
-                href="/forgot-password"
-                className="text-sm text-accent hover:underline"
+                href={forgotPasswordHref}
+                className={`${authLinkClass} text-sm`}
               >
                 Forgot password?
               </Link>
@@ -169,32 +194,6 @@ export default function LoginPage() {
             </Button>
           </FieldGroup>
         </form>
-      </CardContent>
-
-      <CardFooter className="flex flex-col gap-4">
-        <Separator />
-        <p className="text-sm text-muted-foreground text-center">
-          Don&apos;t have an account?
-        </p>
-        <div className="flex flex-col gap-2 w-full">
-          <Button
-            variant="outline"
-            className="w-full border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
-            nativeButton={false}
-            render={<Link href="/register/customer" />}
-          >
-            Join as a Customer
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
-            nativeButton={false}
-            render={<Link href="/register/business" />}
-          >
-            Register your Business
-          </Button>
-        </div>
-      </CardFooter>
-    </Card>
+    </AuthShell>
   );
 }

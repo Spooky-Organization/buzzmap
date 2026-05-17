@@ -1,6 +1,7 @@
 import { getPrisma } from '../prisma/index.js';
 import bcrypt from 'bcrypt';
 import { config } from '../../config/index.js';
+import { sanitizePlainText, sanitizeOptionalText, sanitizeStringArray } from '../utils/sanitize.js';
 
 interface CreateCustomerInput {
   email: string;
@@ -19,12 +20,12 @@ export class CustomerFactory {
     return prisma.user.create({
       data: {
         email: input.email,
-        phone: input.phone,
+        phone: sanitizeOptionalText(input.phone),
         password: hashedPassword,
-        name: input.name,
+        name: sanitizePlainText(input.name),
         role: 'CUSTOMER',
-        interests: input.interests ?? [],
-        location: input.location,
+        interests: sanitizeStringArray(input.interests) ?? [],
+        location: sanitizeOptionalText(input.location),
       },
     });
   }

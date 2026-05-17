@@ -36,15 +36,15 @@ BuzzMap supports two distinct registration flows: customer registration and busi
 {
   "user": {
     "id": "uuid",
-    "email": "user@example.com",
-    "firstName": "John",
-    "lastName": "Doe",
+    "email": "<USER_EMAIL>",
+    "firstName": "<FIRST_NAME>",
+    "lastName": "<LAST_NAME>",
     "role": "CUSTOMER",
     "avatarUrl": null,
-    "createdAt": "2024-01-01T00:00:00Z"
+    "createdAt": "<ISO_TIMESTAMP>"
   },
-  "accessToken": "jwt-token",
-  "refreshToken": "refresh-token"
+  "accessToken": "<JWT_ACCESS_TOKEN>",
+  "refreshToken": "<JWT_REFRESH_TOKEN>"
 }
 ```
 
@@ -93,23 +93,23 @@ BuzzMap supports two distinct registration flows: customer registration and busi
 {
   "user": {
     "id": "uuid",
-    "email": "owner@example.com",
-    "firstName": "Jane",
-    "lastName": "Smith",
+    "email": "<OWNER_EMAIL>",
+    "firstName": "<FIRST_NAME>",
+    "lastName": "<LAST_NAME>",
     "role": "BUSINESS_OWNER",
     "avatarUrl": null,
-    "createdAt": "2024-01-01T00:00:00Z"
+    "createdAt": "<ISO_TIMESTAMP>"
   },
   "business": {
     "id": "uuid",
-    "name": "Example Business",
-    "slug": "example-business",
-    "category": "RETAIL",
+    "name": "<BUSINESS_NAME>",
+    "slug": "<BUSINESS_SLUG>",
+    "category": "<BUSINESS_CATEGORY>",
     "isActive": true,
-    "createdAt": "2024-01-01T00:00:00Z"
+    "createdAt": "<ISO_TIMESTAMP>"
   },
-  "accessToken": "jwt-token",
-  "refreshToken": "refresh-token"
+  "accessToken": "<JWT_ACCESS_TOKEN>",
+  "refreshToken": "<JWT_REFRESH_TOKEN>"
 }
 ```
 
@@ -122,8 +122,8 @@ BuzzMap supports two distinct registration flows: customer registration and busi
 ## Authentication Flow
 
 After successful registration, both endpoints return:
-1. **accessToken**: JWT token for API authentication (expires in 15 minutes)
-2. **refreshToken**: Token for obtaining new access tokens (expires in 7 days)
+1. **accessToken**: JWT token for API authentication (expiry controlled by `JWT_ACCESS_EXPIRY`)
+2. **refreshToken**: Token for obtaining new access tokens (expiry controlled by `JWT_REFRESH_EXPIRY`)
 
 Use the access token in the Authorization header:
 ```
@@ -134,7 +134,7 @@ To refresh the access token:
 ```
 POST /api/v1/auth/refresh
 {
-  "refreshToken": "token"
+  "refreshToken": "<REFRESH_TOKEN>"
 }
 ```
 

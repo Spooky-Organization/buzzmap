@@ -1,7 +1,8 @@
 'use client';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Socket } from 'socket.io-client';
+import { socketRoutes } from '@/lib/routes';
 import { createSocket } from '@/lib/socket';
 
 interface SocketContextType {
@@ -18,35 +19,37 @@ const SocketContext = createContext<SocketContextType>({
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
-  const [notificationSocket, setNotificationSocket] = useState<Socket | null>(null);
-  const [messagingSocket, setMessagingSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const token = status === 'authenticated' ? session?.accessToken : undefined;
+
+  const notificationSocket = useMemo<Socket | null>(
+    () => (token ? createSocket(socketRoutes.notifications, token) : null),
+    [token]
+  );
+  const messagingSocket = useMemo<Socket | null>(
+    () => (token ? createSocket(socketRoutes.messaging, token) : null),
+    [token]
+  );
 
   useEffect(() => {
-    if (status !== 'authenticated' || !session?.accessToken) return;
-
-    const token = session.accessToken;
-
-    const notifSocket = createSocket('/notifications', token);
-    const msgSocket = createSocket('/messaging', token);
+    if (!notificationSocket || !messagingSocket) return;
 
     const handleConnect = () => setIsConnected(true);
     const handleDisconnect = () => setIsConnected(false);
 
-    notifSocket.on('connect', handleConnect);
-    notifSocket.on('disconnect', handleDisconnect);
+    notificationSocket.on('connect', handleConnect);
+    notificationSocket.on('disconnect', handleDisconnect);
 
-    notifSocket.connect();
-    msgSocket.connect();
-
-    setNotificationSocket(notifSocket);
-    setMessagingSocket(msgSocket);
+    notificationSocket.connect();
+    messagingSocket.connect();
 
     return () => {
-      notifSocket.disconnect();
-      msgSocket.disconnect();
+      notificationSocket.disconnect();
+      messagingSocket.disconnect();
+      notificationSocket.off('connect', handleConnect);
+      notificationSocket.off('disconnect', handleDisconnect);
     };
-  }, [status, session?.accessToken]);
+  }, [notificationSocket, messagingSocket]);
 
   return (
     <SocketContext.Provider value={{ notificationSocket, messagingSocket, isConnected }}>

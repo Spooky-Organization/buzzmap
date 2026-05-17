@@ -5,6 +5,7 @@ import {
   registerCustomerSchema,
   registerBusinessSchema,
   loginSchema,
+  refreshTokenSchema,
 } from '../validators/index.js';
 import type { RegisterBusinessDTO } from '../models/index.js';
 
@@ -54,8 +55,23 @@ async function login(
   }
 }
 
+async function refresh(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { refreshToken } = refreshTokenSchema.parse(req.body);
+    const result = await authService.refresh(refreshToken);
+    res.status(200).json({ status: 'success', data: result });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export const authController = {
   registerCustomer,
   registerBusiness,
   login,
+  refresh,
 };
