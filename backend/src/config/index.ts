@@ -2,6 +2,7 @@ const requiredEnvVars = [
   'NODE_ENV',
   'FRONTEND_URL',
   'BACKEND_URL',
+  'CORS_ORIGIN',
   'BACKEND_PORT',
   'DATABASE_URL',
   'REDIS_URL',
@@ -59,6 +60,7 @@ export const config = {
 
   frontendUrl: env.FRONTEND_URL,
   backendUrl: env.BACKEND_URL,
+  corsOrigin: env.CORS_ORIGIN,
   backendPort: parseInt(env.BACKEND_PORT, 10),
 
   databaseUrl: env.DATABASE_URL,

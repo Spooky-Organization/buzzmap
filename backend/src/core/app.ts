@@ -16,8 +16,8 @@ app.use(helmet());
 app.use(botGuard());
 app.get('/robots.txt', noRobots());
 
-// CORS — locked to frontend origin only
-app.use(cors({ origin: config.frontendUrl, credentials: true }));
+// CORS — explicit env-controlled origin for the HTTP API
+app.use(cors({ origin: config.corsOrigin, credentials: true }));
 
 // Body parsers
 app.use(express.json({ limit: config.maxFileSize }));
