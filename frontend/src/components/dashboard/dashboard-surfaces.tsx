@@ -2,12 +2,10 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 import { ArrowRight } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export function DashboardHero({
-  eyebrow,
   title,
   description,
   icon: Icon,
@@ -23,9 +21,6 @@ export function DashboardHero({
     <Card className="overflow-hidden border-primary/15 bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.16),transparent_30%),linear-gradient(180deg,rgba(15,37,64,0.06),rgba(15,37,64,0))] shadow-[0_24px_80px_-42px_rgba(15,37,64,0.58)]">
       <CardContent className="grid gap-5 p-6 lg:grid-cols-[1.25fr_0.95fr] lg:p-8">
         <div className="space-y-4">
-          <Badge className="w-fit rounded-full border-primary/20 bg-background/80 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-primary shadow-sm backdrop-blur">
-            {eyebrow}
-          </Badge>
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <div className="flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
