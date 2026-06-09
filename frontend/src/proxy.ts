@@ -22,6 +22,7 @@ export const config = {
     '/notifications/:path*',
     '/admin/notifications/:path*',
     '/business/dashboard/:path*',
+    '/business/messages/:path*',
     '/business/notifications/:path*',
     '/business/shelf/:path*',
     '/business/orders/:path*',

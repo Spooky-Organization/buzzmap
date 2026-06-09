@@ -6,7 +6,7 @@ import * as povController from './controllers/povController.js';
 
 const router = Router();
 
-router.post('/', authenticate, authorize('CUSTOMER'), upload.single('video'), povController.create);
+router.post('/', authenticate, authorize('CUSTOMER'), upload.array('media', 10), povController.create);
 router.get('/my', authenticate, povController.getMyPOVs);
 router.delete('/:id', authenticate, povController.deletePOV);
 router.get('/:id', authenticate, povController.getOne);

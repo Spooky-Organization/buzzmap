@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import { config } from '../../config/index.js';
 import type { Prisma } from '@prisma/client';
 import { sanitizePlainText, sanitizeOptionalText } from '../utils/sanitize.js';
+import { normalizePhoneNumber } from '../utils/phone.js';
 
 interface CreateBusinessOwnerInput {
   email: string;
@@ -28,7 +29,7 @@ export class BusinessOwnerFactory {
       const user = await tx.user.create({
         data: {
           email: input.email,
-          phone: sanitizeOptionalText(input.phone),
+          phone: normalizePhoneNumber(sanitizeOptionalText(input.phone)),
           password: hashedPassword,
           name: sanitizePlainText(input.name),
           role: 'BUSINESS_OWNER',

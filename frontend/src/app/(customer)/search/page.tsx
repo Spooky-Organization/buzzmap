@@ -4,6 +4,13 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Compass, MapPin, Search, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,12 +21,41 @@ import Link from 'next/link';
 import { useDebounce } from '@/hooks/useDebounce';
 import { DashboardHero, DashboardHeroPill, DashboardPanel } from '@/components/dashboard/dashboard-surfaces';
 
+interface BusinessSearchApiResult {
+  id: string;
+  businessName: string;
+  category: string;
+  location: string;
+  avgRating: number | null;
+}
+
+interface ProductSearchApiResult {
+  id: string;
+  name: string;
+  price: number;
+  imageUrl: string | null;
+  businessName: string;
+  businessId: string;
+}
+
+interface UserSearchApiResult {
+  id: string;
+  name: string;
+  avatar: string | null;
+  role: string;
+}
+
+interface SearchApiResults {
+  businesses: BusinessSearchApiResult[];
+  products: ProductSearchApiResult[];
+  users: UserSearchApiResult[];
+}
+
 interface Business {
   id: string;
   name: string;
   category: string;
   location: string;
-  logoUrl: string | null;
   rating: number | null;
 }
 
@@ -46,10 +82,32 @@ interface SearchResults {
 }
 
 async function fetchSearchResults(query: string, category: string, location: string): Promise<SearchResults> {
-  const res = await api.get<SearchResults>(apiRoutes.search.root, {
+  const res = await api.get<SearchApiResults>(apiRoutes.search.root, {
     params: { q: query, category: category || undefined, location: location || undefined },
   });
-  return res.data;
+  return {
+    businesses: (res.data.businesses ?? []).map((business) => ({
+      id: business.id,
+      name: business.businessName,
+      category: business.category,
+      location: business.location,
+      rating: business.avgRating,
+    })),
+    products: res.data.products ?? [],
+    users: (res.data.users ?? []).map((user) => ({
+      id: user.id,
+      name: user.name,
+      avatarUrl: user.avatar,
+      role: user.role,
+    })),
+  };
+}
+
+const ALL_CATEGORIES = 'all';
+
+async function fetchCategories(): Promise<string[]> {
+  const res = await api.get<{ categories: string[] }>(apiRoutes.search.categories);
+  return res.data.categories;
 }
 
 function ResultSkeleton() {
@@ -73,18 +131,16 @@ function BusinessResult({ business }: { business: Business }) {
     <Link href={appRoutes.business.byId(business.id)}>
       <div className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors">
         <div className="size-10 shrink-0 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
-          {business.logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={business.logoUrl} alt={business.name} className="size-full object-cover" />
-          ) : (
-            <span className="text-sm font-bold text-muted-foreground">
-              {business.name[0].toUpperCase()}
-            </span>
-          )}
+          <span className="text-sm font-bold text-muted-foreground">
+            {business.name[0].toUpperCase()}
+          </span>
         </div>
         <div className="flex flex-col gap-0.5 min-w-0">
           <span className="text-sm font-medium truncate">{business.name}</span>
-          <span className="text-xs text-muted-foreground truncate">{business.location}</span>
+          <span className="text-xs text-muted-foreground truncate">
+            {business.location}
+            {business.rating !== null ? ` • ${business.rating.toFixed(1)}★` : ''}
+          </span>
         </div>
         <Badge variant="outline" className="ml-auto shrink-0">
           {business.category}
@@ -111,7 +167,7 @@ function ProductResult({ product }: { product: Product }) {
           <span className="text-xs text-muted-foreground truncate">by {product.businessName}</span>
         </div>
         <span className="ml-auto shrink-0 text-sm font-semibold text-brand-amber">
-          ₱{product.price.toFixed(2)}
+          KES {product.price.toFixed(2)}
         </span>
       </div>
     </Link>
@@ -154,12 +210,17 @@ export default function SearchPage() {
     enabled: debouncedQuery.trim().length > 0,
   });
 
+  const { data: categories } = useQuery({
+    queryKey: ['search-categories'],
+    queryFn: fetchCategories,
+    staleTime: 5 * 60 * 1000,
+  });
+
   return (
     <div className="flex w-full max-w-none flex-col gap-6">
       <DashboardHero
         eyebrow="Marketplace search"
         title="Search businesses, products, and people from one surface."
-        description="Use search when you already have intent: narrow by category, location, or name, then jump into the exact business or product context you need."
         icon={Compass}
       >
         <DashboardHeroPill
@@ -178,125 +239,130 @@ export default function SearchPage() {
 
       <DashboardPanel
         title="Search Console"
-        description="Query the marketplace, refine the search, and compare results across role-aware tabs."
         icon={Sparkles}
       >
-      <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-      <div className="space-y-4">
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search businesses, products, or people…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="rounded-2xl border-border/70 bg-background/90 pl-8"
-          autoFocus
-        />
-      </div>
+        <div className="space-y-4">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search businesses, products, or people…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="rounded-2xl border-border/70 bg-background/90 pl-8"
+              autoFocus
+            />
+          </div>
 
-      <div className="flex gap-3">
-        <Input
-          placeholder="Category"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="flex-1 rounded-2xl border-border/70 bg-background/90"
-        />
-        <Input
-          placeholder="Location"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          className="flex-1 rounded-2xl border-border/70 bg-background/90"
-        />
-      </div>
-      </div>
+          <div className="flex gap-3">
+            <Select
+              value={category || ALL_CATEGORIES}
+              onValueChange={(value) => setCategory(!value || value === ALL_CATEGORIES ? '' : value)}
+            >
+              <SelectTrigger className="flex-1 rounded-2xl border-border/70 bg-background/90">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_CATEGORIES}>All categories</SelectItem>
+                {categories?.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              placeholder="Location"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className="flex-1 rounded-2xl border-border/70 bg-background/90"
+            />
+          </div>
 
-      {/* No query state */}
-      {!debouncedQuery.trim() && (
-        <div className="flex flex-col items-center gap-2 py-16 text-muted-foreground">
-          <p className="text-base font-medium">Start typing to search</p>
-        </div>
-      )}
-
-      {/* Results */}
-      {debouncedQuery.trim() && (
-          <div className="xl:min-w-0">
-          <Tabs defaultValue="businesses">
-          <TabsList className="mb-4 rounded-2xl border border-border/70 bg-muted/50 p-1">
-            <TabsTrigger value="businesses">
-              Businesses
-              {data && (
-                <Badge variant="secondary" className="ml-1.5">
-                  {data.businesses.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="products">
-              Products
-              {data && (
-                <Badge variant="secondary" className="ml-1.5">
-                  {data.products.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="users">
-              Users
-              {data && (
-                <Badge variant="secondary" className="ml-1.5">
-                  {data.users.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
-
-          {isLoading && <ResultSkeleton />}
-
-          {isError && (
-            <p className="text-sm text-destructive">Failed to load results. Please try again.</p>
+          {!debouncedQuery.trim() && (
+            <div className="flex flex-col items-center gap-2 py-16 text-muted-foreground">
+              <p className="text-base font-medium">Start typing to search</p>
+            </div>
           )}
 
-          {data && (
-            <>
-              <TabsContent value="businesses">
-                {data.businesses.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-muted-foreground">No businesses found</p>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    {data.businesses.map((b) => (
-                      <BusinessResult key={b.id} business={b} />
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
+          {debouncedQuery.trim() && (
+            <div className="xl:min-w-0">
+              <Tabs defaultValue="businesses">
+                <TabsList className="mb-4 rounded-2xl border border-border/70 bg-muted/50 p-1">
+                  <TabsTrigger value="businesses">
+                    Businesses
+                    {data && (
+                      <Badge variant="secondary" className="ml-1.5">
+                        {data.businesses.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="products">
+                    Products
+                    {data && (
+                      <Badge variant="secondary" className="ml-1.5">
+                        {data.products.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="users">
+                    Users
+                    {data && (
+                      <Badge variant="secondary" className="ml-1.5">
+                        {data.users.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="products">
-                {data.products.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-muted-foreground">No products found</p>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    {data.products.map((p) => (
-                      <ProductResult key={p.id} product={p} />
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
+                {isLoading && <ResultSkeleton />}
 
-              <TabsContent value="users">
-                {data.users.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-muted-foreground">No users found</p>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    {data.users.map((u) => (
-                      <UserResult key={u.id} user={u} />
-                    ))}
-                  </div>
+                {isError && (
+                  <p className="text-sm text-destructive">Failed to load results. Please try again.</p>
                 )}
-              </TabsContent>
-            </>
+
+                {data && (
+                  <>
+                    <TabsContent value="businesses">
+                      {data.businesses.length === 0 ? (
+                        <p className="py-8 text-center text-sm text-muted-foreground">No businesses found</p>
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                          {data.businesses.map((b) => (
+                            <BusinessResult key={b.id} business={b} />
+                          ))}
+                        </div>
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="products">
+                      {data.products.length === 0 ? (
+                        <p className="py-8 text-center text-sm text-muted-foreground">No products found</p>
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                          {data.products.map((p) => (
+                            <ProductResult key={p.id} product={p} />
+                          ))}
+                        </div>
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="users">
+                      {data.users.length === 0 ? (
+                        <p className="py-8 text-center text-sm text-muted-foreground">No users found</p>
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                          {data.users.map((u) => (
+                            <UserResult key={u.id} user={u} />
+                          ))}
+                        </div>
+                      )}
+                    </TabsContent>
+                  </>
+                )}
+              </Tabs>
+            </div>
           )}
-        </Tabs>
         </div>
-      )}
-      </div>
       </DashboardPanel>
     </div>
   );

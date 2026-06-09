@@ -9,6 +9,7 @@ import {
   Package,
   LayoutDashboard,
   Plus,
+  PlayCircle,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -19,6 +20,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { appRoutes } from '@/lib/routes';
 import { SidebarAccount } from '@/components/shared/sidebar-account';
@@ -26,6 +28,7 @@ import { SidebarBrand } from '@/components/shared/sidebar-brand';
 
 const navItems = [
   { href: appRoutes.customer.dashboard, label: 'Home', icon: LayoutDashboard },
+  { href: appRoutes.customer.feed, label: 'Feed', icon: PlayCircle },
   { href: appRoutes.customer.search, label: 'Search', icon: Search },
   { href: appRoutes.customer.povCreate, label: 'Create POV', icon: Plus },
   { href: appRoutes.customer.messages, label: 'Messages', icon: MessageSquare },
@@ -35,6 +38,13 @@ const navItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  const handleNavigate = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -58,6 +68,7 @@ export function AppSidebar() {
                     <SidebarMenuButton
                       isActive={isActive}
                       tooltip={label}
+                      onClick={handleNavigate}
                       render={<Link href={href} />}
                     >
                       <Icon />

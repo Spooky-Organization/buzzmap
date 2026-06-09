@@ -14,6 +14,10 @@ router
   .route('/products')
   .get(authenticate, searchController.searchProducts)
   .all(methodNotAllowed(['GET']));
+router
+  .route('/categories')
+  .get(authenticate, searchController.getCategories)
+  .all(methodNotAllowed(['GET']));
 router.route('/users').get(authenticate, searchController.searchUsers).all(methodNotAllowed(['GET']));
 
 export default router;

@@ -39,6 +39,7 @@ export interface UserProfileResponse {
   interests: string[];
   location: string | null;
   phone: string | null;
+  profileQrCode: string | null;
   createdAt: Date;
   businessProfile?: BusinessProfileSummary | null;
   _count?: {
@@ -55,6 +56,7 @@ export interface PublicUserProfileResponse {
   role: string;
   interests: string[];
   location: string | null;
+  profileQrCode: string | null;
   createdAt: Date;
   isFollowing: boolean;
   businessProfile?: BusinessProfileSummary | null;

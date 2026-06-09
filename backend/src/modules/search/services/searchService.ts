@@ -1,5 +1,6 @@
 import { getPrisma } from '../../../shared/prisma/index.js';
 import { logger } from '../../../shared/utils/logger.js';
+import { getSignedUrl } from '../../../shared/storage/upload.js';
 import { Prisma } from '@prisma/client';
 import type {
   BusinessSearchResult,
@@ -114,10 +115,16 @@ export async function searchProducts(
       select: {
         id: true,
         businessId: true,
+        business: {
+          select: {
+            businessName: true,
+          },
+        },
         name: true,
         description: true,
         price: true,
         currency: true,
+        images: true,
         category: true,
         isAvailable: true,
       },
@@ -127,9 +134,65 @@ export async function searchProducts(
     }),
   ]);
 
+  const data: ProductSearchResult[] = await Promise.all(
+    products.map(async (product) => ({
+      id: product.id,
+      businessId: product.businessId,
+      businessName: product.business.businessName,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      currency: product.currency,
+      category: product.category,
+      isAvailable: product.isAvailable,
+      imageUrl: product.images[0] ? await getSignedUrl(product.images[0]) : null,
+    }))
+  );
+
   logger.debug({ keyword, category, minPrice, maxPrice, page, limit, total }, 'Product search executed');
 
-  return { data: products, total, page, limit, totalPages: Math.ceil(total / limit) };
+  return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+}
+
+// ─── Categories ───────────────────────────────────────────────────────────────
+
+/**
+ * Returns the distinct, non-empty category values that actually exist across
+ * current business profiles and available products. This is the authoritative
+ * source for the marketplace search category dropdown so the UI never offers a
+ * category that matches nothing.
+ */
+export async function getCategories(): Promise<string[]> {
+  const prisma = getPrisma();
+
+  const [businessCategories, productCategories] = await Promise.all([
+    prisma.businessProfile.findMany({
+      where: { category: { not: '' } },
+      select: { category: true },
+      distinct: ['category'],
+    }),
+    prisma.product.findMany({
+      where: { isAvailable: true, category: { not: '' } },
+      select: { category: true },
+      distinct: ['category'],
+    }),
+  ]);
+
+  const categories = new Set<string>();
+  for (const { category } of businessCategories) {
+    const value = category.trim();
+    if (value) categories.add(value);
+  }
+  for (const { category } of productCategories) {
+    const value = category.trim();
+    if (value) categories.add(value);
+  }
+
+  const sorted = Array.from(categories).sort((a, b) => a.localeCompare(b));
+
+  logger.debug({ count: sorted.length }, 'Search categories listed');
+
+  return sorted;
 }
 
 // ─── User Search ──────────────────────────────────────────────────────────────

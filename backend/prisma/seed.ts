@@ -4,6 +4,7 @@ import {
   NotificationType,
   OrderStatus,
   PostType,
+  POVMediaType,
   Prisma,
   PrismaClient,
   Role,
@@ -16,6 +17,7 @@ const prisma = new PrismaClient({ adapter });
 
 const SAMPLE_VIDEO_URL = 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4';
 const SAMPLE_THUMBNAIL_URL = 'https://placehold.co/1280x720/png?text=BuzzMap+POV';
+const SAMPLE_IMAGE_URL = 'https://placehold.co/1280x720/png?text=BuzzMap+Photo';
 
 type SeedUserInput = {
   email: string;
@@ -264,15 +266,32 @@ async function upsertPov(
     },
   });
 
+  // Seed each POV with a mixed gallery (one video + one image) to demonstrate
+  // the mixed-media feed.
+  const media: Prisma.POVMediaCreateWithoutPovInput[] = [
+    {
+      url: pov.videoUrl ?? SAMPLE_VIDEO_URL,
+      type: POVMediaType.VIDEO,
+      thumbnailUrl: pov.thumbnailUrl ?? SAMPLE_THUMBNAIL_URL,
+      position: 0,
+    },
+    {
+      url: SAMPLE_IMAGE_URL,
+      type: POVMediaType.IMAGE,
+      thumbnailUrl: null,
+      position: 1,
+    },
+  ];
+
   if (existing) {
+    await prisma.pOVMedia.deleteMany({ where: { povId: existing.id } });
     return prisma.pOV.update({
       where: { id: existing.id },
       data: {
         caption: pov.caption,
         starRating: pov.starRating,
         recommends: pov.recommends,
-        videoUrl: pov.videoUrl ?? SAMPLE_VIDEO_URL,
-        thumbnailUrl: pov.thumbnailUrl ?? SAMPLE_THUMBNAIL_URL,
+        media: { create: media },
       },
     });
   }
@@ -284,8 +303,7 @@ async function upsertPov(
       caption: pov.caption,
       starRating: pov.starRating,
       recommends: pov.recommends,
-      videoUrl: pov.videoUrl ?? SAMPLE_VIDEO_URL,
-      thumbnailUrl: pov.thumbnailUrl ?? SAMPLE_THUMBNAIL_URL,
+      media: { create: media },
     },
   });
 }

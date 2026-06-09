@@ -25,6 +25,11 @@ enum PostType {
   VIDEO
 }
 
+enum POVMediaType {
+  IMAGE
+  VIDEO
+}
+
 enum OrderStatus {
   PENDING
   CONFIRMED
@@ -113,8 +118,6 @@ model POV {
   id            String   @id @default(uuid())
   authorId      String
   businessId    String
-  videoUrl      String
-  thumbnailUrl  String?
   caption       String?
   starRating    Int
   recommends    Boolean
@@ -124,11 +127,26 @@ model POV {
 
   author   User            @relation(fields: [authorId], references: [id])
   business BusinessProfile @relation(fields: [businessId], references: [id])
+  media    POVMedia[]
   comments Comment[]
   likes    Like[]
 
   @@index([businessId, createdAt])
   @@index([authorId])
+}
+
+model POVMedia {
+  id           String       @id @default(uuid())
+  povId        String
+  url          String // storage key (not a signed URL)
+  type         POVMediaType
+  thumbnailUrl String?
+  position     Int // 0-based order within the gallery
+  createdAt    DateTime     @default(now())
+
+  pov POV @relation(fields: [povId], references: [id], onDelete: Cascade)
+
+  @@index([povId, position])
 }
 
 model Post {

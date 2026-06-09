@@ -69,3 +69,18 @@ export const addParticipantSchema = z.object({
 });
 
 export type AddParticipantInput = z.infer<typeof addParticipantSchema>;
+
+export const contactRecommendationSchema = z.object({
+  limit: z.number().int().min(1).max(20).optional(),
+  contacts: z
+    .array(
+      z.object({
+        name: z.string().max(120).optional(),
+        phone: z.string().min(3).max(40),
+      })
+    )
+    .min(1)
+    .max(100),
+});
+
+export type ContactRecommendationInput = z.infer<typeof contactRecommendationSchema>;

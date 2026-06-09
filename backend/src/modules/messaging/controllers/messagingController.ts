@@ -5,6 +5,7 @@ import {
   conversationPaginationSchema,
   messageCursorSchema,
   addParticipantSchema,
+  contactRecommendationSchema,
 } from '../validators/index.js';
 import { AppError } from '../../../shared/middleware/errorHandler.js';
 
@@ -46,6 +47,61 @@ async function getConversations(
     const result = await messagingService.getConversations(userId, page, limit);
 
     res.status(200).json({ status: 'success', data: result });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function getBusinessConversationRecommendations(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = req.user!.userId;
+    const rawLimit = typeof req.query['limit'] === 'string' ? Number.parseInt(req.query['limit'], 10) : 8;
+    const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 20) : 8;
+
+    const recommendations =
+      await messagingService.getBusinessConversationRecommendations(userId, limit);
+
+    res.status(200).json({ status: 'success', data: recommendations });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function getConversationRecommendations(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = req.user!.userId;
+    const rawLimit = typeof req.query['limit'] === 'string' ? Number.parseInt(req.query['limit'], 10) : 8;
+    const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 20) : 8;
+
+    const recommendations = await messagingService.getConversationRecommendations(userId, limit);
+
+    res.status(200).json({ status: 'success', data: recommendations });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function getContactConversationRecommendations(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = req.user!.userId;
+    const { contacts, limit } = contactRecommendationSchema.parse(req.body);
+
+    const recommendations =
+      await messagingService.getContactConversationRecommendations(userId, contacts, limit ?? 8);
+
+    res.status(200).json({ status: 'success', data: recommendations });
   } catch (err) {
     next(err);
   }
@@ -211,6 +267,9 @@ export const messagingController = {
   createConversation,
   getConversation,
   getConversations,
+  getConversationRecommendations,
+  getContactConversationRecommendations,
+  getBusinessConversationRecommendations,
   getMessages,
   markAsRead,
   addParticipant,

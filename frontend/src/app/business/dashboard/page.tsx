@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import {
-  BarChart3,
   ClipboardList,
   Eye,
   LayoutDashboard,
@@ -117,7 +116,6 @@ export default function BusinessDashboardPage() {
           note="Stay close to new public trust signals."
           icon={Star}
           accent="from-amber-500/18 via-primary/[0.08] to-transparent"
-          href={appRoutes.business.analytics}
         />
         <DashboardMetricCard
           label="Followers"
@@ -125,7 +123,6 @@ export default function BusinessDashboardPage() {
           note="Audience growth connected to business visibility."
           icon={Users}
           accent="from-emerald-500/15 via-primary/[0.08] to-transparent"
-          href={appRoutes.business.analytics}
         />
         <DashboardMetricCard
           label="Recent POVs"
@@ -133,7 +130,6 @@ export default function BusinessDashboardPage() {
           note="See the latest customer review activity."
           icon={Video}
           accent="from-rose-500/15 via-primary/[0.08] to-transparent"
-          href={appRoutes.business.analytics}
         />
       </div>
 
@@ -142,8 +138,8 @@ export default function BusinessDashboardPage() {
           title="Recent POVs"
           description="Customer reviews and fresh business mentions that define how your storefront feels in public."
           icon={Video}
-          actionLabel="Open analytics"
-          actionHref={appRoutes.business.analytics}
+          actionLabel="Open settings"
+          actionHref={appRoutes.business.settings}
         >
           {(data?.recentPovs.length ?? 0) === 0 ? (
             <div className="rounded-3xl border border-dashed border-border/70 bg-background/85 px-4 py-10 text-center">
@@ -194,10 +190,10 @@ export default function BusinessDashboardPage() {
                 description="Stay on top of new purchases, fulfillment, and status updates."
               />
               <QuickLinkCard
-                href={appRoutes.business.analytics}
-                icon={BarChart3}
-                title="Performance Analytics"
-                description="Measure follower growth, reviews, and marketplace traction."
+                href={appRoutes.business.settings}
+                icon={MessageSquareHeart}
+                title="Trust & Profile"
+                description="Tune profile details and keep the public trust surface consistent."
               />
             </div>
           </DashboardPanel>

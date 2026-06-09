@@ -6,6 +6,8 @@ import { api } from '@/lib/api';
 import { apiRoutes } from '@/lib/routes';
 import { POVCard, type POVCardData } from './pov-card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 
 interface FeedPage {
   data: POVCardData[];
@@ -45,6 +47,7 @@ export function POVFeed() {
     isFetchingNextPage,
     isLoading,
     isError,
+    refetch,
   } = useInfiniteQuery({
     queryKey: ['feed'],
     queryFn: fetchFeedPage,
@@ -81,9 +84,20 @@ export function POVFeed() {
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center gap-2 py-16 text-muted-foreground">
-        <p className="text-base font-medium">Failed to load feed</p>
-        <p className="text-sm">Please try refreshing the page.</p>
+      <div className="flex flex-col items-center gap-4 rounded-[28px] border border-border/70 bg-card/90 px-6 py-16 text-center shadow-[0_18px_56px_-44px_rgba(15,37,64,0.62)]">
+        <div className="flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+          <RefreshCw className="size-5 text-accent" />
+        </div>
+        <div className="space-y-2">
+          <p className="text-base font-semibold text-primary">Failed to load feed</p>
+          <p className="text-sm text-muted-foreground">
+            BuzzMap could not fetch the latest POVs right now. Refresh the feed and try again.
+          </p>
+        </div>
+        <Button type="button" onClick={() => refetch()} className="rounded-2xl">
+          <RefreshCw data-icon="inline-start" />
+          Refresh feed
+        </Button>
       </div>
     );
   }

@@ -9,12 +9,19 @@ export interface FeedBusiness {
   businessName: string;
 }
 
+export interface FeedMediaItem {
+  id: string;
+  url: string; // signed URL
+  type: 'image' | 'video';
+  thumbnailUrl: string | null;
+  position: number;
+}
+
 export interface FeedPOV {
   id: string;
   authorId: string;
   businessId: string;
-  videoUrl: string;
-  thumbnailUrl: string | null;
+  media: FeedMediaItem[];
   caption: string | null;
   starRating: number;
   recommends: boolean;

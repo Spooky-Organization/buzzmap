@@ -14,6 +14,11 @@ export default function AppError({
 }) {
   const router = useRouter();
 
+  const handleRefresh = () => {
+    reset();
+    router.refresh();
+  };
+
   const handleBack = () => {
     if (window.history.length > 1) {
       router.back();
@@ -31,7 +36,7 @@ export default function AppError({
     <ErrorState
       title="Something went wrong"
       message="We could not load this part of BuzzMap right now. Try again, or head back to a safe page and retry in a moment."
-      onRetry={reset}
+      onRefresh={handleRefresh}
       onBack={handleBack}
     />
   );

@@ -1,5 +1,6 @@
 'use client';
 
+import { Bell, MessageSquare, PlayCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -55,6 +56,40 @@ function StatGridSkeleton({ count = 4 }: { count?: number }) {
   );
 }
 
+function DashboardHeroSkeleton({
+  pillCount = 2,
+}: {
+  pillCount?: number;
+}) {
+  return (
+    <Card className="overflow-hidden border-primary/15 bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.16),transparent_30%),linear-gradient(180deg,rgba(15,37,64,0.06),rgba(15,37,64,0))] shadow-[0_24px_80px_-42px_rgba(15,37,64,0.58)]">
+      <CardContent className="grid gap-5 p-6 lg:grid-cols-[1.25fr_0.95fr] lg:p-8">
+        <div className="space-y-4">
+          <Skeleton className="h-7 w-32 rounded-full" />
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <Skeleton className="size-12 rounded-2xl" />
+              <Skeleton className="h-10 w-80 max-w-full" />
+            </div>
+            <Skeleton className="h-4 w-[36rem] max-w-full" />
+            <Skeleton className="h-4 w-[28rem] max-w-full" />
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+          {Array.from({ length: pillCount }).map((_, index) => (
+            <div key={index} className="rounded-3xl border border-border/70 bg-background/85 p-4 shadow-sm">
+              <Skeleton className="mb-3 size-10 rounded-2xl" />
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="mt-2 h-4 w-24" />
+              <Skeleton className="mt-2 h-3 w-full" />
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function ListCardSkeleton({
   title,
   rows = 3,
@@ -88,6 +123,70 @@ function ListCardSkeleton({
   );
 }
 
+function FeedCardSkeleton() {
+  return (
+    <div className="overflow-hidden rounded-[28px] border border-border/70 bg-card/90 shadow-[0_18px_56px_-44px_rgba(15,37,64,0.62)]">
+      <Skeleton className="aspect-video w-full" />
+      <div className="space-y-4 p-4 sm:p-5">
+        <div className="flex items-center gap-3">
+          <Skeleton className="size-10 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        </div>
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-4/5" />
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-8 w-20 rounded-full" />
+          <Skeleton className="h-8 w-24 rounded-full" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function ConversationRowSkeleton() {
+  return (
+    <div className="flex items-center gap-3 rounded-[20px] border border-border/60 bg-background/80 px-4 py-3">
+      <Skeleton className="size-10 rounded-full" />
+      <div className="flex flex-1 flex-col gap-2">
+        <div className="flex items-center justify-between gap-2">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-3 w-16" />
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <Skeleton className="h-3 w-40" />
+          <Skeleton className="h-5 w-6 rounded-full" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function NotificationRowSkeleton() {
+  return (
+    <div className="flex items-start gap-3 px-4 py-4">
+      <Skeleton className="size-8 rounded-full" />
+      <div className="flex flex-1 flex-col gap-2">
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-3/4" />
+        <Skeleton className="h-3 w-24" />
+      </div>
+      <Skeleton className="h-7 w-20 rounded-xl" />
+    </div>
+  );
+}
+
+function ChatBubbleSkeleton({ align = 'left' }: { align?: 'left' | 'right' }) {
+  return (
+    <div className={`flex ${align === 'right' ? 'justify-end' : 'justify-start'}`}>
+      <Skeleton className={`h-11 rounded-2xl ${align === 'right' ? 'w-52' : 'w-44'}`} />
+    </div>
+  );
+}
+
 export function CustomerDashboardLoading() {
   return (
     <div className="flex flex-col gap-6">
@@ -116,6 +215,129 @@ export function AnalyticsDashboardLoading() {
     <div className="flex flex-col gap-6">
       <DashboardIntroSkeleton />
       <StatGridSkeleton />
+    </div>
+  );
+}
+
+export function FeedRouteLoading() {
+  return (
+    <div className="flex w-full max-w-none flex-col gap-6">
+      <DashboardHeroSkeleton pillCount={2} />
+      <Card className="border-border/70 bg-card/80 shadow-[0_22px_70px_-48px_rgba(15,37,64,0.68)]">
+        <CardHeader>
+          <div className="flex items-start gap-3">
+            <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/[0.08] text-primary">
+              <PlayCircle className="size-5" />
+            </div>
+            <div className="space-y-2">
+              <CardTitle>Community Feed</CardTitle>
+              <Skeleton className="h-4 w-80 max-w-full" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <FeedCardSkeleton key={index} />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export function MessagesRouteLoading() {
+  return (
+    <div className="flex flex-col gap-6">
+      <DashboardHeroSkeleton pillCount={2} />
+      <div className="flex justify-end">
+        <Skeleton className="h-9 w-40 rounded-2xl" />
+      </div>
+      <Card className="border-border/70 bg-card/80 shadow-[0_22px_70px_-48px_rgba(15,37,64,0.68)]">
+        <CardHeader>
+          <div className="flex items-start gap-3">
+            <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/[0.08] text-primary">
+              <MessageSquare className="size-5" />
+            </div>
+            <div className="space-y-2">
+              <CardTitle>Conversation List</CardTitle>
+              <Skeleton className="h-4 w-72 max-w-full" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-[24px] border border-border/70 bg-background/90 p-4">
+            <div className="flex flex-col gap-3">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <ConversationRowSkeleton key={index} />
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export function NotificationsRouteLoading() {
+  return (
+    <div className="flex flex-col gap-6">
+      <DashboardHeroSkeleton pillCount={2} />
+      <div className="flex justify-end">
+        <Skeleton className="h-8 w-32 rounded-2xl" />
+      </div>
+      <Card className="border-border/70 bg-card/80 shadow-[0_22px_70px_-48px_rgba(15,37,64,0.68)]">
+        <CardHeader>
+          <div className="flex items-start gap-3">
+            <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/[0.08] text-primary">
+              <Bell className="size-5" />
+            </div>
+            <div className="space-y-2">
+              <CardTitle>Recent Notifications</CardTitle>
+              <Skeleton className="h-4 w-72 max-w-full" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Card className="overflow-hidden border-0 bg-background/90 shadow-none">
+            <CardContent className="flex flex-col gap-0 p-0">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className={index < 4 ? 'border-b border-border/60' : ''}>
+                  <NotificationRowSkeleton />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export function ConversationRouteLoading() {
+  return (
+    <div className="flex flex-col gap-6">
+      <DashboardHeroSkeleton pillCount={1} />
+      <div className="flex h-[calc(100vh-12rem)] flex-col rounded-[24px] border border-border/70 bg-card shadow-[0_22px_70px_-48px_rgba(15,37,64,0.68)]">
+        <div className="flex items-center gap-3 border-b border-border/70 px-4 py-3">
+          <Skeleton className="size-7 rounded-xl" />
+          <Skeleton className="size-8 rounded-full" />
+          <Skeleton className="h-4 w-32" />
+        </div>
+        <div className="flex flex-1 flex-col gap-4 p-4">
+          <ChatBubbleSkeleton align="left" />
+          <ChatBubbleSkeleton align="right" />
+          <ChatBubbleSkeleton align="left" />
+          <ChatBubbleSkeleton align="right" />
+          <div className="mt-auto rounded-[20px] border border-border/60 bg-background/85 p-3">
+            <div className="flex items-end gap-3">
+              <Skeleton className="h-10 flex-1 rounded-2xl" />
+              <Skeleton className="size-10 rounded-2xl" />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

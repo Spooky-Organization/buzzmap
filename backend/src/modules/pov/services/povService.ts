@@ -1,5 +1,11 @@
 import { getPrisma } from '../../../shared/prisma/index.js';
-import { uploadToStorage, deleteFromStorage, getSignedUrl } from '../../../shared/storage/upload.js';
+import { uploadToStorage, deleteFromStorage } from '../../../shared/storage/upload.js';
+import {
+  formatMedia,
+  mediaTypeFromMime,
+  validatePOVMediaFiles,
+  type RawPOVMedia,
+} from '../../../shared/storage/povMedia.js';
 import { AppError } from '../../../shared/middleware/errorHandler.js';
 import { logger } from '../../../shared/utils/logger.js';
 import type { CreatePOVDTO, POVResponse, CommentResponse, PaginatedResult } from '../models/index.js';
@@ -7,15 +13,10 @@ import { sanitizeOptionalText, sanitizePlainText } from '../../../shared/utils/s
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-async function resolveVideoUrl(videoKey: string): Promise<string> {
-  return getSignedUrl(videoKey);
-}
-
 async function formatPOV(
   pov: {
     id: string;
-    videoUrl: string;
-    thumbnailUrl: string | null;
+    media: RawPOVMedia[];
     caption: string | null;
     starRating: number;
     recommends: boolean;
@@ -38,14 +39,13 @@ async function formatPOV(
     isLiked = like !== null;
   }
 
-  const videoUrl = await resolveVideoUrl(pov.videoUrl);
+  const media = await formatMedia(pov.media);
 
   return {
     id: pov.id,
     author: pov.author,
     business: pov.business,
-    videoUrl,
-    thumbnailUrl: pov.thumbnailUrl,
+    media,
     caption: pov.caption,
     starRating: pov.starRating,
     recommends: pov.recommends,
@@ -58,14 +58,16 @@ async function formatPOV(
 
 const POV_SELECT = {
   id: true,
-  videoUrl: true,
-  thumbnailUrl: true,
   caption: true,
   starRating: true,
   recommends: true,
   likesCount: true,
   commentsCount: true,
   createdAt: true,
+  media: {
+    select: { id: true, url: true, type: true, thumbnailUrl: true, position: true },
+    orderBy: { position: 'asc' },
+  },
   author: { select: { id: true, name: true, avatar: true } },
   business: { select: { id: true, businessName: true } },
 } as const;
@@ -75,9 +77,12 @@ const POV_SELECT = {
 export async function createPOV(
   authorId: string,
   data: CreatePOVDTO,
-  videoFile: Express.Multer.File
+  mediaFiles: Express.Multer.File[]
 ): Promise<POVResponse> {
   const prisma = getPrisma();
+
+  // Enforce gallery rules (count + per-type size) before any upload.
+  validatePOVMediaFiles(mediaFiles);
 
   // Verify business exists
   const business = await prisma.businessProfile.findUnique({
@@ -88,17 +93,31 @@ export async function createPOV(
     throw new AppError(404, 'Business not found');
   }
 
-  const videoKey = await uploadToStorage(videoFile, 'povs');
-  logger.info({ authorId, businessId: data.businessId, videoKey }, 'POV video uploaded');
+  // Upload each file, preserving the client-provided order as `position`.
+  const mediaRecords = await Promise.all(
+    mediaFiles.map(async (file, position) => {
+      const key = await uploadToStorage(file, 'povs');
+      return {
+        url: key,
+        type: mediaTypeFromMime(file.mimetype),
+        position,
+      };
+    })
+  );
+
+  logger.info(
+    { authorId, businessId: data.businessId, mediaCount: mediaRecords.length },
+    'POV media uploaded'
+  );
 
   const pov = await prisma.pOV.create({
     data: {
       authorId,
       businessId: data.businessId,
-      videoUrl: videoKey,
       caption: sanitizeOptionalText(data.caption) ?? null,
       starRating: data.starRating,
       recommends: data.recommends,
+      media: { create: mediaRecords },
     },
     select: POV_SELECT,
   });
@@ -111,7 +130,7 @@ export async function deletePOV(povId: string, userId: string): Promise<void> {
 
   const pov = await prisma.pOV.findUnique({
     where: { id: povId },
-    select: { id: true, authorId: true, videoUrl: true },
+    select: { id: true, authorId: true, media: { select: { url: true } } },
   });
 
   if (!pov) {
@@ -122,8 +141,9 @@ export async function deletePOV(povId: string, userId: string): Promise<void> {
     throw new AppError(403, 'You are not authorized to delete this POV');
   }
 
-  // Remove from storage first, then delete DB record
-  await deleteFromStorage(pov.videoUrl);
+  // Remove every media object from storage first, then delete DB record
+  // (cascade removes the POVMedia rows).
+  await Promise.all(pov.media.map((m) => deleteFromStorage(m.url)));
 
   await prisma.pOV.delete({ where: { id: povId } });
 

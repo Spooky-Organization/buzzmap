@@ -87,7 +87,6 @@ export default function CustomerDashboardPage() {
       <DashboardHero
         eyebrow="Customer dashboard"
         title={`Welcome back, ${firstName}`}
-        description="Track active orders, keep your POV publishing momentum high, and stay close to the businesses and products moving in your orbit."
         icon={Compass}
       >
         <DashboardHeroPill
@@ -148,7 +147,6 @@ export default function CustomerDashboardPage() {
       <div className="grid gap-6 xl:grid-cols-[1.2fr_0.95fr]">
         <DashboardPanel
           title="Active Orders"
-          description="Orders still in flight, so you can stay on top of delivery and confirmation progress."
           icon={Package2}
           actionLabel="View orders"
           actionHref={appRoutes.customer.orders}
@@ -186,7 +184,6 @@ export default function CustomerDashboardPage() {
 
         <DashboardPanel
           title="Recent POVs"
-          description="Your latest customer voice in the system, including the reviews that keep discovery credible."
           icon={TrendingUp}
           actionLabel="Create POV"
           actionHref={appRoutes.customer.povCreate}

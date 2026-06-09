@@ -54,6 +54,10 @@ export class FeedQueryBuilder {
       take: this.take,
       ...(this.cursor ? { skip: 1, cursor: { id: this.cursor } } : {}),
       include: {
+        media: {
+          select: { id: true, url: true, type: true, thumbnailUrl: true, position: true },
+          orderBy: { position: 'asc' as const },
+        },
         author: { select: { id: true, name: true, avatar: true } },
         business: { select: { id: true, businessName: true } },
       },

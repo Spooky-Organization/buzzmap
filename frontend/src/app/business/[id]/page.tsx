@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { use } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
@@ -9,6 +10,7 @@ import {
   MapPin,
   Navigation,
   Phone,
+  QrCode,
   Sparkles,
   Star,
   UserCheck,
@@ -36,6 +38,7 @@ interface BusinessProfile {
   coordinates: string | null;
   contactInfo: string;
   operatingHours: Record<string, string> | null;
+  qrCode: string | null;
   logoUrl?: string;
   avgRating: number;
   reviewCount: number;
@@ -164,6 +167,7 @@ export default function BusinessProfilePage({ params }: { params: Promise<{ id: 
   const galleryImages = getGalleryImages(products);
   const descriptionPoints = splitDescription(business?.description ?? '');
   const mapEmbedUrl = business ? getMapEmbedUrl(business) : null;
+  const latestPov = (povsData?.povs ?? [])[0] ?? null;
 
   if (bizLoading) {
     return (
@@ -303,34 +307,94 @@ export default function BusinessProfilePage({ params }: { params: Promise<{ id: 
 
           <div className="border-t bg-muted/20 p-5 lg:border-l lg:border-t-0">
             <div className="mb-3 flex items-center gap-2">
-              <ImageIcon className="size-4 text-accent" />
+              <Sparkles className="size-4 text-accent" />
               <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                Business Photos
+                Customer POV Snapshot
               </h2>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-2">
-              {Array.from({ length: 3 }).map((_, index) => {
-                const image = galleryImages[index];
-                return (
-                  <div
-                    key={`${business.id}-gallery-${index}`}
-                    className="relative aspect-[4/3] overflow-hidden rounded-2xl border bg-background"
-                  >
-                    {image ? (
-                      <img
-                        src={image}
-                        alt={`${business.businessName} photo ${index + 1}`}
-                        className="size-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex size-full items-center justify-center px-4 text-center text-xs text-muted-foreground">
-                        Add more showcase or product photos to complete this gallery
-                      </div>
-                    )}
+            {latestPov ? (
+              <div className="space-y-4">
+                <div className="rounded-2xl border bg-background p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <Badge variant="outline">{latestPov.starRating}/5 stars</Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {formatRelativeDate(latestPov.createdAt)}
+                    </span>
                   </div>
-                );
-              })}
-            </div>
+                  <p className="mt-3 text-sm font-medium text-foreground">
+                    {latestPov.caption?.trim() || 'Customer left a rating-only POV for this business.'}
+                  </p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {latestPov.recommends ? 'Recommended by the customer' : 'Shared without recommendation'}
+                  </p>
+                </div>
+
+                <div>
+                  <div className="mb-3 flex items-center gap-2">
+                    <ImageIcon className="size-4 text-accent" />
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                      Visual Proof
+                    </h3>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-2">
+                    {Array.from({ length: 3 }).map((_, index) => {
+                      const image = galleryImages[index];
+                      return (
+                        <div
+                          key={`${business.id}-gallery-${index}`}
+                          className="relative aspect-[4/3] overflow-hidden rounded-2xl border bg-background"
+                        >
+                          {image ? (
+                            <Image
+                              src={image}
+                              alt={`${business.businessName} photo ${index + 1}`}
+                              fill
+                              sizes="(max-width: 1024px) 33vw, 16rem"
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className="flex size-full items-center justify-center px-4 text-center text-xs text-muted-foreground">
+                              Add more showcase or product photos to complete this gallery
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="rounded-2xl border bg-background p-4 text-sm text-muted-foreground">
+                  No customer POVs have been attached to this business yet.
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-2">
+                  {Array.from({ length: 3 }).map((_, index) => {
+                    const image = galleryImages[index];
+                    return (
+                      <div
+                        key={`${business.id}-gallery-${index}`}
+                        className="relative aspect-[4/3] overflow-hidden rounded-2xl border bg-background"
+                      >
+                        {image ? (
+                          <Image
+                            src={image}
+                            alt={`${business.businessName} photo ${index + 1}`}
+                            fill
+                            sizes="(max-width: 1024px) 33vw, 16rem"
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="flex size-full items-center justify-center px-4 text-center text-xs text-muted-foreground">
+                            Add more showcase or product photos to complete this gallery
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </Card>
@@ -341,7 +405,7 @@ export default function BusinessProfilePage({ params }: { params: Promise<{ id: 
             <div className="border-b px-5 py-4">
               <h2 className="text-lg font-semibold text-primary">Location</h2>
               <p className="text-sm text-muted-foreground">
-                Quick map context for where this business operates.
+                Quick map context so POV viewers can place the business in the real world.
               </p>
             </div>
             {mapEmbedUrl ? (
@@ -362,20 +426,35 @@ export default function BusinessProfilePage({ params }: { params: Promise<{ id: 
 
         <Card>
           <CardContent className="flex h-full flex-col justify-center gap-3 p-5">
-            <h2 className="text-lg font-semibold text-primary">Profile Completeness</h2>
-            <p className="text-sm text-muted-foreground">
-              High-trust business pages should include a strong description, map-ready location,
-              and at least three photos.
-            </p>
-            <div className="grid gap-2 text-sm">
-              <div className="rounded-xl border px-3 py-2">
-                Description: {descriptionPoints.length > 0 ? 'Complete' : 'Needs more detail'}
-              </div>
-              <div className="rounded-xl border px-3 py-2">
-                Map: {mapEmbedUrl ? 'Location ready' : 'Missing coordinates or clear place query'}
-              </div>
-              <div className="rounded-xl border px-3 py-2">Photos: {galleryImages.length}/3 available</div>
+            <div className="flex items-center gap-2">
+              <QrCode className="size-5 text-accent" />
+              <h2 className="text-lg font-semibold text-primary">Scan This Business</h2>
             </div>
+            <p className="text-sm text-muted-foreground">
+              Use the QR code to reopen this business profile quickly from printed material,
+              packaging, counters, or in-store displays.
+            </p>
+            {business.qrCode ? (
+              <div className="flex flex-col items-start gap-3">
+                <div className="overflow-hidden rounded-[28px] border border-border/70 bg-white p-3 shadow-sm">
+                  <Image
+                    src={business.qrCode}
+                    alt={`${business.businessName} QR code`}
+                    width={168}
+                    height={168}
+                    unoptimized
+                    className="rounded-2xl"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Scanning opens the live BuzzMap business page.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-xl border px-3 py-4 text-sm text-muted-foreground">
+                QR code not available yet.
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -421,10 +500,12 @@ export default function BusinessProfilePage({ params }: { params: Promise<{ id: 
                 <Card key={product.id} size="sm" className="overflow-hidden">
                   <div className="aspect-[4/3] bg-muted/30">
                     {product.images?.[0] ? (
-                      <img
+                      <Image
                         src={product.images[0]}
                         alt={product.name}
-                        className="size-full object-cover"
+                        fill
+                        sizes="(max-width: 1280px) 50vw, 20rem"
+                        className="object-cover"
                       />
                     ) : (
                       <div className="flex size-full items-center justify-center text-xs text-muted-foreground">

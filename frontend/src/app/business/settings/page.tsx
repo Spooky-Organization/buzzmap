@@ -1,10 +1,11 @@
 'use client';
 
+import Image from 'next/image';
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
-import { MapPinned, Save, Settings2, Store } from 'lucide-react';
+import { Copy, Download, MapPinned, QrCode, Save, Settings2, Store } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -58,6 +59,7 @@ const emptyProfile: BusinessProfileForm = {
 };
 
 interface BackendBusinessProfile {
+  id: string;
   businessName: string;
   description: string | null;
   category: string | null;
@@ -66,6 +68,7 @@ interface BackendBusinessProfile {
   coordinates: string | null;
   contactInfo: string | null;
   operatingHours: Record<string, unknown> | null;
+  qrCode: string | null;
 }
 
 function formatOperatingHoursForEditor(
@@ -114,6 +117,13 @@ export default function BusinessSettingsPage() {
   });
 
   const form = draft ?? toBusinessProfileForm(data);
+  const publicProfileUrl =
+    data?.id
+      ? new URL(
+          `/business/${data.id}`,
+          process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+        ).toString()
+      : null;
 
   const saveProfile = useMutation({
     mutationFn: async () => {
@@ -146,6 +156,17 @@ export default function BusinessSettingsPage() {
 
   const update = (key: keyof BusinessProfileForm, value: string) =>
     setDraft((current) => ({ ...(current ?? form), [key]: value }));
+
+  const copyPublicProfileLink = async () => {
+    if (!publicProfileUrl) return;
+
+    try {
+      await navigator.clipboard.writeText(publicProfileUrl);
+      toast.success('Public profile link copied');
+    } catch {
+      toast.error('Failed to copy public profile link');
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -297,6 +318,72 @@ export default function BusinessSettingsPage() {
               )}
             </Button>
           </FieldGroup>
+        </CardContent>
+      </Card>
+
+      <Card className="w-full max-w-none border-border/70 bg-card/80 shadow-[0_22px_70px_-48px_rgba(15,37,64,0.68)]">
+        <CardHeader>
+          <CardTitle>Business QR Code</CardTitle>
+          <CardDescription>
+            Share the public business profile in-person with one scan.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="overflow-hidden rounded-[28px] border border-border/70 bg-white p-3 shadow-sm">
+              {data?.qrCode ? (
+                <Image
+                  src={data.qrCode}
+                  alt={`${data.businessName} QR code`}
+                  width={160}
+                  height={160}
+                  unoptimized
+                  className="rounded-2xl"
+                />
+              ) : (
+                <div className="flex h-40 w-40 items-center justify-center rounded-2xl bg-muted/30 text-muted-foreground">
+                  <QrCode className="size-8" />
+                </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-foreground">Scan to open this business</p>
+              <p className="max-w-md text-sm text-muted-foreground">
+                BuzzMap keeps this QR code tied to the public business page, so printed posters,
+                counters, and packaging can send people straight to the live profile.
+              </p>
+              {publicProfileUrl ? (
+                <p className="break-all text-xs text-muted-foreground">{publicProfileUrl}</p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void copyPublicProfileLink()}
+              disabled={!publicProfileUrl}
+            >
+              <Copy data-icon="inline-start" />
+              Copy profile link
+            </Button>
+            {data?.qrCode ? (
+              <Button
+                type="button"
+                nativeButton={false}
+                render={
+                  <a
+                    href={data.qrCode}
+                    download={`${data.businessName.replace(/\s+/g, '-').toLowerCase()}-qr.png`}
+                  />
+                }
+              >
+                <Download data-icon="inline-start" />
+                Download QR
+              </Button>
+            ) : null}
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -14,17 +14,17 @@ export interface CartItemResponse {
     currency: string;
     images: string[];
     businessId: string;
+    businessName: string;
   };
   quantity: number;
 }
 
 export interface OrderItemResponse {
   id: string;
-  product: {
-    id: string;
-    name: string;
-    price: number;
-  };
+  productId: string;
+  productName: string;
+  businessId: string;
+  businessName: string;
   quantity: number;
   price: number; // price at time of order
 }
@@ -32,8 +32,10 @@ export interface OrderItemResponse {
 export interface OrderResponse {
   id: string;
   customerId: string;
+  customerName?: string;
   status: OrderStatus;
   totalAmount: number;
+  businessName?: string;
   items: OrderItemResponse[];
   createdAt: Date;
 }

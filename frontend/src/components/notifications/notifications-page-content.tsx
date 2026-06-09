@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import {
   Bell,
   Check,
@@ -15,15 +16,16 @@ import {
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { DashboardHero, DashboardHeroPill, DashboardPanel } from '@/components/dashboard/dashboard-surfaces';
 import { api } from '@/lib/api';
-import { apiRoutes } from '@/lib/routes';
+import { apiRoutes, appRoutes } from '@/lib/routes';
 import { cn } from '@/lib/utils';
+import { NotificationRowSkeleton } from '@/components/dashboard/loading-skeletons';
 
 type NotificationType = 'POV_POSTED' | 'ORDER_UPDATE' | 'NEW_FOLLOWER' | 'MESSAGE' | 'FRIEND_JOINED';
+type SessionRole = 'ADMIN' | 'BUSINESS_OWNER' | 'CUSTOMER';
 
 interface Notification {
   id: string;
@@ -32,6 +34,7 @@ interface Notification {
   body: string;
   read: boolean;
   createdAt: string;
+  data?: Record<string, unknown> | null;
 }
 
 interface NotificationsData {
@@ -47,6 +50,44 @@ const NOTIFICATION_ICONS: Record<NotificationType, React.ElementType> = {
   FRIEND_JOINED: Users,
 };
 
+function readString(data: Record<string, unknown> | null | undefined, key: string): string | null {
+  const value = data?.[key];
+  return typeof value === 'string' && value.trim().length > 0 ? value : null;
+}
+
+function resolveNotificationHref(
+  notification: Notification,
+  role: SessionRole | undefined
+): string | null {
+  if (!role) return null;
+
+  if (notification.type === 'MESSAGE') {
+    const conversationId = readString(notification.data, 'conversationId');
+    if (role === 'CUSTOMER' && conversationId) {
+      return appRoutes.customer.message(conversationId);
+    }
+    if (role === 'BUSINESS_OWNER' && conversationId) {
+      return appRoutes.business.message(conversationId);
+    }
+    if (role === 'ADMIN') {
+      return appRoutes.admin.messages;
+    }
+    return null;
+  }
+
+  if (notification.type === 'ORDER_UPDATE') {
+    if (role === 'BUSINESS_OWNER') {
+      return appRoutes.business.orders;
+    }
+    if (role === 'ADMIN') {
+      return appRoutes.admin.orders;
+    }
+    return appRoutes.customer.orders;
+  }
+
+  return null;
+}
+
 export function NotificationsPageContent({
   eyebrow,
   title,
@@ -56,12 +97,14 @@ export function NotificationsPageContent({
 }: {
   eyebrow: string;
   title: string;
-  description: string;
+  description?: string;
   panelTitle: string;
-  panelDescription: string;
+  panelDescription?: string;
 }) {
   const { data: session } = useSession();
+  const router = useRouter();
   const queryClient = useQueryClient();
+  const role = session?.user?.role as SessionRole | undefined;
 
   const { data, isLoading } = useQuery<NotificationsData>({
     queryKey: ['notifications'],
@@ -100,6 +143,21 @@ export function NotificationsPageContent({
 
   const notifications = data?.notifications ?? [];
   const unreadCount = data?.unreadCount ?? 0;
+
+  const handleNotificationClick = async (notification: Notification) => {
+    const href = resolveNotificationHref(notification, role);
+    if (!href) return;
+
+    if (!notification.read) {
+      try {
+        await markRead.mutateAsync(notification.id);
+      } catch {
+        // Navigation is still more useful than blocking interaction on read failure.
+      }
+    }
+
+    router.push(href);
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -144,7 +202,9 @@ export function NotificationsPageContent({
             {isLoading ? (
               <div className="flex flex-col gap-3 p-4">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
+                  <div key={i} className="rounded-[20px] border border-border/60 bg-background/80">
+                    <NotificationRowSkeleton />
+                  </div>
                 ))}
               </div>
             ) : notifications.length === 0 ? (
@@ -160,14 +220,29 @@ export function NotificationsPageContent({
             ) : (
               notifications.map((notification, index) => {
                 const Icon = NOTIFICATION_ICONS[notification.type] ?? Bell;
+                const href = resolveNotificationHref(notification, role);
                 return (
                   <div key={notification.id}>
                     <div
                       className={cn(
                         'flex items-start gap-3 px-4 py-4 transition-colors',
+                        href && 'cursor-pointer hover:bg-muted/40',
                         !notification.read && 'bg-accent/10',
                         notification.read ? 'opacity-80' : ''
                       )}
+                      onClick={href ? () => void handleNotificationClick(notification) : undefined}
+                      onKeyDown={
+                        href
+                          ? (event) => {
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                void handleNotificationClick(notification);
+                              }
+                            }
+                          : undefined
+                      }
+                      role={href ? 'button' : undefined}
+                      tabIndex={href ? 0 : undefined}
                     >
                       <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-muted">
                         <Icon className="size-4 text-muted-foreground" />
@@ -184,7 +259,10 @@ export function NotificationsPageContent({
                           variant="ghost"
                           size="xs"
                           disabled={markRead.isPending}
-                          onClick={() => markRead.mutate(notification.id)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            markRead.mutate(notification.id);
+                          }}
                         >
                           <Check data-icon="inline-start" />
                           Mark read

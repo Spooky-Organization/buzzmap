@@ -19,9 +19,14 @@ export interface Conversation {
 interface ConversationListProps {
   conversations: Conversation[];
   activeId?: string;
+  hrefBuilder?: (conversationId: string) => string;
 }
 
-export function ConversationList({ conversations, activeId }: ConversationListProps) {
+export function ConversationList({
+  conversations,
+  activeId,
+  hrefBuilder = appRoutes.customer.message,
+}: ConversationListProps) {
   const router = useRouter();
 
   return (
@@ -42,7 +47,7 @@ export function ConversationList({ conversations, activeId }: ConversationListPr
                 'flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted',
                 activeId === convo.id && 'bg-muted'
               )}
-              onClick={() => router.push(appRoutes.customer.message(convo.id))}
+              onClick={() => router.push(hrefBuilder(convo.id))}
             >
               <Avatar>
                 {convo.participantAvatar && (

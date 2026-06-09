@@ -1,5 +1,7 @@
 import { getPrisma } from '../../../shared/prisma/index.js';
 import { AppError } from '../../../shared/middleware/errorHandler.js';
+import { notificationService } from '../../notifications/services/notificationService.js';
+import { NotificationType } from '../../notifications/models/index.js';
 import type {
   CartItemResponse,
   OrderResponse,
@@ -19,6 +21,11 @@ const cartItemSelect = {
       currency: true,
       images: true,
       businessId: true,
+      business: {
+        select: {
+          businessName: true,
+        },
+      },
     },
   },
 } as const;
@@ -32,6 +39,12 @@ const orderItemSelect = {
       id: true,
       name: true,
       price: true,
+      businessId: true,
+      business: {
+        select: {
+          businessName: true,
+        },
+      },
     },
   },
 } as const;
@@ -39,11 +52,149 @@ const orderItemSelect = {
 const orderSelect = {
   id: true,
   customerId: true,
+  customer: {
+    select: {
+      name: true,
+    },
+  },
   status: true,
   totalAmount: true,
   createdAt: true,
   items: { select: orderItemSelect },
 } as const;
+
+function mapCartItem(item: {
+  id: string;
+  quantity: number;
+  product: {
+    id: string;
+    name: string;
+    price: number;
+    currency: string;
+    images: string[];
+    businessId: string;
+    business: {
+      businessName: string;
+    };
+  };
+}): CartItemResponse {
+  return {
+    id: item.id,
+    quantity: item.quantity,
+    product: {
+      id: item.product.id,
+      name: item.product.name,
+      price: item.product.price,
+      currency: item.product.currency,
+      images: item.product.images,
+      businessId: item.product.businessId,
+      businessName: item.product.business.businessName,
+    },
+  };
+}
+
+function mapOrderItem(item: {
+  id: string;
+  quantity: number;
+  price: number;
+  product: {
+    id: string;
+    name: string;
+    businessId: string;
+    business: {
+      businessName: string;
+    };
+  };
+}): OrderResponse['items'][number] {
+  return {
+    id: item.id,
+    productId: item.product.id,
+    productName: item.product.name,
+    businessId: item.product.businessId,
+    businessName: item.product.business.businessName,
+    quantity: item.quantity,
+    price: item.price,
+  };
+}
+
+function mapCustomerOrder(order: {
+  id: string;
+  customerId: string;
+  customer: { name: string };
+  status: OrderResponse['status'];
+  totalAmount: number;
+  createdAt: Date;
+  items: Array<{
+    id: string;
+    quantity: number;
+    price: number;
+    product: {
+      id: string;
+      name: string;
+      businessId: string;
+      business: {
+        businessName: string;
+      };
+    };
+  }>;
+}): OrderResponse {
+  const items = order.items.map(mapOrderItem);
+  const businessNames = Array.from(new Set(items.map((item) => item.businessName)));
+
+  return {
+    id: order.id,
+    customerId: order.customerId,
+    customerName: order.customer.name,
+    status: order.status,
+    totalAmount: order.totalAmount,
+    businessName: businessNames.join(', '),
+    items,
+    createdAt: order.createdAt,
+  };
+}
+
+function mapBusinessOrder(
+  order: {
+    id: string;
+    customerId: string;
+    customer: { name: string };
+    status: OrderResponse['status'];
+    totalAmount: number;
+    createdAt: Date;
+    items: Array<{
+      id: string;
+      quantity: number;
+      price: number;
+      product: {
+        id: string;
+        name: string;
+        businessId: string;
+        business: {
+          businessName: string;
+        };
+      };
+    }>;
+  },
+  businessId: string
+): OrderResponse {
+  const items = order.items
+    .filter((item) => item.product.businessId === businessId)
+    .map(mapOrderItem);
+
+  const businessNames = Array.from(new Set(items.map((item) => item.businessName)));
+  const totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  return {
+    id: order.id,
+    customerId: order.customerId,
+    customerName: order.customer.name,
+    status: order.status,
+    totalAmount,
+    businessName: businessNames.join(', '),
+    items,
+    createdAt: order.createdAt,
+  };
+}
 
 // ─── Cart ─────────────────────────────────────────────────────────────────────
 
@@ -102,7 +253,7 @@ export async function addToCart(
     });
   }
 
-  return cartItem as CartItemResponse;
+  return mapCartItem(cartItem);
 }
 
 /**
@@ -141,7 +292,7 @@ export async function getCart(userId: string): Promise<CartItemResponse[]> {
     select: cartItemSelect,
   });
 
-  return items as CartItemResponse[];
+  return items.map(mapCartItem);
 }
 
 /**
@@ -184,7 +335,7 @@ export async function updateCartQuantity(
     select: cartItemSelect,
   });
 
-  return updated as CartItemResponse;
+  return mapCartItem(updated);
 }
 
 // ─── Orders ───────────────────────────────────────────────────────────────────
@@ -216,6 +367,13 @@ export async function createOrderFromCart(
           stock: true,
           isAvailable: true,
           name: true,
+          businessId: true,
+          business: {
+            select: {
+              userId: true,
+              businessName: true,
+            },
+          },
         },
       },
     },
@@ -278,7 +436,46 @@ export async function createOrderFromCart(
     return createdOrder;
   });
 
-  return order as OrderResponse;
+  const businessNotifications = new Map<
+    string,
+    { businessName: string; subtotal: number; itemCount: number }
+  >();
+
+  for (const item of cartItems) {
+    const existing = businessNotifications.get(item.product.business.userId);
+    const lineTotal = item.product.price * item.quantity;
+    if (existing) {
+      existing.subtotal += lineTotal;
+      existing.itemCount += item.quantity;
+      continue;
+    }
+
+    businessNotifications.set(item.product.business.userId, {
+      businessName: item.product.business.businessName,
+      subtotal: lineTotal,
+      itemCount: item.quantity,
+    });
+  }
+
+  await Promise.all(
+    Array.from(businessNotifications.entries()).map(([userId, summary]) =>
+      notificationService.createNotification(
+        userId,
+        NotificationType.ORDER_UPDATE,
+        'New order received',
+        `${summary.itemCount} item(s) were ordered from ${summary.businessName}.`,
+        {
+          orderId: order.id,
+          status: order.status,
+          subtotal: summary.subtotal,
+          businessName: summary.businessName,
+          notificationTarget: 'business-orders',
+        }
+      )
+    )
+  );
+
+  return mapCustomerOrder(order);
 }
 
 /**
@@ -304,7 +501,7 @@ export async function getCustomerOrders(
   ]);
 
   return {
-    data: orders as OrderResponse[],
+    data: orders.map(mapCustomerOrder),
     total,
     page,
     limit,
@@ -353,7 +550,7 @@ export async function getBusinessOrders(
   ]);
 
   return {
-    data: orders as OrderResponse[],
+    data: orders.map((order) => mapBusinessOrder(order, business.id)),
     total,
     page,
     limit,
@@ -415,7 +612,31 @@ export async function updateOrderStatus(
     select: orderSelect,
   });
 
-  return updated as OrderResponse;
+  const refreshed = await prisma.order.findUnique({
+    where: { id: updated.id },
+    select: orderSelect,
+  });
+
+  if (!refreshed) {
+    throw new AppError(404, 'Order not found after update.');
+  }
+
+  const notificationOrder = mapBusinessOrder(refreshed, business.id);
+
+  await notificationService.createNotification(
+    refreshed.customerId,
+    NotificationType.ORDER_UPDATE,
+    'Order status updated',
+    `Your order${notificationOrder.businessName ? ` from ${notificationOrder.businessName}` : ''} is now ${status}.`,
+    {
+      orderId: refreshed.id,
+      status,
+      businessName: notificationOrder.businessName,
+      notificationTarget: 'customer-orders',
+    }
+  );
+
+  return notificationOrder;
 }
 
 /**
@@ -443,6 +664,11 @@ export async function getOrder(
               name: true,
               price: true,
               businessId: true,
+              business: {
+                select: {
+                  businessName: true,
+                },
+              },
             },
           },
         },
@@ -459,7 +685,7 @@ export async function getOrder(
     if (order.customerId !== userId) {
       throw new AppError(403, 'You are not authorised to view this order.');
     }
-    return order as unknown as OrderResponse;
+    return mapCustomerOrder(order);
   }
 
   // Business owner: must have at least one product in the order
@@ -480,5 +706,5 @@ export async function getOrder(
     throw new AppError(403, 'You are not authorised to view this order.');
   }
 
-  return order as unknown as OrderResponse;
+  return mapBusinessOrder(order, business.id);
 }

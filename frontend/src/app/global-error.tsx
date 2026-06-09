@@ -15,6 +15,11 @@ export default function GlobalError({
 }) {
   const router = useRouter();
 
+  const handleRefresh = () => {
+    reset();
+    window.location.reload();
+  };
+
   const handleBack = () => {
     if (window.history.length > 1) {
       router.back();
@@ -34,7 +39,7 @@ export default function GlobalError({
         <ErrorState
           title="We hit an unexpected problem"
           message="BuzzMap could not finish that request. Please refresh the page or try again shortly."
-          onRetry={reset}
+          onRefresh={handleRefresh}
           onBack={handleBack}
         />
       </body>

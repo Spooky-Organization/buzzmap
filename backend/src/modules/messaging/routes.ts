@@ -7,6 +7,21 @@ const router = Router();
 
 router.post('/conversations', authenticate, messagingController.createConversation);
 router.get('/conversations', authenticate, messagingController.getConversations);
+router.get(
+  '/conversations/recommendations',
+  authenticate,
+  messagingController.getConversationRecommendations
+);
+router.post(
+  '/conversations/recommendations/contacts',
+  authenticate,
+  messagingController.getContactConversationRecommendations
+);
+router.get(
+  '/conversations/recommendations/business',
+  authenticate,
+  messagingController.getBusinessConversationRecommendations
+);
 router.get('/conversations/:id', authenticate, messagingController.getConversation);
 router.get('/conversations/:id/messages', authenticate, messagingController.getMessages);
 router.patch('/conversations/:id/read', authenticate, messagingController.markAsRead);

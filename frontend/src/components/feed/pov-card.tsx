@@ -8,12 +8,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
+import { appRoutes, apiRoutes } from '@/lib/routes';
 import { cn } from '@/lib/utils';
+import { POVMediaGallery, type POVMediaItem } from './pov-media-gallery';
 
 export interface POVCardData {
   id: string;
-  videoUrl: string | null;
-  thumbnailUrl: string | null;
+  media: POVMediaItem[];
   caption: string | null;
   starRating: number;
   recommends: boolean;
@@ -85,9 +86,9 @@ export function POVCard({ pov }: POVCardProps) {
     setLikesCount((c) => c + (wasLiked ? -1 : 1));
     try {
       if (wasLiked) {
-        await api.delete(`/api/v1/pov/${pov.id}/like`);
+        await api.delete(apiRoutes.pov.like(pov.id));
       } else {
-        await api.post(`/api/v1/pov/${pov.id}/like`);
+        await api.post(apiRoutes.pov.like(pov.id));
       }
     } catch {
       // Revert on error
@@ -100,26 +101,8 @@ export function POVCard({ pov }: POVCardProps) {
 
   return (
     <Card className="overflow-hidden">
-      {/* Video / Thumbnail */}
-      {pov.videoUrl && (
-        <div className="aspect-video w-full bg-black">
-          <video
-            src={pov.videoUrl}
-            poster={pov.thumbnailUrl ?? undefined}
-            controls
-            playsInline
-            className="size-full object-cover"
-          />
-        </div>
-      )}
-      {!pov.videoUrl && pov.thumbnailUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={pov.thumbnailUrl}
-          alt="POV thumbnail"
-          className="aspect-video w-full object-cover"
-        />
-      )}
+      {/* Mixed image / video gallery */}
+      {pov.media.length > 0 && <POVMediaGallery media={pov.media} />}
 
       <CardHeader className="gap-2">
         {/* Author + Business row */}
@@ -176,7 +159,13 @@ export function POVCard({ pov }: POVCardProps) {
         </Button>
 
         {/* Comment */}
-        <Button variant="ghost" size="sm" className="gap-1.5" nativeButton={false} render={<Link href={`/pov/${pov.id}#comments`} />}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5"
+          nativeButton={false}
+          render={<Link href={`${appRoutes.customer.pov(pov.id)}#comments`} />}
+        >
           <MessageCircle />
           <span className="text-xs">{pov.commentsCount}</span>
         </Button>

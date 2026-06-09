@@ -1,3 +1,5 @@
+import QRCode from 'qrcode';
+import { config } from '../../../config/index.js';
 import { getPrisma } from '../../../shared/prisma/index.js';
 import { AppError } from '../../../shared/middleware/errorHandler.js';
 import bcrypt from 'bcrypt';
@@ -11,6 +13,7 @@ import type {
   FollowingEntry,
 } from '../models/index.js';
 import { sanitizeOptionalText, sanitizePlainText, sanitizeStringArray } from '../../../shared/utils/sanitize.js';
+import { normalizePhoneNumber } from '../../../shared/utils/phone.js';
 
 const businessProfileSelect = {
   id: true,
@@ -27,6 +30,22 @@ const businessProfileSelect = {
   createdAt: true,
   updatedAt: true,
 } as const;
+
+function getUserPublicUrl(userId: string): string {
+  return new URL(`/user/${userId}`, config.frontendUrl).toString();
+}
+
+async function generateUserQrCode(userId: string): Promise<string> {
+  return QRCode.toDataURL(getUserPublicUrl(userId), {
+    errorCorrectionLevel: 'M',
+    margin: 1,
+    width: 320,
+    color: {
+      dark: '#0f2540',
+      light: '#ffffff',
+    },
+  });
+}
 
 export async function getProfile(userId: string): Promise<UserProfileResponse> {
   const prisma = getPrisma();
@@ -58,6 +77,8 @@ export async function getProfile(userId: string): Promise<UserProfileResponse> {
     throw new AppError(404, 'User not found');
   }
 
+  const profileQrCode = await generateUserQrCode(user.id);
+
   return {
     id: user.id,
     email: user.email,
@@ -67,6 +88,7 @@ export async function getProfile(userId: string): Promise<UserProfileResponse> {
     interests: user.interests,
     location: user.location,
     phone: user.phone,
+    profileQrCode,
     createdAt: user.createdAt,
     businessProfile: user.businessProfile,
     _count: {
@@ -121,6 +143,8 @@ export async function getPublicProfile(
     throw new AppError(404, 'User not found');
   }
 
+  const profileQrCode = await generateUserQrCode(user.id);
+
   return {
     id: user.id,
     name: user.name,
@@ -128,6 +152,7 @@ export async function getPublicProfile(
     role: user.role,
     interests: user.interests,
     location: user.location,
+    profileQrCode,
     createdAt: user.createdAt,
     isFollowing: !!isFollowing,
     businessProfile: user.businessProfile,
@@ -144,11 +169,12 @@ export async function updateProfile(
   data: UpdateProfileDTO
 ): Promise<UserProfileResponse> {
   const prisma = getPrisma();
+  const normalizedPhone = normalizePhoneNumber(sanitizeOptionalText(data.phone));
 
   // Check phone uniqueness if provided
-  if (data.phone) {
+  if (normalizedPhone) {
     const existing = await prisma.user.findUnique({
-      where: { phone: data.phone },
+      where: { phone: normalizedPhone },
       select: { id: true },
     });
     if (existing && existing.id !== userId) {
@@ -162,7 +188,7 @@ export async function updateProfile(
       ...(data.name !== undefined && { name: sanitizePlainText(data.name) }),
       ...(data.avatar !== undefined && { avatar: sanitizeOptionalText(data.avatar) }),
       ...(data.location !== undefined && { location: sanitizeOptionalText(data.location) }),
-      ...(data.phone !== undefined && { phone: sanitizeOptionalText(data.phone) }),
+      ...(data.phone !== undefined && { phone: normalizedPhone }),
     },
     select: {
       id: true,
@@ -194,6 +220,7 @@ export async function updateProfile(
     interests: user.interests,
     location: user.location,
     phone: user.phone,
+    profileQrCode: await generateUserQrCode(user.id),
     createdAt: user.createdAt,
     businessProfile: user.businessProfile,
     _count: {
@@ -244,6 +271,7 @@ export async function updateInterests(
     interests: user.interests,
     location: user.location,
     phone: user.phone,
+    profileQrCode: await generateUserQrCode(user.id),
     createdAt: user.createdAt,
     businessProfile: user.businessProfile,
     _count: {
@@ -460,20 +488,23 @@ export async function detectFriends(
     },
   });
 
-  return mutualFollows.map(({ following }) => ({
-    id: following.id,
-    name: following.name,
-    avatar: following.avatar,
-    role: following.role,
-    interests: following.interests,
-    location: following.location,
-    createdAt: following.createdAt,
-    isFollowing: true,
-    businessProfile: following.businessProfile,
-    _count: {
-      followers: following._count.followers,
-      following: following._count.follows,
-      povs: following._count.povs,
-    },
-  }));
+  return Promise.all(
+    mutualFollows.map(async ({ following }) => ({
+      id: following.id,
+      name: following.name,
+      avatar: following.avatar,
+      role: following.role,
+      interests: following.interests,
+      location: following.location,
+      profileQrCode: await generateUserQrCode(following.id),
+      createdAt: following.createdAt,
+      isFollowing: true,
+      businessProfile: following.businessProfile,
+      _count: {
+        followers: following._count.followers,
+        following: following._count.follows,
+        povs: following._count.povs,
+      },
+    }))
+  );
 }

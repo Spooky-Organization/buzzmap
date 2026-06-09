@@ -7,7 +7,27 @@ import { AppError } from '../middleware/errorHandler.js';
 
 // ─── Multer configuration ─────────────────────────────────────────────────────
 
-const maxFileSizeBytes = parseInt(config.maxFileSize, 10);
+/**
+ * Parse a human-readable size (e.g. "200mb", "512kb", "1024") into bytes.
+ * A bare number is treated as bytes. Defaults to 200 MB if unparseable.
+ */
+function parseFileSize(value: string): number {
+  const match = /^(\d+(?:\.\d+)?)\s*(gb|mb|kb|b)?$/i.exec(value.trim());
+  if (!match) return 200 * 1024 * 1024;
+  const amount = parseFloat(match[1]);
+  const unit = (match[2] ?? 'b').toLowerCase();
+  const multiplier =
+    unit === 'gb'
+      ? 1024 ** 3
+      : unit === 'mb'
+        ? 1024 ** 2
+        : unit === 'kb'
+          ? 1024
+          : 1;
+  return Math.floor(amount * multiplier);
+}
+
+const maxFileSizeBytes = parseFileSize(config.maxFileSize);
 
 function hasPrefix(buffer: Buffer, prefix: number[]): boolean {
   return prefix.every((byte, index) => buffer[index] === byte);

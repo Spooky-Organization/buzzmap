@@ -1,9 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
-import { ChevronRight, ClipboardList, PackageCheck, ShoppingBag, Workflow } from 'lucide-react';
+import { ChevronRight, ClipboardList, MessageSquare, PackageCheck, ShoppingBag, Store, Workflow } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Card,
@@ -41,7 +42,7 @@ import {
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
 import { Separator } from '@/components/ui/separator';
 import { api } from '@/lib/api';
-import { apiRoutes } from '@/lib/routes';
+import { apiRoutes, appRoutes } from '@/lib/routes';
 import {
   DashboardHero,
   DashboardHeroPill,
@@ -55,6 +56,22 @@ interface OrderItem {
   productName: string;
   quantity: number;
   price: number;
+}
+
+interface BackendOrderItem {
+  id: string;
+  productName: string;
+  quantity: number;
+  price: number;
+}
+
+interface BackendOrder {
+  id: string;
+  status: OrderStatus;
+  totalAmount: number;
+  createdAt: string;
+  customerName: string;
+  items: BackendOrderItem[];
 }
 
 interface Order {
@@ -89,8 +106,22 @@ export default function BusinessOrdersPage() {
   const { data, isLoading } = useQuery<{ orders: Order[] }>({
     queryKey: ['business-orders'],
     queryFn: async () => {
-      const res = await api.get(apiRoutes.orders.business);
-      return { orders: res.data.orders ?? [] };
+      const res = await api.get<{ data: BackendOrder[] } & Record<string, unknown>>(apiRoutes.orders.business);
+      return {
+        orders: (res.data.data ?? []).map((order) => ({
+          id: order.id,
+          status: order.status,
+          total: order.totalAmount,
+          createdAt: order.createdAt,
+          customerName: order.customerName,
+          items: order.items.map((item) => ({
+            id: item.id,
+            productName: item.productName,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+        })),
+      };
     },
     enabled: !!session,
   });
@@ -153,6 +184,7 @@ export default function BusinessOrdersPage() {
           note="Orders already accepted into fulfillment."
           icon={PackageCheck}
           accent="from-sky-500/15 via-primary/[0.08] to-transparent"
+          href={appRoutes.business.shelf}
         />
         <DashboardMetricCard
           label="Order Value"
@@ -162,6 +194,27 @@ export default function BusinessOrdersPage() {
           accent="from-emerald-500/15 via-primary/[0.08] to-transparent"
         />
       </div>
+
+      <Card className="border-border/70 bg-card/80 shadow-[0_22px_70px_-48px_rgba(15,37,64,0.68)]">
+        <CardContent className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-primary">Fulfillment works best with a current shelf</p>
+            <p className="text-sm text-muted-foreground">
+              Jump back to the product shelf to adjust availability, stock, and storefront readiness while processing orders.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button variant="outline" nativeButton={false} render={<Link href={appRoutes.business.shelf} />}>
+              <Store data-icon="inline-start" />
+              Open shelf
+            </Button>
+            <Button nativeButton={false} render={<Link href={appRoutes.business.messages} />}>
+              <MessageSquare data-icon="inline-start" />
+              Message customers
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="border-border/70 bg-card/80 shadow-[0_22px_70px_-48px_rgba(15,37,64,0.68)]">
         <CardHeader>

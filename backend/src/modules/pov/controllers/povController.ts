@@ -19,9 +19,7 @@ export async function create(
   try {
     assertAuthenticated(req);
 
-    if (!req.file) {
-      throw new AppError(400, 'Video file is required');
-    }
+    const files = (req.files as Express.Multer.File[] | undefined) ?? [];
 
     // Body fields come as strings from multipart/form-data — coerce them
     const rawBody = {
@@ -32,7 +30,10 @@ export async function create(
     };
 
     const data = createPOVSchema.parse(rawBody);
-    const pov = await povService.createPOV(req.user.userId, data, req.file);
+    if (files.length === 0 && !data.caption?.trim()) {
+      throw new AppError(400, 'A text-only POV requires a caption.');
+    }
+    const pov = await povService.createPOV(req.user.userId, data, files);
 
     res.status(201).json({ status: 'success', data: pov });
   } catch (err) {

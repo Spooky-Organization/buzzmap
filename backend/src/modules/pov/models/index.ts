@@ -5,12 +5,21 @@ export interface CreatePOVDTO {
   recommends: boolean;
 }
 
+export type POVMediaType = 'image' | 'video';
+
+export interface POVMediaItem {
+  id: string;
+  url: string; // signed URL
+  type: POVMediaType;
+  thumbnailUrl: string | null;
+  position: number;
+}
+
 export interface POVResponse {
   id: string;
   author: { id: string; name: string; avatar: string | null };
   business: { id: string; businessName: string };
-  videoUrl: string;
-  thumbnailUrl: string | null;
+  media: POVMediaItem[];
   caption: string | null;
   starRating: number;
   recommends: boolean;

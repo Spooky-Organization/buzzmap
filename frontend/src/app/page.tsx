@@ -25,6 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { appRoutes } from '@/lib/routes';
+import { LegalDocumentDialog } from '@/components/legal/legal-document-dialog';
 
 /* ─── animation helpers ─── */
 import type { Variants } from 'framer-motion';
@@ -90,6 +91,86 @@ function HoneycombPattern({ className = '' }: { className?: string }) {
       </defs>
       <rect width="100%" height="100%" fill="url(#honeycomb)" />
     </svg>
+  );
+}
+
+/* ─── hero POV showcase card (decorative) ─── */
+function HeroPOVCard({
+  initials,
+  name,
+  location,
+  caption,
+  rating,
+  kind,
+  duration,
+  mediaClassName,
+  recommends = true,
+}: {
+  initials: string;
+  name: string;
+  location: string;
+  caption: string;
+  rating: number;
+  kind: 'video' | 'photo';
+  duration?: string;
+  mediaClassName: string;
+  recommends?: boolean;
+}) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-white/10 bg-[oklch(0.22_0.045_255)]/95 shadow-2xl shadow-black/50 ring-1 ring-white/5 backdrop-blur-sm">
+      {/* media */}
+      <div className={`relative aspect-[5/4] w-full ${mediaClassName}`}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_22%,rgba(255,255,255,0.22),transparent_55%)]" />
+        <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-black/45 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+          {kind === 'video' ? <Play className="size-2.5 fill-current" /> : <ShoppingBag className="size-2.5" />}
+          {kind}
+        </span>
+        {kind === 'video' && (
+          <>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="flex size-11 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/30 backdrop-blur-sm">
+                <Play className="size-4 fill-white text-white" />
+              </div>
+            </div>
+            {duration && (
+              <span className="absolute bottom-2.5 right-2.5 rounded bg-black/55 px-1.5 py-0.5 text-[9px] font-medium text-white">
+                {duration}
+              </span>
+            )}
+          </>
+        )}
+      </div>
+      {/* body */}
+      <div className="flex flex-col gap-2 p-3">
+        <div className="flex items-center gap-2">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground">
+            {initials}
+          </span>
+          <div className="min-w-0 leading-tight">
+            <p className="truncate text-xs font-semibold text-white">{name}</p>
+            <p className="flex items-center gap-0.5 text-[10px] text-white/50">
+              <MapPin className="size-2.5" />
+              {location}
+            </p>
+          </div>
+          {recommends && (
+            <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[9px] font-semibold text-emerald-300">
+              <CheckCircle className="size-2.5" />
+              Recommends
+            </span>
+          )}
+        </div>
+        <div className="flex gap-0.5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Star
+              key={i}
+              className={`size-3 ${i < rating ? 'fill-accent text-accent' : 'fill-white/10 text-white/10'}`}
+            />
+          ))}
+        </div>
+        <p className="text-[11px] leading-snug text-white/70">{caption}</p>
+      </div>
+    </div>
   );
 }
 
@@ -240,103 +321,222 @@ export default function LandingPage() {
 
       {/* ─── HERO ─── */}
       <section className="relative overflow-hidden bg-primary">
-        {/* Honeycomb overlay */}
-        <HoneycombPattern className="absolute inset-0 text-white/[0.04]" />
+        {/* atmosphere */}
+        <HoneycombPattern className="absolute inset-0 text-white/[0.035]" />
+        <div className="pointer-events-none absolute -top-40 right-0 size-[34rem] rounded-full bg-accent/20 blur-[150px]" />
+        <div className="pointer-events-none absolute -bottom-48 -left-40 size-[28rem] rounded-full bg-accent/10 blur-[130px]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
 
-        {/* Gradient orbs */}
-        <div className="pointer-events-none absolute -left-40 -top-40 size-96 rounded-full bg-accent/20 blur-[120px]" />
-        <div className="pointer-events-none absolute -bottom-40 -right-40 size-96 rounded-full bg-accent/10 blur-[120px]" />
+        <motion.div
+          variants={stagger}
+          initial="hidden"
+          animate="visible"
+          className="relative mx-auto grid max-w-7xl items-center gap-14 px-6 py-20 md:py-24 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:py-28"
+        >
+          {/* LEFT — editorial copy */}
+          <div className="flex flex-col items-start gap-6 text-left">
+            <motion.div variants={fadeUp}>
+              <Badge
+                variant="outline"
+                className="gap-2 rounded-full border-accent/30 bg-accent/10 py-1 pl-2 pr-3 text-accent"
+              >
+                <span className="relative flex size-2">
+                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-accent opacity-60" />
+                  <span className="relative inline-flex size-2 rounded-full bg-accent" />
+                </span>
+                Launching in East Africa
+              </Badge>
+            </motion.div>
 
-        <div className="relative mx-auto flex max-w-7xl flex-col items-center gap-8 px-6 py-24 text-center md:py-32 lg:py-40">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <Badge variant="outline" className="border-accent/30 bg-accent/10 text-accent">
-              Launching in East Africa
-            </Badge>
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.3 }}
-            className="max-w-4xl text-4xl font-extrabold leading-tight tracking-tight text-primary-foreground md:text-5xl lg:text-7xl"
-          >
-            Discover Real Businesses.{' '}
-            <span className="text-accent">Real Reviews.</span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="max-w-2xl text-lg leading-relaxed text-primary-foreground/70 md:text-xl"
-          >
-            BuzzMap kills fake reviews by replacing static text with lived-moment
-            video POVs from real customers. See it, believe it, support it.
-          </motion.p>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.7 }}
-            className="text-2xl font-semibold tracking-wide text-accent md:text-3xl"
-          >
-            for you by you
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.8 }}
-            className="flex flex-col gap-4 sm:flex-row"
-          >
-            <Button
-              size="lg"
-              className="bg-accent text-white hover:bg-[oklch(0.68_0.17_65)] shadow-lg shadow-accent/25 hover:shadow-xl active:scale-[0.98] transition-all"
-              nativeButton={false}
-              render={<Link href={appRoutes.auth.registerCustomer} />}
+            <motion.p
+              variants={fadeUp}
+              className="text-xs font-semibold uppercase tracking-[0.4em] text-accent/80"
             >
-              Start Exploring
-              <ArrowRight className="ml-2" />
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-primary-foreground/20 bg-transparent text-primary-foreground hover:bg-primary-foreground/10"
-              nativeButton={false}
-              render={<Link href={appRoutes.auth.registerBusiness} />}
-            >
-              <Play className="mr-2 size-4" />
-              List Your Business
-            </Button>
-          </motion.div>
+              For you · by you
+            </motion.p>
 
-          {/* Floating phone mockup hint */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1.0 }}
-            className="mt-8 w-full max-w-3xl"
-          >
-            <div className="relative mx-auto aspect-video max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-2xl shadow-black/20 backdrop-blur-sm">
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-                <div className="flex size-16 items-center justify-center rounded-full bg-accent/20 backdrop-blur-sm">
-                  <Play className="size-7 text-accent" />
+            <motion.h1
+              variants={fadeUp}
+              className="text-balance text-5xl font-extrabold leading-[0.95] tracking-tight text-primary-foreground sm:text-6xl lg:text-7xl"
+            >
+              See it. Believe it.{' '}
+              <span className="relative inline-block text-accent">
+                Support it.
+                <svg
+                  className="absolute -bottom-2 left-0 h-2.5 w-full text-accent/60"
+                  viewBox="0 0 200 10"
+                  fill="none"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M2 7C50 2 90 2 120 5C150 8 180 4 198 3"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
+            </motion.h1>
+
+            <motion.p
+              variants={fadeUp}
+              className="max-w-xl text-lg leading-relaxed text-primary-foreground/70"
+            >
+              BuzzMap turns honest customer{' '}
+              <span className="font-medium text-primary-foreground">POVs</span> — short
+              videos and photos — into the trust signal that helps you find the best
+              sellers and shops online.
+            </motion.p>
+
+            <motion.div variants={fadeUp} className="flex flex-col gap-3 sm:flex-row">
+              <Button
+                size="lg"
+                className="bg-accent text-white shadow-lg shadow-accent/25 transition-all hover:bg-[oklch(0.68_0.17_65)] hover:shadow-xl active:scale-[0.98]"
+                nativeButton={false}
+                render={<Link href={appRoutes.auth.registerCustomer} />}
+              >
+                Start Exploring
+                <ArrowRight className="ml-2" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-primary-foreground/20 bg-transparent text-primary-foreground hover:bg-primary-foreground/10"
+                nativeButton={false}
+                render={<Link href={appRoutes.auth.registerBusiness} />}
+              >
+                <Play className="mr-2 size-4" />
+                List Your Business
+              </Button>
+            </motion.div>
+
+            {/* trust strip */}
+            <motion.div variants={fadeUp} className="flex items-center gap-4 pt-2">
+              <div className="flex -space-x-2.5">
+                {['AW', 'KO', 'FA', 'BM'].map((init, idx) => (
+                  <span
+                    key={init}
+                    className={`flex size-9 items-center justify-center rounded-full border-2 border-primary text-[11px] font-bold ${
+                      idx % 2 === 0
+                        ? 'bg-accent text-accent-foreground'
+                        : 'bg-[oklch(0.42_0.07_255)] text-white'
+                    }`}
+                  >
+                    {init}
+                  </span>
+                ))}
+              </div>
+              <div className="leading-tight">
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className="size-3.5 fill-accent text-accent" />
+                  ))}
+                  <span className="ml-1 text-sm font-bold text-primary-foreground">4.8</span>
                 </div>
-                <p className="text-sm font-medium text-primary-foreground/60">Watch how BuzzMap works</p>
+                <p className="text-xs text-primary-foreground/60">
+                  from 120K+ real customer POVs
+                </p>
               </div>
-              {/* Decorative UI elements */}
-              <div className="absolute left-4 top-4 flex gap-2">
-                <div className="size-3 rounded-full bg-white/20" />
-                <div className="size-3 rounded-full bg-white/20" />
-                <div className="size-3 rounded-full bg-white/20" />
-              </div>
-            </div>
+            </motion.div>
+          </div>
+
+          {/* RIGHT — POV collage */}
+          <motion.div
+            variants={stagger}
+            className="relative mx-auto hidden h-[30rem] w-full max-w-sm sm:block lg:h-[34rem] lg:max-w-md"
+          >
+            {/* back card */}
+            <motion.div
+              variants={scaleIn}
+              className="absolute left-0 top-2 w-44 -rotate-6 lg:w-48"
+            >
+              <HeroPOVCard
+                initials="FA"
+                name="Fatma A."
+                location="Mombasa"
+                caption="Fresh produce, fair prices — my weekly stop."
+                rating={4}
+                kind="photo"
+                mediaClassName="bg-gradient-to-br from-[oklch(0.5_0.11_75)] to-[oklch(0.32_0.06_40)]"
+              />
+            </motion.div>
+
+            {/* bottom card */}
+            <motion.div
+              variants={scaleIn}
+              className="absolute bottom-0 left-6 z-20 w-48 -rotate-2 lg:w-52"
+            >
+              <HeroPOVCard
+                initials="KO"
+                name="Kevin O."
+                location="Kisumu"
+                caption="Fast service and the fittings actually last."
+                rating={5}
+                kind="video"
+                duration="0:18"
+                mediaClassName="bg-gradient-to-br from-[oklch(0.46_0.08_210)] to-[oklch(0.28_0.06_255)]"
+              />
+            </motion.div>
+
+            {/* front hero card */}
+            <motion.div
+              variants={scaleIn}
+              className="absolute right-0 top-16 z-30 w-52 rotate-3 lg:w-60"
+            >
+              <HeroPOVCard
+                initials="AW"
+                name="Aisha W."
+                location="Nairobi"
+                caption="Best mandazi in town — the queue is worth it."
+                rating={5}
+                kind="video"
+                duration="0:24"
+                mediaClassName="bg-gradient-to-br from-[oklch(0.6_0.15_75)] to-[oklch(0.34_0.07_300)]"
+              />
+            </motion.div>
+
+            {/* floating rating chip */}
+            <motion.div variants={scaleIn} className="absolute -left-3 top-32 z-40 lg:-left-6">
+              <motion.div
+                animate={{ y: [0, -9, 0] }}
+                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+                className="flex items-center gap-2 rounded-2xl border border-white/10 bg-[oklch(0.22_0.045_255)]/95 px-3 py-2 shadow-xl shadow-black/40 backdrop-blur-sm"
+              >
+                <span className="flex size-8 items-center justify-center rounded-xl bg-accent/15 text-accent">
+                  <Star className="size-4 fill-accent" />
+                </span>
+                <div className="leading-none">
+                  <p className="text-sm font-bold text-white">4.9</p>
+                  <p className="text-[10px] text-white/50">avg POV rating</p>
+                </div>
+              </motion.div>
+            </motion.div>
+
+            {/* floating brand hex */}
+            <motion.div variants={scaleIn} className="absolute -right-2 top-4 z-40 lg:right-2">
+              <motion.div
+                animate={{ y: [0, 8, 0] }}
+                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
+                className="flex size-12 items-center justify-center rounded-2xl border border-accent/30 bg-accent/15 text-accent shadow-xl shadow-accent/10 backdrop-blur-sm"
+              >
+                <Hexagon className="size-6 fill-accent/20" />
+              </motion.div>
+            </motion.div>
+
+            {/* floating recommend chip */}
+            <motion.div variants={scaleIn} className="absolute -bottom-3 right-2 z-40">
+              <motion.div
+                animate={{ y: [0, -7, 0] }}
+                transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
+                className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-500/15 px-3 py-1.5 text-xs font-semibold text-emerald-300 shadow-xl shadow-black/30 backdrop-blur-sm"
+              >
+                <CheckCircle className="size-3.5" />
+                94% recommend
+              </motion.div>
+            </motion.div>
           </motion.div>
-        </div>
+        </motion.div>
       </section>
 
       {/* ─── STATS BAR ─── */}
@@ -368,32 +568,32 @@ export default function LandingPage() {
             <FeatureCard
               icon={Video}
               title="Video POVs"
-              description="Authentic video reviews from real customers. No scripts, no fakes — just lived moments that show the real experience."
+              description="Real customer footage that shows what a place actually feels like."
             />
             <FeatureCard
               icon={Shield}
               title="Trust-Driven"
-              description="Star ratings, recommendation scores, and verified customer status ensure every review you see is genuine."
+              description="Ratings and recommendations stay tied to real customer activity."
             />
             <FeatureCard
               icon={MessageSquare}
               title="Real-Time Messaging"
-              description="Chat directly with businesses before you buy. Ask questions, negotiate, and get instant responses."
+              description="Ask a business before you buy instead of guessing from a listing."
             />
             <FeatureCard
               icon={ShoppingBag}
               title="Product Shelf"
-              description="Browse products and services from local businesses. Add to cart and order seamlessly within the app."
+              description="Browse what is actually on offer and move straight into checkout."
             />
             <FeatureCard
               icon={MapPin}
               title="Local Discovery"
-              description="Find businesses in your area with interest-based feeds and trending POVs from your community."
+              description="Use POVs and location context to find strong nearby options fast."
             />
             <FeatureCard
-              icon={TrendingUp}
-              title="Business Analytics"
-              description="Business owners get real-time insights on reviews, followers, and engagement to grow their brand."
+              icon={Smartphone}
+              title="Business Profiles"
+              description="Profiles, posts, and POVs work together as the public trust surface."
             />
           </div>
         </div>
@@ -462,7 +662,7 @@ export default function LandingPage() {
                 step={3}
                 icon={TrendingUp}
                 title="Grow With Trust"
-                description="Earn visibility through genuine customer POVs. Track analytics, followers, and engagement in real time."
+                description="Earn visibility through genuine customer POVs and keep your public profile sharp."
               />
             </div>
           </motion.div>
@@ -611,7 +811,7 @@ export default function LandingPage() {
               <ul className="flex flex-col gap-2">
                 <li><Link href={appRoutes.auth.registerBusiness} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Register Business</Link></li>
                 <li><Link href={appRoutes.business.dashboard} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Dashboard</Link></li>
-                <li><Link href={appRoutes.business.analytics} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Analytics</Link></li>
+                <li><Link href={appRoutes.business.settings} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Settings</Link></li>
               </ul>
             </div>
             <div>
@@ -631,8 +831,7 @@ export default function LandingPage() {
               &copy; {new Date().getFullYear()} BuzzMap. All rights reserved.
             </p>
             <div className="flex gap-6">
-              <a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</a>
-              <a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</a>
+              <LegalDocumentDialog kind="terms" />
             </div>
           </div>
         </div>

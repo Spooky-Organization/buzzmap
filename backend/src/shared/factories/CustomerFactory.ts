@@ -2,6 +2,7 @@ import { getPrisma } from '../prisma/index.js';
 import bcrypt from 'bcrypt';
 import { config } from '../../config/index.js';
 import { sanitizePlainText, sanitizeOptionalText, sanitizeStringArray } from '../utils/sanitize.js';
+import { normalizePhoneNumber } from '../utils/phone.js';
 
 interface CreateCustomerInput {
   email: string;
@@ -20,7 +21,7 @@ export class CustomerFactory {
     return prisma.user.create({
       data: {
         email: input.email,
-        phone: sanitizeOptionalText(input.phone),
+        phone: normalizePhoneNumber(sanitizeOptionalText(input.phone)),
         password: hashedPassword,
         name: sanitizePlainText(input.name),
         role: 'CUSTOMER',

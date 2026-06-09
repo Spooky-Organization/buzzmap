@@ -87,3 +87,17 @@ export interface PaginatedConversations {
   limit: number;
   totalPages: number;
 }
+
+export interface ConversationRecommendation {
+  userId: string;
+  name: string;
+  avatar: string | null;
+  reasons: string[];
+  lastInteractionAt: Date | null;
+  matchedContactName?: string | null;
+}
+
+export interface ImportedContact {
+  name?: string;
+  phone: string;
+}

@@ -15,7 +15,7 @@ export function DashboardHero({
 }: {
   eyebrow: string;
   title: string;
-  description: string;
+  description?: string;
   icon: LucideIcon;
   children?: ReactNode;
 }) {
@@ -33,7 +33,9 @@ export function DashboardHero({
               </div>
               <h2 className="text-3xl font-semibold tracking-tight text-primary">{title}</h2>
             </div>
-            <p className="max-w-3xl text-sm leading-7 text-muted-foreground">{description}</p>
+            {description ? (
+              <p className="max-w-3xl text-sm leading-7 text-muted-foreground">{description}</p>
+            ) : null}
           </div>
         </div>
         {children ? <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">{children}</div> : null}
@@ -113,7 +115,7 @@ export function DashboardPanel({
   children,
 }: {
   title: string;
-  description: string;
+  description?: string;
   icon: LucideIcon;
   actionLabel?: string;
   actionHref?: string;
@@ -129,7 +131,7 @@ export function DashboardPanel({
             </div>
             <div className="space-y-1">
               <CardTitle>{title}</CardTitle>
-              <CardDescription>{description}</CardDescription>
+              {description ? <CardDescription>{description}</CardDescription> : null}
             </div>
           </div>
           {actionLabel && actionHref ? (

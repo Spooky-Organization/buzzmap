@@ -24,13 +24,32 @@ interface CartItem {
   productId: string;
   productName: string;
   price: number;
+  currency: string;
   quantity: number;
   imageUrl?: string;
   businessName: string;
 }
 
-interface CartData {
-  items: CartItem[];
+interface BackendCartItem {
+  id: string;
+  quantity: number;
+  product: {
+    id: string;
+    name: string;
+    price: number;
+    currency: string;
+    images: string[];
+    businessId: string;
+    businessName: string;
+  };
+}
+
+function formatCurrency(amount: number, currency = 'KES') {
+  return new Intl.NumberFormat('en-KE', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 2,
+  }).format(amount);
 }
 
 export default function CartPage() {
@@ -38,11 +57,20 @@ export default function CartPage() {
   const queryClient = useQueryClient();
   const [checkingOut, setCheckingOut] = useState(false);
 
-  const { data, isLoading } = useQuery<CartData>({
+  const { data: items = [], isLoading } = useQuery<CartItem[]>({
     queryKey: ['cart'],
     queryFn: async () => {
-      const res = await api.get(apiRoutes.cart.root);
-      return { items: res.data.items ?? [] };
+      const res = await api.get<BackendCartItem[]>(apiRoutes.cart.root);
+      return (res.data ?? []).map((item) => ({
+        id: item.id,
+        productId: item.product.id,
+        productName: item.product.name,
+        price: item.product.price,
+        currency: item.product.currency,
+        quantity: item.quantity,
+        imageUrl: item.product.images[0],
+        businessName: item.product.businessName,
+      }));
     },
     enabled: !!session,
   });
@@ -83,16 +111,15 @@ export default function CartPage() {
     }
   };
 
-  const items = data?.items ?? [];
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+  const currency = items[0]?.currency ?? 'KES';
 
   return (
     <div className="flex flex-col gap-6">
       <DashboardHero
         eyebrow="Customer cart"
         title="Review the basket before it becomes an order."
-        description="The cart is the last high-intent checkpoint before checkout. Keep quantities clean, remove weak fits, and verify total value before you place the order."
         icon={ShoppingBag}
       >
         <DashboardHeroPill
@@ -126,7 +153,7 @@ export default function CartPage() {
         />
         <DashboardMetricCard
           label="Cart Value"
-          value={`${Math.round(total)}`}
+          value={formatCurrency(total, currency)}
           note="Rounded value currently represented in the basket."
           icon={CreditCard}
           accent="from-emerald-500/15 via-primary/[0.08] to-transparent"
@@ -168,7 +195,7 @@ export default function CartPage() {
                     <p className="font-medium">{item.productName}</p>
                     <p className="text-sm text-muted-foreground">{item.businessName}</p>
                     <p className="text-sm font-semibold text-primary">
-                      ₱{item.price.toFixed(2)}
+                      {formatCurrency(item.price, item.currency)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -217,13 +244,13 @@ export default function CartPage() {
                   <span className="text-muted-foreground">
                     {item.productName} × {item.quantity}
                   </span>
-                  <span>₱{(item.price * item.quantity).toFixed(2)}</span>
+                  <span>{formatCurrency(item.price * item.quantity, item.currency)}</span>
                 </div>
               ))}
               <Separator />
               <div className="flex justify-between font-semibold">
                 <span>Total</span>
-                <span>₱{total.toFixed(2)}</span>
+                <span>{formatCurrency(total, currency)}</span>
               </div>
             </CardContent>
             <CardFooter>

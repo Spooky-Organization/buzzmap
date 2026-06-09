@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { FileText, ShieldCheck } from 'lucide-react';
+import { useMemo, useState, type ReactNode } from 'react';
+import { FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -11,9 +11,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { LEGAL_DOCUMENT_CONTENT } from '@/components/legal/legal-document-content';
+import { TERMS_OF_SERVICE_CONTENT } from '@/components/legal/terms-of-service-content';
 
-type LegalDocumentKind = 'terms' | 'privacy';
+type LegalDocumentKind = 'terms';
 
 const LEGAL_DOCS: Record<
   LegalDocumentKind,
@@ -25,16 +25,10 @@ const LEGAL_DOCS: Record<
   }
 > = {
   terms: {
-    title: 'Terms and Conditions',
-    description: 'Rules for using BuzzMap across customer, business, and admin access.',
+    title: 'Terms of Service',
+    description: 'The BuzzMap Terms of Service governing customer, business, and platform use.',
     icon: FileText,
-    content: LEGAL_DOCUMENT_CONTENT.terms,
-  },
-  privacy: {
-    title: 'Privacy Policy',
-    description: 'How BuzzMap handles account, platform, and activity information.',
-    icon: ShieldCheck,
-    content: LEGAL_DOCUMENT_CONTENT.privacy,
+    content: TERMS_OF_SERVICE_CONTENT,
   },
 };
 
@@ -46,6 +40,62 @@ function getTodayLabel() {
   }).format(new Date());
 }
 
+// Lightweight inline markdown: bold-italic (***x***), bold (**x**), italic (*x*),
+// and links ([text](url)). Returns React nodes so we never render raw markers.
+function parseInline(text: string, keyBase: string): ReactNode[] {
+  const nodes: ReactNode[] = [];
+  const pattern =
+    /\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*|\[([^\]]+)\]\(([^)\s]+)\)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let token = 0;
+
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(text.slice(lastIndex, match.index));
+    }
+    const key = `${keyBase}-i${token++}`;
+    if (match[1] !== undefined) {
+      nodes.push(
+        <strong key={key} className="font-semibold italic text-foreground">
+          {match[1]}
+        </strong>
+      );
+    } else if (match[2] !== undefined) {
+      nodes.push(
+        <strong key={key} className="font-semibold text-foreground">
+          {match[2]}
+        </strong>
+      );
+    } else if (match[3] !== undefined) {
+      nodes.push(
+        <em key={key} className="italic">
+          {match[3]}
+        </em>
+      );
+    } else if (match[4] !== undefined) {
+      nodes.push(
+        <a
+          key={key}
+          href={match[5]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-primary underline underline-offset-2 hover:text-primary/80"
+        >
+          {match[4]}
+        </a>
+      );
+    }
+    lastIndex = pattern.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex));
+  }
+
+  return nodes;
+}
+
 function renderMarkdown(markdown: string) {
   const blocks = markdown
     .split(/\n\s*\n/)
@@ -53,49 +103,69 @@ function renderMarkdown(markdown: string) {
     .filter(Boolean);
 
   return blocks.map((block, index) => {
+    const key = `legal-block-${index}`;
     const lines = block.split('\n').map((line) => line.trim()).filter(Boolean);
 
-    if (block.startsWith('# ')) {
+    if (block.startsWith('### ')) {
       return (
-        <h2 key={`legal-block-${index}`} className="text-2xl font-semibold tracking-tight text-primary">
-          {block.slice(2)}
-        </h2>
+        <h4 key={key} className="pt-1 text-base font-semibold text-foreground">
+          {parseInline(block.slice(4), key)}
+        </h4>
       );
     }
 
     if (block.startsWith('## ')) {
       return (
-        <h3 key={`legal-block-${index}`} className="pt-2 text-lg font-semibold text-foreground">
-          {block.slice(3)}
+        <h3 key={key} className="pt-3 text-lg font-semibold text-foreground">
+          {parseInline(block.slice(3), key)}
         </h3>
+      );
+    }
+
+    if (block.startsWith('# ')) {
+      return (
+        <h2 key={key} className="text-2xl font-semibold tracking-tight text-primary">
+          {parseInline(block.slice(2), key)}
+        </h2>
       );
     }
 
     if (lines.every((line) => line.startsWith('- '))) {
       return (
-        <ul key={`legal-block-${index}`} className="space-y-2 pl-5 text-sm leading-7 text-muted-foreground">
+        <ul key={key} className="list-disc space-y-2 pl-5 text-sm leading-7 text-muted-foreground">
           {lines.map((line, lineIndex) => (
-            <li key={`legal-line-${index}-${lineIndex}`} className="list-disc">
-              {line.slice(2)}
-            </li>
+            <li key={`${key}-${lineIndex}`}>{parseInline(line.slice(2), `${key}-${lineIndex}`)}</li>
           ))}
         </ul>
       );
     }
 
+    if (lines.every((line) => /^\d+\.\s/.test(line))) {
+      return (
+        <ol key={key} className="list-decimal space-y-2 pl-5 text-sm leading-7 text-muted-foreground">
+          {lines.map((line, lineIndex) => (
+            <li key={`${key}-${lineIndex}`}>
+              {parseInline(line.replace(/^\d+\.\s/, ''), `${key}-${lineIndex}`)}
+            </li>
+          ))}
+        </ol>
+      );
+    }
+
     return (
-      <p key={`legal-block-${index}`} className="text-sm leading-7 text-muted-foreground">
-        {lines.join(' ')}
+      <p key={key} className="text-sm leading-7 text-muted-foreground">
+        {parseInline(lines.join(' '), key)}
       </p>
     );
   });
 }
 
-export function LegalDocumentDialog({ kind }: { kind: LegalDocumentKind }) {
+export function LegalDocumentDialog({ kind = 'terms' }: { kind?: LegalDocumentKind }) {
   const [open, setOpen] = useState(false);
   const doc = LEGAL_DOCS[kind];
   const Icon = doc.icon;
   const updatedAt = useMemo(() => getTodayLabel(), []);
+  const rendered = useMemo(() => renderMarkdown(doc.content), [doc.content]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -131,7 +201,7 @@ export function LegalDocumentDialog({ kind }: { kind: LegalDocumentKind }) {
         </div>
 
         <div className="max-h-[60vh] overflow-y-auto px-6 py-5">
-          <div className="space-y-4">{renderMarkdown(doc.content)}</div>
+          <div className="space-y-4">{rendered}</div>
         </div>
       </DialogContent>
     </Dialog>

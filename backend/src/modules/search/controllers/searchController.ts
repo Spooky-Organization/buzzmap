@@ -89,6 +89,20 @@ export async function searchProducts(
   }
 }
 
+export async function getCategories(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    assertAuthenticated(req);
+    const categories = await searchService.getCategories();
+    res.status(200).json({ status: 'success', data: { categories } });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function searchUsers(
   req: Request,
   res: Response,

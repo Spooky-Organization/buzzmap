@@ -12,12 +12,14 @@ export interface BusinessSearchResult {
 export interface ProductSearchResult {
   id: string;
   businessId: string;
+  businessName: string;
   name: string;
   description: string;
   price: number;
   currency: string;
   category: string;
   isAvailable: boolean;
+  imageUrl: string | null;
 }
 
 export interface UserSearchResult {

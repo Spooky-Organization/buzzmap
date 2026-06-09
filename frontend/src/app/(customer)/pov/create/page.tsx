@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { Camera, Upload, Star, Video } from 'lucide-react';
+import { Camera, Upload, Star, Images, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -14,7 +15,32 @@ import { Input } from '@/components/ui/input';
 import { api } from '@/lib/api';
 import { apiRoutes, appRoutes } from '@/lib/routes';
 import { cn } from '@/lib/utils';
+import { useDebounce } from '@/hooks/useDebounce';
 import { DashboardHero, DashboardHeroPill } from '@/components/dashboard/dashboard-surfaces';
+
+// Gallery rules — must mirror the backend (shared/storage/povMedia.ts)
+const MAX_VIDEOS = 2;
+const MAX_IMAGES = 8;
+const MAX_VIDEO_BYTES = 200 * 1024 * 1024; // 200 MB
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
+
+interface MediaDraft {
+  id: string;
+  file: File;
+  url: string; // object URL for preview
+  type: 'image' | 'video';
+}
+
+interface BusinessLookupResult {
+  id: string;
+  businessName: string;
+  category: string;
+  location: string;
+}
+
+interface PaginatedBusinessLookup {
+  data: BusinessLookupResult[];
+}
 
 export default function CreatePOVPage() {
   const router = useRouter();
@@ -27,33 +53,92 @@ export default function CreatePOVPage() {
   const [businessSearch, setBusinessSearch] = useState('');
   const [selectedBusinessId, setSelectedBusinessId] = useState('');
   const [selectedBusinessName, setSelectedBusinessName] = useState('');
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [media, setMedia] = useState<MediaDraft[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const debouncedBusinessSearch = useDebounce(businessSearch, 300);
 
   // Derived single values — take the last element for "single-select" semantics
   const rating = ratingArr[ratingArr.length - 1] ?? '';
   const recommended = recommendedArr[recommendedArr.length - 1] ?? '';
 
+  const { data: businessResults, isLoading: businessResultsLoading } = useQuery({
+    queryKey: ['pov-business-lookup', debouncedBusinessSearch],
+    queryFn: async () => {
+      const res = await api.get<PaginatedBusinessLookup>(apiRoutes.search.businesses, {
+        params: { keyword: debouncedBusinessSearch, limit: 5 },
+      });
+      return res.data.data ?? [];
+    },
+    enabled: !selectedBusinessId && debouncedBusinessSearch.trim().length >= 2,
+    staleTime: 60_000,
+  });
+
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('video/')) {
-      toast.error('Please select a valid video file.');
-      return;
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+
+    let videoCount = media.filter((m) => m.type === 'video').length;
+    let imageCount = media.filter((m) => m.type === 'image').length;
+    const accepted: MediaDraft[] = [];
+
+    for (const file of files) {
+      const isVideo = file.type.startsWith('video/');
+      const isImage = file.type.startsWith('image/');
+      if (!isVideo && !isImage) {
+        toast.error(`"${file.name}" is not a supported image or video.`);
+        continue;
+      }
+      if (isVideo) {
+        if (file.size > MAX_VIDEO_BYTES) {
+          toast.error(`"${file.name}" exceeds the 200 MB video limit.`);
+          continue;
+        }
+        if (videoCount >= MAX_VIDEOS) {
+          toast.error(`You can add at most ${MAX_VIDEOS} videos.`);
+          continue;
+        }
+        videoCount += 1;
+      } else {
+        if (file.size > MAX_IMAGE_BYTES) {
+          toast.error(`"${file.name}" exceeds the 10 MB image limit.`);
+          continue;
+        }
+        if (imageCount >= MAX_IMAGES) {
+          toast.error(`You can add at most ${MAX_IMAGES} images.`);
+          continue;
+        }
+        imageCount += 1;
+      }
+      accepted.push({
+        id: crypto.randomUUID(),
+        file,
+        url: URL.createObjectURL(file),
+        type: isVideo ? 'video' : 'image',
+      });
     }
-    if (file.size > 200 * 1024 * 1024) {
-      toast.error('Video must be under 200 MB.');
-      return;
+
+    if (accepted.length > 0) {
+      setMedia((prev) => [...prev, ...accepted]);
     }
-    setVideoFile(file);
-    const url = URL.createObjectURL(file);
-    setVideoPreview(url);
+    // Allow re-selecting the same file later
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  function removeMedia(id: string) {
+    setMedia((prev) => {
+      const target = prev.find((m) => m.id === id);
+      if (target) URL.revokeObjectURL(target.url);
+      return prev.filter((m) => m.id !== id);
+    });
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    if (!selectedBusinessId) {
+      toast.error('Please select the business this POV is about.');
+      return;
+    }
     if (!rating) {
       toast.error('Please select a star rating.');
       return;
@@ -62,15 +147,22 @@ export default function CreatePOVPage() {
       toast.error('Please indicate if you recommend this business.');
       return;
     }
+    if (media.length === 0 && !caption.trim()) {
+      toast.error('Add a caption if you want to post a text-only POV.');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
       const formData = new FormData();
       formData.append('caption', caption);
-      formData.append('rating', rating);
-      formData.append('recommended', recommended);
+      formData.append('starRating', rating);
+      formData.append('recommends', recommended);
       if (selectedBusinessId) formData.append('businessId', selectedBusinessId);
-      if (videoFile) formData.append('video', videoFile);
+      // Order in `media` is the gallery order the backend persists as `position`.
+      for (const item of media) {
+        formData.append('media', item.file);
+      }
 
       await api.post(apiRoutes.pov.root, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -90,14 +182,13 @@ export default function CreatePOVPage() {
       <DashboardHero
         eyebrow="POV creation"
         title="Turn a customer experience into a useful trust signal."
-        description="A good POV helps the next buyer see what the business actually feels like. Add honest detail, a fair rating, and enough context to be useful."
         icon={Camera}
       >
         <DashboardHeroPill
-          icon={Video}
+          icon={Images}
           label="Format"
-          value="Video-first"
-          note="Short-form video remains the highest-signal review format on BuzzMap."
+          value="Media or text"
+          note="Post with photos, video, or text only when the written review is strong enough on its own."
         />
         <DashboardHeroPill
           icon={Star}
@@ -111,7 +202,7 @@ export default function CreatePOVPage() {
         <CardHeader>
           <CardTitle>Create a Point of View</CardTitle>
           <CardDescription>
-            Share your honest experience at a business with video, a rating, and a caption.
+            Share your honest experience at a business with photos, video, or a text-only review plus your rating.
           </CardDescription>
         </CardHeader>
 
@@ -121,34 +212,57 @@ export default function CreatePOVPage() {
               {/* Video Upload */}
               <div className="space-y-6">
               <Field>
-                <FieldLabel>Video</FieldLabel>
-                <FieldDescription>Upload a short video of your experience (max 200 MB).</FieldDescription>
+                <FieldLabel>Photos &amp; video</FieldLabel>
+                <FieldDescription>
+                  Add up to {MAX_IMAGES} photos and {MAX_VIDEOS} videos as proof
+                  (videos up to 200 MB, photos up to 10 MB). You can also skip media and post a text-only POV.
+                </FieldDescription>
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="video/*"
+                  accept="image/*,video/*"
+                  multiple
                   className="sr-only"
                   onChange={handleFileChange}
                 />
-                {videoPreview ? (
-                  <div className="flex flex-col gap-2">
-                    <video
-                      src={videoPreview}
-                      controls
-                      className="w-full rounded-lg aspect-video bg-black object-contain"
-                    />
-                    <Button
+                {media.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {media.map((item) => (
+                      <div
+                        key={item.id}
+                        className="group relative aspect-video overflow-hidden rounded-lg border bg-black"
+                      >
+                        {item.type === 'video' ? (
+                          <video src={item.url} className="size-full object-cover" />
+                        ) : (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={item.url} alt="Selected media" className="size-full object-cover" />
+                        )}
+                        <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium uppercase text-white">
+                          {item.type}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeMedia(item.id)}
+                          aria-label="Remove media"
+                          className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white transition-colors hover:bg-black/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                    <button
                       type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setVideoFile(null);
-                        setVideoPreview(null);
-                        if (fileInputRef.current) fileInputRef.current.value = '';
-                      }}
+                      onClick={() => fileInputRef.current?.click()}
+                      className={cn(
+                        'flex aspect-video flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border',
+                        'text-muted-foreground transition-colors hover:border-ring hover:bg-muted/30',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+                      )}
                     >
-                      Remove video
-                    </Button>
+                      <Upload className="size-5" />
+                      <span className="text-xs font-medium">Add more</span>
+                    </button>
                   </div>
                 ) : (
                   <button
@@ -160,14 +274,14 @@ export default function CreatePOVPage() {
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
                     )}
                   >
-                    <Video className="size-10 opacity-60" />
+                    <Images className="size-10 opacity-60" />
                     <div className="flex flex-col items-center gap-1">
-                      <span className="text-sm font-medium text-foreground">Click to upload video</span>
-                      <span className="text-xs">MP4, MOV, WebM up to 200 MB</span>
+                      <span className="text-sm font-medium text-foreground">Click to upload photos or video</span>
+                      <span className="text-xs">JPG, PNG, WebP, MP4, MOV, WebM</span>
                     </div>
                     <span className={buttonVariants({ variant: 'outline', size: 'sm' })}>
                       <Upload />
-                      Choose file
+                      Choose files
                     </span>
                   </button>
                 )}
@@ -175,8 +289,8 @@ export default function CreatePOVPage() {
 
               {/* Business search */}
               <Field>
-                <FieldLabel>Business (optional)</FieldLabel>
-                <FieldDescription>Tag the business your POV is about.</FieldDescription>
+                <FieldLabel>Business</FieldLabel>
+                <FieldDescription>Select the business your POV is about.</FieldDescription>
                 {selectedBusinessId ? (
                   <div className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm">
                     <span className="flex-1 font-medium">{selectedBusinessName}</span>
@@ -194,11 +308,48 @@ export default function CreatePOVPage() {
                     </Button>
                   </div>
                 ) : (
-                  <Input
-                    placeholder="Search business name…"
-                    value={businessSearch}
-                    onChange={(e) => setBusinessSearch(e.target.value)}
-                  />
+                  <div className="space-y-3">
+                    <Input
+                      placeholder="Search business name…"
+                      value={businessSearch}
+                      onChange={(e) => setBusinessSearch(e.target.value)}
+                    />
+                    {businessSearch.trim().length > 0 ? (
+                      <div className="rounded-lg border border-border/70 bg-background/90">
+                        {businessResultsLoading ? (
+                          <p className="px-3 py-2 text-sm text-muted-foreground">Searching businesses…</p>
+                        ) : businessResults && businessResults.length > 0 ? (
+                          <div className="divide-y divide-border/60">
+                            {businessResults.map((business) => (
+                              <button
+                                key={business.id}
+                                type="button"
+                                className="flex w-full flex-col items-start gap-1 px-3 py-3 text-left transition-colors hover:bg-muted/50"
+                                onClick={() => {
+                                  setSelectedBusinessId(business.id);
+                                  setSelectedBusinessName(business.businessName);
+                                  setBusinessSearch(business.businessName);
+                                }}
+                              >
+                                <span className="text-sm font-medium text-foreground">
+                                  {business.businessName}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {business.category} • {business.location}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        ) : debouncedBusinessSearch.trim().length >= 2 ? (
+                          <p className="px-3 py-2 text-sm text-muted-foreground">No matching businesses found.</p>
+                        ) : (
+                          <p className="px-3 py-2 text-sm text-muted-foreground">
+                            Type at least 2 characters to search.
+                          </p>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
                 )}
               </Field>
               </div>
@@ -260,7 +411,7 @@ export default function CreatePOVPage() {
               {/* Caption */}
               <Field>
                 <FieldLabel>Caption</FieldLabel>
-                <FieldDescription>Share your thoughts about this experience.</FieldDescription>
+                <FieldDescription>Share your thoughts about this experience. Required when posting without media.</FieldDescription>
                 <Textarea
                   placeholder="What did you think? Share the details…"
                   value={caption}

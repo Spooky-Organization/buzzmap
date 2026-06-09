@@ -10,6 +10,17 @@ import { DashboardLayoutShell } from '@/components/shared/dashboard-layout-shell
 import { BusinessSidebar } from '@/components/business/business-sidebar';
 import { AppSidebar } from '@/components/shared/app-sidebar';
 
+const BUSINESS_WORKSPACE_SEGMENTS = new Set([
+  'analytics',
+  'dashboard',
+  'messages',
+  'notifications',
+  'orders',
+  'posts',
+  'settings',
+  'shelf',
+]);
+
 function resolveSidebar(role?: string) {
   if (role === 'ADMIN') return <AdminSidebar />;
   if (role === 'BUSINESS_OWNER') return <BusinessSidebar />;
@@ -20,7 +31,9 @@ export default function BusinessLayout({ children }: { children: React.ReactNode
   const router = useRouter();
   const pathname = usePathname();
   const { data: session, status } = useSession();
-  const isPublicBusinessProfile = /^\/business\/[^/]+$/.test(pathname);
+  const publicProfileCandidate = pathname.match(/^\/business\/([^/]+)$/)?.[1] ?? null;
+  const isPublicBusinessProfile =
+    publicProfileCandidate !== null && !BUSINESS_WORKSPACE_SEGMENTS.has(publicProfileCandidate);
 
   useEffect(() => {
     if (isPublicBusinessProfile) {

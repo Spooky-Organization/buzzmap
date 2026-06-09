@@ -23,10 +23,13 @@ export const appRoutes = {
     message: (conversationId: string) => `/messages/${conversationId}`,
     notifications: '/notifications',
     povCreate: '/pov/create',
+    pov: (povId: string) => `/pov/${povId}`,
   },
   business: {
     dashboard: '/business/dashboard',
     notifications: '/business/notifications',
+    messages: '/business/messages',
+    message: (conversationId: string) => `/business/messages/${conversationId}`,
     shelf: '/business/shelf',
     orders: '/business/orders',
     postsCreate: '/business/posts/create',
@@ -100,9 +103,11 @@ export const apiRoutes = {
   pov: {
     root: `${API_PREFIX}/pov`,
     mine: `${API_PREFIX}/pov/my`,
+    byId: (povId: string) => `${API_PREFIX}/pov/${povId}`,
     byBusiness: (businessId: string) => `${API_PREFIX}/pov/business/${businessId}`,
     byUser: (userId: string) => `${API_PREFIX}/pov/user/${userId}`,
     like: (povId: string) => `${API_PREFIX}/pov/${povId}/like`,
+    comments: (povId: string) => `${API_PREFIX}/pov/${povId}/comments`,
   },
   cart: {
     root: `${API_PREFIX}/cart`,
@@ -122,10 +127,14 @@ export const apiRoutes = {
     root: `${API_PREFIX}/search`,
     businesses: `${API_PREFIX}/search/businesses`,
     products: `${API_PREFIX}/search/products`,
+    categories: `${API_PREFIX}/search/categories`,
     users: `${API_PREFIX}/search/users`,
   },
   messaging: {
     conversations: `${API_PREFIX}/messaging/conversations`,
+    recommendations: `${API_PREFIX}/messaging/conversations/recommendations`,
+    contactRecommendations: `${API_PREFIX}/messaging/conversations/recommendations/contacts`,
+    businessRecommendations: `${API_PREFIX}/messaging/conversations/recommendations/business`,
     conversation: (conversationId: string) =>
       `${API_PREFIX}/messaging/conversations/${conversationId}`,
     messages: (conversationId: string) =>

@@ -13,7 +13,6 @@ export default function FeedPage() {
       <DashboardHero
         eyebrow="Customer feed"
         title="Discover businesses through authentic customer perspective."
-        description="The feed is where BuzzMap stops feeling like a static directory and starts feeling alive. Scan POVs, compare experiences, and decide what feels trustworthy."
         icon={Compass}
       >
         <DashboardHeroPill
@@ -32,7 +31,6 @@ export default function FeedPage() {
 
       <DashboardPanel
         title="Community Feed"
-        description="Recent POV content from across the marketplace, optimized for scanning and discovery."
         icon={PlayCircle}
       >
         <div className="mx-auto w-full max-w-5xl">

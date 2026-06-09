@@ -1,13 +1,17 @@
 'use client';
 
+import Image from 'next/image';
 import { use, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import {
   Check,
+  Copy,
+  Download,
   KeyRound,
   MapPin,
   PencilLine,
+  QrCode,
   Save,
   ShieldCheck,
   Store,
@@ -35,6 +39,7 @@ interface UserProfile {
   role: 'ADMIN' | 'CUSTOMER' | 'BUSINESS_OWNER';
   interests: string[];
   location: string | null;
+  profileQrCode: string | null;
   createdAt: string;
   isFollowing: boolean;
   businessProfile?: null | {
@@ -64,7 +69,6 @@ interface MeProfile extends Omit<UserProfile, 'isFollowing'> {
 interface Pov {
   id: string;
   caption: string | null;
-  thumbnailUrl?: string | null;
   starRating: number;
   createdAt: string;
   likesCount?: number;
@@ -301,6 +305,27 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
     .slice(0, 2);
 
   const joinedLabel = profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : '';
+  const publicProfileUrl = profile
+    ? new URL(
+        appRoutes.user.byId(profile.id),
+        process.env.NEXT_PUBLIC_SITE_URL ??
+          (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
+      ).toString()
+    : '';
+
+  async function copyPublicProfileLink(): Promise<void> {
+    if (!publicProfileUrl) {
+      toast.error('Profile link unavailable');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(publicProfileUrl);
+      toast.success('Profile link copied');
+    } catch {
+      toast.error('Failed to copy profile link');
+    }
+  }
 
   if (isLoading) {
     return (
@@ -454,6 +479,60 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                   </a>
                 </div>
               ) : null}
+            </div>
+
+            <div className="rounded-[28px] border border-border/70 bg-card/70 p-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="overflow-hidden rounded-[24px] border border-border/70 bg-white p-2 shadow-sm">
+                    {profile.profileQrCode ? (
+                      <Image
+                        src={profile.profileQrCode}
+                        alt={`${profile.name} profile QR code`}
+                        width={112}
+                        height={112}
+                        unoptimized
+                        className="rounded-2xl"
+                      />
+                    ) : (
+                      <div className="flex h-28 w-28 items-center justify-center rounded-2xl bg-muted/30 text-muted-foreground">
+                        <QrCode className="size-6" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-foreground">Profile QR code</p>
+                    <p className="max-w-md text-sm text-muted-foreground">
+                      Share this community profile in person so one scan opens the live BuzzMap page.
+                    </p>
+                    {publicProfileUrl ? (
+                      <p className="break-all text-xs text-muted-foreground">{publicProfileUrl}</p>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <Button type="button" variant="outline" onClick={() => void copyPublicProfileLink()}>
+                    <Copy data-icon="inline-start" />
+                    Copy profile link
+                  </Button>
+                  {profile.profileQrCode ? (
+                    <Button
+                      type="button"
+                      nativeButton={false}
+                      render={
+                        <a
+                          href={profile.profileQrCode}
+                          download={`${profile.name.replace(/\s+/g, '-').toLowerCase()}-profile-qr.png`}
+                        />
+                      }
+                    >
+                      <Download data-icon="inline-start" />
+                      Download QR
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
             </div>
           </div>
         </DashboardPanel>

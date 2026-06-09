@@ -46,6 +46,22 @@ interface OrderItem {
   price: number;
 }
 
+interface BackendOrderItem {
+  id: string;
+  productName: string;
+  quantity: number;
+  price: number;
+}
+
+interface BackendOrder {
+  id: string;
+  status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
+  totalAmount: number;
+  createdAt: string;
+  businessName: string;
+  items: BackendOrderItem[];
+}
+
 interface Order {
   id: string;
   status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
@@ -55,8 +71,8 @@ interface Order {
   items: OrderItem[];
 }
 
-interface OrdersData {
-  orders: Order[];
+interface BackendOrdersData {
+  data: BackendOrder[];
   total: number;
   page: number;
   totalPages: number;
@@ -78,14 +94,26 @@ export default function OrdersPage() {
   const [page, setPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  const { data, isLoading } = useQuery<OrdersData>({
+  const { data, isLoading } = useQuery<{ orders: Order[]; total: number; page: number; totalPages: number }>({
     queryKey: ['orders', page],
     queryFn: async () => {
-      const res = await api.get(apiRoutes.orders.mine, {
+      const res = await api.get<BackendOrdersData>(apiRoutes.orders.mine, {
         params: { page, limit: PAGE_SIZE },
       });
       return {
-        orders: res.data.orders ?? [],
+        orders: (res.data.data ?? []).map((order) => ({
+          id: order.id,
+          status: order.status,
+          total: order.totalAmount,
+          createdAt: order.createdAt,
+          businessName: order.businessName,
+          items: order.items.map((item) => ({
+            id: item.id,
+            productName: item.productName,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+        })),
         total: res.data.total ?? 0,
         page: res.data.page ?? 1,
         totalPages: res.data.totalPages ?? 1,
@@ -105,7 +133,6 @@ export default function OrdersPage() {
       <DashboardHero
         eyebrow="Customer orders"
         title="Track order history without losing the buyer context."
-        description="Review past purchases, inspect line items, and monitor current statuses from one order surface designed for customers."
         icon={Workflow}
       >
         <DashboardHeroPill
@@ -207,7 +234,7 @@ export default function OrdersPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        ₱{order.total.toFixed(2)}
+                        KES {order.total.toFixed(2)}
                       </TableCell>
                       <TableCell>
                         <Dialog
@@ -262,14 +289,14 @@ export default function OrdersPage() {
                                       <span className="text-muted-foreground">
                                         {item.productName} × {item.quantity}
                                       </span>
-                                      <span>₱{(item.price * item.quantity).toFixed(2)}</span>
+                                      <span>KES {(item.price * item.quantity).toFixed(2)}</span>
                                     </div>
                                   ))}
                                 </div>
                                 <Separator />
                                 <div className="flex justify-between font-semibold">
                                   <span>Total</span>
-                                  <span>₱{selectedOrder.total.toFixed(2)}</span>
+                                  <span>KES {selectedOrder.total.toFixed(2)}</span>
                                 </div>
                               </div>
                             )}

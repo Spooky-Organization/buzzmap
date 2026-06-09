@@ -6,8 +6,8 @@ import {
   LayoutDashboard,
   Store,
   ClipboardList,
+  MessageSquare,
   Plus,
-  BarChart3,
   Settings,
 } from 'lucide-react';
 import {
@@ -19,6 +19,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { appRoutes } from '@/lib/routes';
 import { SidebarAccount } from '@/components/shared/sidebar-account';
@@ -28,13 +29,20 @@ const navItems = [
   { href: appRoutes.business.dashboard, label: 'Dashboard', icon: LayoutDashboard },
   { href: appRoutes.business.shelf, label: 'Product Shelf', icon: Store },
   { href: appRoutes.business.orders, label: 'Orders', icon: ClipboardList },
+  { href: appRoutes.business.messages, label: 'Messages', icon: MessageSquare },
   { href: appRoutes.business.postsCreate, label: 'Create Post', icon: Plus },
-  { href: appRoutes.business.analytics, label: 'Analytics', icon: BarChart3 },
   { href: appRoutes.business.settings, label: 'Settings', icon: Settings },
 ];
 
 export function BusinessSidebar() {
   const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  const handleNavigate = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -56,6 +64,7 @@ export function BusinessSidebar() {
                     <SidebarMenuButton
                       isActive={isActive}
                       tooltip={label}
+                      onClick={handleNavigate}
                       render={<Link href={href} />}
                     >
                       <Icon />

@@ -1,9 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
-import { Plus, Edit, Trash2, MoreVertical, Store, PackagePlus, Save, Boxes, Tag } from 'lucide-react';
+import { Plus, Edit, Trash2, MoreVertical, Store, PackagePlus, Save, Boxes, Tag, ClipboardList, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,7 +31,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
 import { api } from '@/lib/api';
-import { apiRoutes } from '@/lib/routes';
+import { apiRoutes, appRoutes } from '@/lib/routes';
 import {
   DashboardHero,
   DashboardHeroPill,
@@ -42,7 +43,9 @@ interface Product {
   name: string;
   description: string;
   price: number;
+  currency: string;
   stock: number;
+  category: string;
   isAvailable: boolean;
 }
 
@@ -51,9 +54,10 @@ interface ProductForm {
   description: string;
   price: string;
   stock: string;
+  category: string;
 }
 
-const emptyForm: ProductForm = { name: '', description: '', price: '', stock: '' };
+const emptyForm: ProductForm = { name: '', description: '', price: '', stock: '', category: '' };
 
 export default function ShelfPage() {
   const { data: session } = useSession();
@@ -72,14 +76,31 @@ export default function ShelfPage() {
     enabled: isBusinessOwner,
   });
 
+  const buildProductPayload = () => {
+    const name = form.name.trim();
+    const description = form.description.trim();
+    const category = form.category.trim();
+    const price = Number.parseFloat(form.price);
+    const stock = Number.parseInt(form.stock, 10);
+
+    if (!name || !description || !category) {
+      throw new Error('Name, description, and category are required.');
+    }
+
+    if (!Number.isFinite(price) || price <= 0) {
+      throw new Error('Enter a valid price greater than zero.');
+    }
+
+    if (!Number.isInteger(stock) || stock < 0) {
+      throw new Error('Enter a valid stock quantity of zero or more.');
+    }
+
+    return { name, description, category, price, stock };
+  };
+
   const saveProduct = useMutation({
     mutationFn: async () => {
-      const payload = {
-        name: form.name,
-        description: form.description,
-        price: parseFloat(form.price),
-        stock: parseInt(form.stock, 10),
-      };
+      const payload = buildProductPayload();
       if (editingProduct) {
         await api.patch(apiRoutes.products.byId(editingProduct.id), payload);
       } else {
@@ -93,7 +114,10 @@ export default function ShelfPage() {
       setEditingProduct(null);
       toast.success(editingProduct ? 'Product updated' : 'Product added');
     },
-    onError: () => toast.error('Failed to save product'),
+    onError: (error) => {
+      const message = error instanceof Error ? error.message : 'Failed to save product';
+      toast.error(message);
+    },
   });
 
   const deleteProduct = useMutation({
@@ -122,6 +146,7 @@ export default function ShelfPage() {
       description: product.description,
       price: product.price.toString(),
       stock: product.stock.toString(),
+      category: product.category,
     });
     setDialogOpen(true);
   };
@@ -172,6 +197,7 @@ export default function ShelfPage() {
           note="Products customers can actively order right now."
           icon={Tag}
           accent="from-emerald-500/15 via-primary/[0.08] to-transparent"
+          href={appRoutes.business.orders}
         />
         <DashboardMetricCard
           label="Stock"
@@ -181,6 +207,27 @@ export default function ShelfPage() {
           accent="from-amber-500/18 via-primary/[0.08] to-transparent"
         />
       </div>
+
+      <Card className="border-border/70 bg-card/80 shadow-[0_22px_70px_-48px_rgba(15,37,64,0.68)]">
+        <CardContent className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-primary">Keep shelf and fulfillment aligned</p>
+            <p className="text-sm text-muted-foreground">
+              Move from inventory updates into orders and customer conversations without leaving the business workflow.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button variant="outline" nativeButton={false} render={<Link href={appRoutes.business.orders} />}>
+              <ClipboardList data-icon="inline-start" />
+              Open orders
+            </Button>
+            <Button nativeButton={false} render={<Link href={appRoutes.business.messages} />}>
+              <MessageSquare data-icon="inline-start" />
+              Open messages
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1">
@@ -213,9 +260,17 @@ export default function ShelfPage() {
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 />
               </Field>
+              <Field>
+                <FieldLabel>Category</FieldLabel>
+                <Input
+                  placeholder="e.g. Beverages"
+                  value={form.category}
+                  onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                />
+              </Field>
               <div className="grid grid-cols-2 gap-4">
                 <Field>
-                  <FieldLabel>Price (₱)</FieldLabel>
+                  <FieldLabel>Price (KES)</FieldLabel>
                   <Input
                     type="number"
                     min="0"
@@ -239,7 +294,14 @@ export default function ShelfPage() {
             </FieldGroup>
             <DialogFooter>
               <Button
-                disabled={saveProduct.isPending || !form.name || !form.price}
+                disabled={
+                  saveProduct.isPending ||
+                  !form.name.trim() ||
+                  !form.description.trim() ||
+                  !form.category.trim() ||
+                  !form.price.trim() ||
+                  !form.stock.trim()
+                }
                 onClick={() => saveProduct.mutate()}
               >
                 {saveProduct.isPending ? (
@@ -334,12 +396,15 @@ export default function ShelfPage() {
               <CardContent className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <span className="text-lg font-bold text-primary">
-                    ₱{product.price.toFixed(2)}
+                    {product.currency} {product.price.toFixed(2)}
                   </span>
                   <Badge variant={product.isAvailable ? 'default' : 'secondary'}>
                     {product.isAvailable ? 'Available' : 'Unavailable'}
                   </Badge>
                 </div>
+                <p className="text-sm text-muted-foreground">
+                  Category: {product.category}
+                </p>
                 <p className="text-sm text-muted-foreground">
                   Stock: {product.stock}
                 </p>

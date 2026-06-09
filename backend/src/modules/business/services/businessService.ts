@@ -1,3 +1,5 @@
+import QRCode from 'qrcode';
+import { config } from '../../../config/index.js';
 import { getPrisma } from '../../../shared/prisma/index.js';
 import { AppError } from '../../../shared/middleware/errorHandler.js';
 import { sanitizeOptionalText, sanitizePlainText } from '../../../shared/utils/sanitize.js';
@@ -30,6 +32,43 @@ const businessProfileSelect = {
 type SelectedBusinessProfile = Prisma.BusinessProfileGetPayload<{
   select: typeof businessProfileSelect;
 }>;
+
+function getBusinessPublicUrl(businessId: string): string {
+  return new URL(`/business/${businessId}`, config.frontendUrl).toString();
+}
+
+async function generateBusinessQrCode(businessId: string): Promise<string> {
+  return QRCode.toDataURL(getBusinessPublicUrl(businessId), {
+    errorCorrectionLevel: 'M',
+    margin: 1,
+    width: 320,
+    color: {
+      dark: '#0f2540',
+      light: '#ffffff',
+    },
+  });
+}
+
+async function ensureBusinessQrCode(
+  profile: SelectedBusinessProfile
+): Promise<SelectedBusinessProfile> {
+  if (profile.qrCode) {
+    return profile;
+  }
+
+  const prisma = getPrisma();
+  const qrCode = await generateBusinessQrCode(profile.id);
+
+  await prisma.businessProfile.update({
+    where: { id: profile.id },
+    data: { qrCode },
+  });
+
+  return {
+    ...profile,
+    qrCode,
+  };
+}
 
 function mapBusinessProfile(
   profile: SelectedBusinessProfile,
@@ -92,14 +131,16 @@ function sanitizeBusinessProfileUpdate(data: UpdateBusinessProfileDTO): UpdateBu
 export async function getBusinessProfileByOwner(userId: string): Promise<BusinessProfileResponse> {
   const prisma = getPrisma();
 
-  const profile = await prisma.businessProfile.findUnique({
+  const rawProfile = await prisma.businessProfile.findUnique({
     where: { userId },
     select: businessProfileSelect,
   });
 
-  if (!profile) {
+  if (!rawProfile) {
     throw new AppError(404, 'Business profile not found');
   }
+
+  const profile = await ensureBusinessQrCode(rawProfile);
 
   const followerCount = await prisma.follow.count({
     where: { followingId: profile.userId },
@@ -115,6 +156,14 @@ export async function updateBusinessProfile(
   const prisma = getPrisma();
   const sanitizedData = sanitizeBusinessProfileUpdate(data);
   const prismaData: Prisma.BusinessProfileUpdateInput = {};
+  const existingProfile = await prisma.businessProfile.findUnique({
+    where: { userId },
+    select: { id: true },
+  });
+
+  if (!existingProfile) {
+    throw new AppError(404, 'Business profile not found');
+  }
 
   if (sanitizedData.businessName !== undefined) prismaData.businessName = sanitizedData.businessName;
   if (sanitizedData.description !== undefined) prismaData.description = sanitizedData.description;
@@ -126,12 +175,19 @@ export async function updateBusinessProfile(
   if (sanitizedData.operatingHours !== undefined) {
     prismaData.operatingHours = sanitizedData.operatingHours as Prisma.InputJsonValue;
   }
+  prismaData.qrCode = await generateBusinessQrCode(existingProfile.id);
 
-  await prisma.businessProfile.update({
+  const updated = await prisma.businessProfile.update({
     where: { userId },
     data: prismaData,
+    select: businessProfileSelect,
   });
-  return getBusinessProfileByOwner(userId);
+
+  const followerCount = await prisma.follow.count({
+    where: { followingId: updated.userId },
+  });
+
+  return mapBusinessProfile(updated, followerCount);
 }
 
 export async function getBusinessProfileById(
@@ -140,14 +196,16 @@ export async function getBusinessProfileById(
 ): Promise<PublicBusinessProfileResponse> {
   const prisma = getPrisma();
 
-  const profile = await prisma.businessProfile.findUnique({
+  const rawProfile = await prisma.businessProfile.findUnique({
     where: { id: businessId },
     select: businessProfileSelect,
   });
 
-  if (!profile) {
+  if (!rawProfile) {
     throw new AppError(404, 'Business not found');
   }
+
+  const profile = await ensureBusinessQrCode(rawProfile);
 
   const [followerCount, isFollowing] = await Promise.all([
     prisma.follow.count({

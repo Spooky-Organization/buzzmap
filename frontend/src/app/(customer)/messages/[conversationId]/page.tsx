@@ -19,6 +19,7 @@ import {
 } from '@/lib/messaging';
 import { useMessages } from '@/hooks/useMessages';
 import { DashboardHero, DashboardHeroPill } from '@/components/dashboard/dashboard-surfaces';
+import { ConversationRouteLoading } from '@/components/dashboard/loading-skeletons';
 
 interface PageParams {
   conversationId: string;
@@ -123,12 +124,15 @@ export default function ConversationPage({ params }: { params: Promise<PageParam
     .toUpperCase()
     .slice(0, 2);
 
+  if (metaLoading && messagesLoading) {
+    return <ConversationRouteLoading />;
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <DashboardHero
         eyebrow="Conversation view"
         title={metaLoading ? 'Opening conversation...' : `Chat with ${meta?.participantName ?? 'participant'}`}
-        description="Stay in the thread while read receipts and typing signals keep the exchange current."
         icon={MessageSquareMore}
       >
         <DashboardHeroPill
