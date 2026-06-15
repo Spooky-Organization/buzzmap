@@ -11,7 +11,7 @@ This document defines *how we work* in this repo. For *what changed*, see [`CHAN
 
 1. **Do NOT run production builds after each change.** Builds are slow and are not the dev feedback loop here. Verify with **lint + type check** only (see §4). Run a build only when explicitly asked.
 2. **Respect the running dev environment.** The dev stack is already up with hot reload. Do not restart, rebuild, or tear down containers unless asked. Assume changes are picked up automatically.
-3. **Do not run `git` commands during implementation.** The repo owner handles staging, commits, and branches manually at the end. Do not commit, push, branch, or stage on the owner's behalf unless explicitly told to.
+3. **Do not run `git` commands during implementation.** The repo owner handles git operations at the end unless explicitly told otherwise. Do not commit, push, branch, stage, stash, or pop on the owner's behalf during implementation.
 4. **Make root-cause changes, not band-aids.** Align frontend with the real backend contract rather than adding null guards over stale field names. (This is a recurring lesson in the changelog history.)
 5. **Keep changes inside the established patterns** (§5). New one-off conventions create drift.
 6. **Update [`CHANGELOG.md`](./CHANGELOG.md) after a coherent batch**, not after every edit (§6).
@@ -146,3 +146,20 @@ Append to [`CHANGELOG.md`](./CHANGELOG.md) using its existing template. Rules (m
 5. **Report** honestly with the commands run and their output.
 6. **Changelog** after the batch is coherent (§6).
 7. **Stop at git.** Leave staging/commits to the owner (§1.3).
+
+## 8. End-of-Work Git Operations
+
+Run git operations only after implementation, verification, and changelog work
+are complete, and only when the owner explicitly asks for end-of-work git
+handling.
+
+Rules:
+- Use `.claude/skills/commit` and its four-pass workflow for all commits.
+- Make sub-atomic commits: one complete logical change per commit, split by
+  coherence rather than by session timing or file count.
+- Do not use bare `git commit`; the sanctioned path is the commit skill and
+  `.claude/hooks/do_commit.sh`.
+- Do not run ad hoc `git stage`, broad staging, stash pop, branch switching, or
+  arbitrary push commands during implementation.
+- If final push is explicitly requested, push only the `nextjs` branch after the
+  atomic commits are complete.

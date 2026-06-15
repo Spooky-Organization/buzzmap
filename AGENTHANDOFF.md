@@ -4,23 +4,29 @@ This file is the working contract for multi-agent execution in this repo.
 
 Current agents:
 - `Matthew`: lead Codex agent in the current tab. Owns task assignment, integration review, and final verification.
-- `Jarvis`: secondary Codex agent in a separate tab. Historical only for the completed multi-agent remediation slices on 2026-06-09.
+- `Jarvis`: secondary Codex agent in a separate tab. Batch 2 customer social home and people-discovery slice is complete unless Matthew reassigns follow-up.
 
 ## Current Status
 
+- Active remediation source: `docs/buzzmap test report 2.docx`.
+- Active remediation plan: `docs/superpowers/plans/2026-06-15-test-report-2-remediation-scope.md`.
+- Matthew active status: Test Report 2 Batches 1, 3, 4, and 5 complete and recorded in `CHANGELOG.md`.
+- Jarvis active status: Batch 2 complete and recorded in `CHANGELOG.md` under `customer-social-home-and-people-discovery`.
 - Matthew batch status: complete for the orders/cart contract slice recorded in `CHANGELOG.md`.
 - Jarvis batch status: complete for the search/shelf/POV business tagging slice recorded in `CHANGELOG.md`.
 - Matthew notification remediation status: complete for notification-source wiring and deep-link behavior recorded in `CHANGELOG.md`.
 - Matthew POV detail/comment remediation status: complete and recorded in `CHANGELOG.md`.
 - Matthew business messaging remediation status: complete and recorded in `CHANGELOG.md`.
 - Matthew QR remediation status: complete and recorded in `CHANGELOG.md`.
-- Multi-agent execution is complete for this remediation run; Matthew now owns the remaining follow-up work directly.
+- Test Report 2 Batches 1-5 are complete. No active Test Report 2 implementation split remains.
+- `docs/superpowers/plans/2026-06-15-test-report-2-remediation-scope.md` now includes the resolved Batch 5 product decisions and implementation outcomes.
 
 ## Required Read Order
 
 Before touching code, every agent must read:
 - `SOP.md`
 - `CHANGELOG.md`
+- `docs/superpowers/plans/2026-06-15-test-report-2-remediation-scope.md`
 - `docs/superpowers/plans/2026-06-09-test-report-remediation-scope.md`
 - `AGENTHANDOFF.md`
 
@@ -32,6 +38,106 @@ Before touching code, every agent must read:
 - Prefer root-cause contract fixes over UI-only patches.
 - Keep write scopes narrow. Assume the other agent is actively editing their assigned files.
 - If a task requires touching another agent's claimed file, stop and hand it back to Matthew for reassignment.
+
+## Completed Test Report 2 Split: Batch 5
+
+Matthew completed the community and analytics foundation slice recorded in `CHANGELOG.md` under `community-analytics-foundation`.
+
+Implemented MVP decisions:
+- "Community" means existing interests plus the follow graph for this pass; no new first-class `Community` model is created yet.
+- POV visibility is introduced as a schema/API field with `PUBLIC` and `FOLLOWERS`; `SELECTED_USERS` remains deferred because there is no selected-friend relation yet.
+- Analytics starts with write-only event capture for `BUSINESS_VIEWED`, `PRODUCT_VIEWED`, `POV_VIEWED`, `ADD_TO_CART`, `CHECKOUT_STARTED`, `ORDER_PLACED`, and `MESSAGE_STARTED`.
+- No analytics dashboard/reporting UI is added in this pass; event capture creates the data foundation first.
+
+Completed files included:
+- `AGENTHANDOFF.md`
+- `docs/superpowers/plans/2026-06-15-test-report-2-batch-5-community-analytics-foundation.md`
+- `backend/prisma/schema.prisma`
+- `backend/src/core/routes.ts`
+- `backend/src/modules/analytics/models/index.ts`
+- `backend/src/modules/analytics/validators/index.ts`
+- `backend/src/modules/analytics/services/analyticsService.ts`
+- `backend/src/modules/analytics/controllers/analyticsController.ts`
+- `backend/src/modules/analytics/routes.ts`
+- `backend/src/modules/pov/models/index.ts`
+- `backend/src/modules/pov/validators/index.ts`
+- `backend/src/modules/pov/services/povService.ts`
+- `backend/src/modules/pov/controllers/povController.ts`
+- `backend/src/shared/builders/FeedQueryBuilder.ts`
+- `backend/src/modules/feed/models/index.ts`
+- `backend/src/modules/feed/services/feedService.ts`
+- `backend/src/modules/feed/controllers/feedController.ts`
+- `frontend/src/lib/routes.ts`
+- `frontend/src/lib/analytics.ts`
+- `frontend/src/app/(customer)/pov/create/page.tsx`
+- `frontend/src/app/(customer)/pov/[id]/page.tsx`
+- `frontend/src/app/business/[id]/page.tsx`
+- `frontend/src/app/(customer)/search/page.tsx`
+- `frontend/src/app/(customer)/cart/page.tsx`
+- `frontend/src/app/(customer)/messages/page.tsx`
+- `frontend/src/app/business/messages/page.tsx`
+- `CHANGELOG.md`
+
+No active Batch 5 file ownership remains. Future work should start a fresh split for analytics reporting UI, first-class communities, mutual friends, or dual business QR types.
+
+## Completed Test Report 2 Split: Batch 4
+
+Matthew completed the public profile restructure slice recorded in `CHANGELOG.md` under `profile-content-first-restructure`.
+
+Completed files included:
+- `AGENTHANDOFF.md`
+- `frontend/src/lib/routes.ts`
+- `frontend/src/app/user/[id]/page.tsx`
+- `frontend/src/app/business/[id]/page.tsx`
+- `CHANGELOG.md`
+
+Completed outcomes:
+- Public user profiles now lead with identity, counts, follow/message actions, and content tabs for POVs and posts.
+- The frontend route registry now exposes the existing `GET /api/v1/posts/user/:userId` contract.
+- Public business profiles no longer show the owner QR card; review capture remains available through the `Leave POV` CTA and the owner settings QR tools.
+- Jarvis-owned customer dashboard/messages files were not edited by Matthew in this batch.
+
+## Completed Test Report 2 Split: Batch 2
+
+Jarvis completed the customer social home and people-discovery/messaging UX slice recorded in `CHANGELOG.md` under `customer-social-home-and-people-discovery`.
+
+Completed files included:
+- `frontend/src/app/(customer)/dashboard/page.tsx`
+- `frontend/src/app/(customer)/messages/page.tsx`
+
+## Completed Test Report 2 Split: Batch 3
+
+Matthew completed the business posting and public business content slice recorded in `CHANGELOG.md` under `business-posting-and-profile-content`.
+
+Completed files included:
+- `backend/src/modules/posts/services/postService.ts`
+- `frontend/src/lib/routes.ts`
+- `frontend/src/app/business/[id]/page.tsx`
+- `frontend/src/app/business/dashboard/page.tsx`
+
+## Completed Test Report 2 Split: Batch 1
+
+Matthew completed the cross-cutting POV and QR contract slice recorded in `CHANGELOG.md` under `test-report-2-pov-and-review-qr-foundation`.
+
+Completed files included:
+- `backend/prisma/schema.prisma`
+- `backend/src/modules/pov/validators/index.ts`
+- `backend/src/modules/pov/models/index.ts`
+- `backend/src/modules/pov/services/povService.ts`
+- `backend/src/modules/pov/controllers/povController.ts`
+- `backend/src/modules/feed/models/index.ts`
+- `backend/src/modules/feed/services/feedService.ts`
+- `backend/src/shared/builders/FeedQueryBuilder.ts`
+- `backend/src/modules/business/services/businessService.ts`
+- `backend/src/modules/messaging/services/messagingService.ts`
+- `backend/src/modules/recommendations/services/recommendationService.ts`
+- `backend/src/modules/admin/models/index.ts`
+- `backend/src/modules/admin/services/adminService.ts`
+- `frontend/src/app/(customer)/pov/create/page.tsx`
+- `frontend/src/components/feed/pov-card.tsx`
+- `frontend/src/app/(customer)/pov/[id]/page.tsx`
+- `frontend/src/app/user/[id]/page.tsx`
+- `frontend/src/app/business/settings/page.tsx`
 
 ## Completed Remediation Split
 
