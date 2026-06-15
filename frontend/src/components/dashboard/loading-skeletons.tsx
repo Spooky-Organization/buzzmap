@@ -6,31 +6,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 function DashboardIntroSkeleton() {
   return (
-    <Card className="overflow-hidden border-border/60">
-      <CardContent className="grid gap-5 p-6 lg:grid-cols-[1.25fr_0.95fr] lg:p-8">
-        <div className="space-y-4">
-          <Skeleton className="h-5 w-36 rounded-full" />
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <Skeleton className="size-12 rounded-2xl" />
-              <Skeleton className="h-10 w-72 max-w-full" />
-            </div>
-            <Skeleton className="h-4 w-[32rem] max-w-full" />
-            <Skeleton className="h-4 w-[24rem] max-w-full" />
-          </div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="rounded-3xl border border-border/60 p-4">
-              <Skeleton className="mb-3 size-10 rounded-2xl" />
-              <Skeleton className="h-3 w-20" />
-              <Skeleton className="mt-2 h-4 w-24" />
-              <Skeleton className="mt-2 h-3 w-full" />
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="min-w-0 overflow-hidden pb-1">
+      <div className="flex min-w-0 items-center gap-4">
+        <Skeleton className="h-10 w-1 shrink-0 rounded-full" />
+        <Skeleton className="h-8 w-80 max-w-full sm:h-9" />
+      </div>
+      <Skeleton className="mt-4 h-px w-full" />
+    </div>
   );
 }
 
@@ -61,32 +43,16 @@ function DashboardHeroSkeleton({
 }: {
   pillCount?: number;
 }) {
+  const titleWidthClass = pillCount === 1 ? 'w-64' : 'w-80';
+
   return (
-    <Card className="overflow-hidden border-primary/15 bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.16),transparent_30%),linear-gradient(180deg,rgba(15,37,64,0.06),rgba(15,37,64,0))] shadow-[0_24px_80px_-42px_rgba(15,37,64,0.58)]">
-      <CardContent className="grid gap-5 p-6 lg:grid-cols-[1.25fr_0.95fr] lg:p-8">
-        <div className="space-y-4">
-          <Skeleton className="h-7 w-32 rounded-full" />
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <Skeleton className="size-12 rounded-2xl" />
-              <Skeleton className="h-10 w-80 max-w-full" />
-            </div>
-            <Skeleton className="h-4 w-[36rem] max-w-full" />
-            <Skeleton className="h-4 w-[28rem] max-w-full" />
-          </div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-          {Array.from({ length: pillCount }).map((_, index) => (
-            <div key={index} className="rounded-3xl border border-border/70 bg-background/85 p-4 shadow-sm">
-              <Skeleton className="mb-3 size-10 rounded-2xl" />
-              <Skeleton className="h-3 w-20" />
-              <Skeleton className="mt-2 h-4 w-24" />
-              <Skeleton className="mt-2 h-3 w-full" />
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="min-w-0 overflow-hidden pb-1">
+      <div className="flex min-w-0 items-center gap-4">
+        <Skeleton className="h-10 w-1 shrink-0 rounded-full" />
+        <Skeleton className={`h-8 max-w-full sm:h-9 ${titleWidthClass}`} />
+      </div>
+      <Skeleton className="mt-4 h-px w-full" />
+    </div>
   );
 }
 

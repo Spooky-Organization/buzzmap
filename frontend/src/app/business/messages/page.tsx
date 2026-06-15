@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Spinner } from '@/components/ui/spinner';
 import { api } from '@/lib/api';
+import { trackAnalyticsEvent } from '@/lib/analytics';
 import { DashboardHero, DashboardHeroPill, DashboardPanel } from '@/components/dashboard/dashboard-surfaces';
 import { ConversationRowSkeleton } from '@/components/dashboard/loading-skeletons';
 import { apiRoutes, appRoutes } from '@/lib/routes';
@@ -84,6 +85,11 @@ export default function BusinessMessagesPage() {
         participantIds: [userId],
       });
       const conversationId = res.data.id as string;
+      void trackAnalyticsEvent({
+        eventType: 'MESSAGE_STARTED',
+        conversationId,
+        metadata: { source: 'business_messages' },
+      });
       toast.success('Conversation started');
       router.push(appRoutes.business.message(conversationId));
     } catch {

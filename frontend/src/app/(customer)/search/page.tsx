@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { api } from '@/lib/api';
+import { trackAnalyticsEvent } from '@/lib/analytics';
 import { apiRoutes, appRoutes } from '@/lib/routes';
 import Link from 'next/link';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -152,7 +153,17 @@ function BusinessResult({ business }: { business: Business }) {
 
 function ProductResult({ product }: { product: Product }) {
   return (
-    <Link href={appRoutes.business.byId(product.businessId)}>
+    <Link
+      href={appRoutes.business.byId(product.businessId)}
+      onClick={() => {
+        void trackAnalyticsEvent({
+          eventType: 'PRODUCT_VIEWED',
+          businessId: product.businessId,
+          productId: product.id,
+          metadata: { source: 'search_result' },
+        });
+      }}
+    >
       <div className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors">
         <div className="size-10 shrink-0 rounded-lg bg-muted overflow-hidden">
           {product.imageUrl ? (

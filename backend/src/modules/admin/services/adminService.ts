@@ -211,11 +211,12 @@ export async function getBusinesses(params: {
 
   return {
     data: businesses.map((business) => {
-      const reviewCount = business.povs.length;
+      const ratedPovs = business.povs.filter((pov) => pov.starRating !== null);
+      const reviewCount = ratedPovs.length;
       const avgRating =
         reviewCount > 0
           ? Number(
-              (business.povs.reduce((sum, pov) => sum + pov.starRating, 0) / reviewCount).toFixed(2)
+              (ratedPovs.reduce((sum, pov) => sum + (pov.starRating ?? 0), 0) / reviewCount).toFixed(2)
             )
           : null;
 

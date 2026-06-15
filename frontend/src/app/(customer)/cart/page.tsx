@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
 import { api } from '@/lib/api';
+import { trackAnalyticsEvent } from '@/lib/analytics';
 import { apiRoutes, appRoutes } from '@/lib/routes';
 import {
   DashboardHero,
@@ -101,7 +102,29 @@ export default function CartPage() {
   const handleCheckout = async () => {
     setCheckingOut(true);
     try {
-      await api.post(apiRoutes.orders.checkout);
+      void trackAnalyticsEvent({
+        eventType: 'CHECKOUT_STARTED',
+        metadata: {
+          source: 'cart',
+          itemCount: items.length,
+          quantity: totalQuantity,
+          cartValue: total,
+        },
+      });
+
+      const res = await api.post<{ id: string }>(apiRoutes.orders.checkout);
+      if (res.data.id) {
+        void trackAnalyticsEvent({
+          eventType: 'ORDER_PLACED',
+          orderId: res.data.id,
+          metadata: {
+            source: 'cart',
+            itemCount: items.length,
+            quantity: totalQuantity,
+            orderValue: total,
+          },
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       toast.success('Order placed successfully!');
     } catch {

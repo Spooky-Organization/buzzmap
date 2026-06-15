@@ -1,10 +1,32 @@
 import { z } from 'zod';
 
 export const createPOVSchema = z.object({
-  businessId: z.string().uuid(),
+  businessId: z
+    .string()
+    .uuid()
+    .optional(),
   caption: z.string().max(500).optional(),
-  starRating: z.number().int().min(1).max(5),
-  recommends: z.boolean(),
+  starRating: z.number().int().min(1).max(5).optional(),
+  recommends: z.boolean().optional(),
+  visibility: z.enum(['PUBLIC', 'FOLLOWERS']).default('PUBLIC'),
+}).superRefine((data, ctx) => {
+  if (!data.businessId) return;
+
+  if (data.starRating === undefined) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['starRating'],
+      message: 'A business-linked POV requires a star rating.',
+    });
+  }
+
+  if (data.recommends === undefined) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['recommends'],
+      message: 'A business-linked POV requires a recommendation choice.',
+    });
+  }
 });
 
 export const createCommentSchema = z.object({

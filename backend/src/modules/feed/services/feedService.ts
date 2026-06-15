@@ -47,7 +47,9 @@ export async function getPersonalizedFeed(
   const interests = user?.interests ?? [];
   const effectiveLimit = limit ?? 20;
 
-  const builder = new FeedQueryBuilder().paginate(cursor, effectiveLimit);
+  const builder = new FeedQueryBuilder()
+    .filterByVisibleTo(userId)
+    .paginate(cursor, effectiveLimit);
 
   if (interests.length > 0) {
     builder.filterByInterests(interests);
@@ -65,12 +67,14 @@ export async function getPersonalizedFeed(
  * Returns trending POVs sorted by likesCount desc within the past 7 days.
  */
 export async function getTrending(
+  userId: string,
   cursor?: string,
   limit?: number
 ): Promise<PaginatedFeedResult> {
   const effectiveLimit = limit ?? 20;
 
   const args = new FeedQueryBuilder()
+    .filterByVisibleTo(userId)
     .sortByTrending()
     .withinTimeframe(TRENDING_TIMEFRAME_MS)
     .paginate(cursor, effectiveLimit)

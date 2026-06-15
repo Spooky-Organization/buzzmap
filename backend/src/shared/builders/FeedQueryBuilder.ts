@@ -1,21 +1,58 @@
+import type { Prisma } from '@prisma/client';
+
 /**
  * Builder pattern for constructing Prisma POV feed queries.
  * Chain filter/pagination methods then call .build() to get findMany args.
  */
 export class FeedQueryBuilder {
-  private where: Record<string, unknown> = {};
-  private orderBy: Record<string, unknown> = { createdAt: 'desc' };
+  private where: Prisma.POVWhereInput = {};
+  private orderBy: Prisma.POVOrderByWithRelationInput = { createdAt: 'desc' };
   private cursor?: string;
   private take: number = 20;
+
+  private addFilter(filter: Prisma.POVWhereInput): this {
+    if (Object.keys(this.where).length === 0) {
+      this.where = filter;
+      return this;
+    }
+
+    this.where = { AND: [this.where, filter] };
+    return this;
+  }
 
   /**
    * Filter POVs where the associated business category is in the provided list.
    */
   filterByInterests(interests: string[]): this {
     if (interests.length > 0) {
-      this.where['business'] = { category: { in: interests } };
+      this.addFilter({
+        OR: [
+          { business: { category: { in: interests } } },
+          { businessId: null },
+        ],
+      });
     }
     return this;
+  }
+
+  /**
+   * Restrict follower-only POVs to the author or users who follow the author.
+   */
+  filterByVisibleTo(userId: string): this {
+    return this.addFilter({
+      OR: [
+        { visibility: 'PUBLIC' },
+        { authorId: userId },
+        {
+          visibility: 'FOLLOWERS',
+          author: {
+            followers: {
+              some: { followerId: userId },
+            },
+          },
+        },
+      ],
+    });
   }
 
   /**
@@ -40,8 +77,7 @@ export class FeedQueryBuilder {
    * @param withinMs milliseconds from now to look back (default 7 days)
    */
   withinTimeframe(withinMs: number = 7 * 24 * 60 * 60 * 1000): this {
-    this.where['createdAt'] = { gte: new Date(Date.now() - withinMs) };
-    return this;
+    return this.addFilter({ createdAt: { gte: new Date(Date.now() - withinMs) } });
   }
 
   /**

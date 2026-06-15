@@ -1,8 +1,11 @@
+import type { POVVisibility } from '@prisma/client';
+
 export interface CreatePOVDTO {
-  businessId: string;
+  businessId?: string;
   caption?: string;
-  starRating: number; // 1-5
-  recommends: boolean;
+  starRating?: number; // 1-5, required for business-linked POVs
+  recommends?: boolean; // required for business-linked POVs
+  visibility?: POVVisibility;
 }
 
 export type POVMediaType = 'image' | 'video';
@@ -18,11 +21,12 @@ export interface POVMediaItem {
 export interface POVResponse {
   id: string;
   author: { id: string; name: string; avatar: string | null };
-  business: { id: string; businessName: string };
+  business: { id: string; businessName: string } | null;
   media: POVMediaItem[];
   caption: string | null;
-  starRating: number;
-  recommends: boolean;
+  starRating: number | null;
+  recommends: boolean | null;
+  visibility: POVVisibility;
   likesCount: number;
   commentsCount: number;
   createdAt: Date;

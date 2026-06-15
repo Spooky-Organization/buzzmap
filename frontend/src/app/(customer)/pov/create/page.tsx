@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Camera, Upload, Star, Images, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -42,24 +42,35 @@ interface PaginatedBusinessLookup {
   data: BusinessLookupResult[];
 }
 
+interface BusinessProfileLookup {
+  id: string;
+  businessName: string;
+  category: string;
+  location: string;
+}
+
 export default function CreatePOVPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [caption, setCaption] = useState('');
   // ToggleGroup (Base UI) uses readonly string[] for value
   const [ratingArr, setRatingArr] = useState<readonly string[]>([]);
   const [recommendedArr, setRecommendedArr] = useState<readonly string[]>([]);
+  const [visibilityArr, setVisibilityArr] = useState<readonly string[]>(['PUBLIC']);
   const [businessSearch, setBusinessSearch] = useState('');
   const [selectedBusinessId, setSelectedBusinessId] = useState('');
   const [selectedBusinessName, setSelectedBusinessName] = useState('');
   const [media, setMedia] = useState<MediaDraft[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const debouncedBusinessSearch = useDebounce(businessSearch, 300);
+  const businessIdFromQuery = searchParams.get('businessId') ?? '';
 
   // Derived single values — take the last element for "single-select" semantics
   const rating = ratingArr[ratingArr.length - 1] ?? '';
   const recommended = recommendedArr[recommendedArr.length - 1] ?? '';
+  const visibility = visibilityArr[visibilityArr.length - 1] ?? 'PUBLIC';
 
   const { data: businessResults, isLoading: businessResultsLoading } = useQuery({
     queryKey: ['pov-business-lookup', debouncedBusinessSearch],
@@ -72,6 +83,25 @@ export default function CreatePOVPage() {
     enabled: !selectedBusinessId && debouncedBusinessSearch.trim().length >= 2,
     staleTime: 60_000,
   });
+
+  const { data: prefilledBusiness } = useQuery({
+    queryKey: ['pov-business-prefill', businessIdFromQuery],
+    queryFn: async () => {
+      const res = await api.get<BusinessProfileLookup>(
+        apiRoutes.business.byId(businessIdFromQuery)
+      );
+      return res.data;
+    },
+    enabled: !!businessIdFromQuery && !selectedBusinessId,
+    staleTime: 60_000,
+  });
+
+  useEffect(() => {
+    if (!prefilledBusiness || selectedBusinessId) return;
+    setSelectedBusinessId(prefilledBusiness.id);
+    setSelectedBusinessName(prefilledBusiness.businessName);
+    setBusinessSearch(prefilledBusiness.businessName);
+  }, [prefilledBusiness, selectedBusinessId]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
@@ -135,15 +165,11 @@ export default function CreatePOVPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!selectedBusinessId) {
-      toast.error('Please select the business this POV is about.');
-      return;
-    }
-    if (!rating) {
+    if (selectedBusinessId && !rating) {
       toast.error('Please select a star rating.');
       return;
     }
-    if (!recommended) {
+    if (selectedBusinessId && !recommended) {
       toast.error('Please indicate if you recommend this business.');
       return;
     }
@@ -156,9 +182,12 @@ export default function CreatePOVPage() {
     try {
       const formData = new FormData();
       formData.append('caption', caption);
-      formData.append('starRating', rating);
-      formData.append('recommends', recommended);
-      if (selectedBusinessId) formData.append('businessId', selectedBusinessId);
+      formData.append('visibility', visibility);
+      if (selectedBusinessId) {
+        formData.append('businessId', selectedBusinessId);
+        formData.append('starRating', rating);
+        formData.append('recommends', recommended);
+      }
       // Order in `media` is the gallery order the backend persists as `position`.
       for (const item of media) {
         formData.append('media', item.file);
@@ -193,8 +222,8 @@ export default function CreatePOVPage() {
         <DashboardHeroPill
           icon={Star}
           label="Review quality"
-          value="Rating required"
-          note="A star rating and recommendation help make the POV actionable."
+          value="Business reviews"
+          note="Ratings are collected when an experience is attached to a business."
         />
       </DashboardHero>
 
@@ -202,7 +231,7 @@ export default function CreatePOVPage() {
         <CardHeader>
           <CardTitle>Create a Point of View</CardTitle>
           <CardDescription>
-            Share your honest experience at a business with photos, video, or a text-only review plus your rating.
+            Share a personal experience, or attach a business when the POV should become a review.
           </CardDescription>
         </CardHeader>
 
@@ -290,7 +319,7 @@ export default function CreatePOVPage() {
               {/* Business search */}
               <Field>
                 <FieldLabel>Business</FieldLabel>
-                <FieldDescription>Select the business your POV is about.</FieldDescription>
+                <FieldDescription>Attach a business when this experience should become a review.</FieldDescription>
                 {selectedBusinessId ? (
                   <div className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm">
                     <span className="flex-1 font-medium">{selectedBusinessName}</span>
@@ -354,56 +383,86 @@ export default function CreatePOVPage() {
               </Field>
               </div>
 
-              {/* Star Rating — single-select via ToggleGroup */}
               <div className="space-y-6">
-              <Field>
-                <FieldLabel>Rating</FieldLabel>
-                <FieldDescription>How would you rate this business out of 5 stars?</FieldDescription>
-                <ToggleGroup
-                  value={ratingArr}
-                  onValueChange={(val) => {
-                    // Keep only the most recently toggled value (single-select semantics)
-                    const next = val.filter((v) => !ratingArr.includes(v));
-                    setRatingArr(next.length > 0 ? [next[next.length - 1]] : val.slice(-1));
-                  }}
-                  spacing={1}
-                  aria-label="Star rating"
-                >
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <ToggleGroupItem
-                      key={star}
-                      value={String(star)}
-                      aria-label={`${star} star${star !== 1 ? 's' : ''}`}
+              {selectedBusinessId ? (
+                <>
+                  {/* Star Rating — single-select via ToggleGroup */}
+                  <Field>
+                    <FieldLabel>Rating</FieldLabel>
+                    <FieldDescription>How would you rate this business out of 5 stars?</FieldDescription>
+                    <ToggleGroup
+                      value={ratingArr}
+                      onValueChange={(val) => {
+                        // Keep only the most recently toggled value (single-select semantics)
+                        const next = val.filter((v) => !ratingArr.includes(v));
+                        setRatingArr(next.length > 0 ? [next[next.length - 1]] : val.slice(-1));
+                      }}
+                      spacing={1}
+                      aria-label="Star rating"
                     >
-                      <Star
-                        className={cn(
-                          parseInt(rating) >= star
-                            ? 'fill-accent text-accent'
-                            : 'fill-muted text-muted-foreground'
-                        )}
-                      />
-                    </ToggleGroupItem>
-                  ))}
-                </ToggleGroup>
-              </Field>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <ToggleGroupItem
+                          key={star}
+                          value={String(star)}
+                          aria-label={`${star} star${star !== 1 ? 's' : ''}`}
+                        >
+                          <Star
+                            className={cn(
+                              parseInt(rating) >= star
+                                ? 'fill-accent text-accent'
+                                : 'fill-muted text-muted-foreground'
+                            )}
+                          />
+                        </ToggleGroupItem>
+                      ))}
+                    </ToggleGroup>
+                  </Field>
 
-              {/* Recommend — single-select via ToggleGroup */}
+                  {/* Recommend — single-select via ToggleGroup */}
+                  <Field>
+                    <FieldLabel>Would you recommend this business?</FieldLabel>
+                    <ToggleGroup
+                      value={recommendedArr}
+                      onValueChange={(val) => {
+                        const next = val.filter((v) => !recommendedArr.includes(v));
+                        setRecommendedArr(next.length > 0 ? [next[next.length - 1]] : val.slice(-1));
+                      }}
+                      spacing={1}
+                      aria-label="Recommend"
+                    >
+                      <ToggleGroupItem value="true" aria-label="Yes, recommend">
+                        Yes
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="false" aria-label="No, do not recommend">
+                        No
+                      </ToggleGroupItem>
+                    </ToggleGroup>
+                  </Field>
+                </>
+              ) : null}
+
+              {/* Caption */}
               <Field>
-                <FieldLabel>Would you recommend this business?</FieldLabel>
+                <FieldLabel>Visibility</FieldLabel>
+                <FieldDescription>
+                  Public POVs can reach the feed. Follower-only POVs stay with people who follow you.
+                </FieldDescription>
                 <ToggleGroup
-                  value={recommendedArr}
+                  value={visibilityArr}
                   onValueChange={(val) => {
-                    const next = val.filter((v) => !recommendedArr.includes(v));
-                    setRecommendedArr(next.length > 0 ? [next[next.length - 1]] : val.slice(-1));
+                    const next = val.filter((v) => !visibilityArr.includes(v));
+                    setVisibilityArr(
+                      next.length > 0 ? [next[next.length - 1]] : val.length > 0 ? val.slice(-1) : ['PUBLIC']
+                    );
                   }}
                   spacing={1}
-                  aria-label="Recommend"
+                  aria-label="POV visibility"
                 >
-                  <ToggleGroupItem value="true" aria-label="Yes, recommend">
-                    Yes
+                  <ToggleGroupItem value="PUBLIC" aria-label="Public POV">
+                    Public
                   </ToggleGroupItem>
-                  <ToggleGroupItem value="false" aria-label="No, do not recommend">
-                    No
+                  <ToggleGroupItem value="FOLLOWERS" aria-label="Followers-only POV">
+                    Followers
                   </ToggleGroupItem>
                 </ToggleGroup>
               </Field>

@@ -30,6 +30,11 @@ enum POVMediaType {
   VIDEO
 }
 
+enum POVVisibility {
+  PUBLIC
+  FOLLOWERS
+}
+
 enum OrderStatus {
   PENDING
   CONFIRMED
@@ -62,6 +67,16 @@ enum ReportStatus {
   RESOLVED
 }
 
+enum AnalyticsEventType {
+  BUSINESS_VIEWED
+  PRODUCT_VIEWED
+  POV_VIEWED
+  ADD_TO_CART
+  CHECKOUT_STARTED
+  ORDER_PLACED
+  MESSAGE_STARTED
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model User {
@@ -84,6 +99,7 @@ model User {
   likes                    Like[]
   orders                   Order[]
   cartItems                CartItem[]
+  analyticsEvents          AnalyticsEvent[]
   follows                  Follow[]                  @relation("following")
   followers                Follow[]                  @relation("followedBy")
   sentMessages             Message[]
@@ -117,16 +133,17 @@ model BusinessProfile {
 model POV {
   id            String   @id @default(uuid())
   authorId      String
-  businessId    String
+  businessId    String?
   caption       String?
-  starRating    Int
-  recommends    Boolean
+  starRating    Int?
+  recommends    Boolean?
+  visibility     POVVisibility @default(PUBLIC)
   likesCount    Int      @default(0)
   commentsCount Int      @default(0)
   createdAt     DateTime @default(now())
 
   author   User            @relation(fields: [authorId], references: [id])
-  business BusinessProfile @relation(fields: [businessId], references: [id])
+  business BusinessProfile? @relation(fields: [businessId], references: [id])
   media    POVMedia[]
   comments Comment[]
   likes    Like[]
@@ -319,4 +336,27 @@ model Report {
   createdAt  DateTime         @default(now())
 
   reporter User @relation(fields: [reporterId], references: [id])
+}
+
+model AnalyticsEvent {
+  id             String             @id @default(uuid())
+  userId         String
+  eventType      AnalyticsEventType
+  businessId     String?
+  productId      String?
+  povId          String?
+  orderId        String?
+  conversationId String?
+  metadata       Json?
+  createdAt      DateTime           @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([eventType, createdAt])
+  @@index([businessId, createdAt])
+  @@index([productId, createdAt])
+  @@index([povId, createdAt])
+  @@index([orderId, createdAt])
+  @@index([conversationId, createdAt])
 }

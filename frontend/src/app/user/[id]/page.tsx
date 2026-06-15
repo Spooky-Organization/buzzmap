@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { use, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
@@ -10,15 +11,14 @@ import {
   Download,
   KeyRound,
   MapPin,
+  MessageCircle,
+  Newspaper,
   PencilLine,
   QrCode,
   Save,
-  ShieldCheck,
   Store,
   UserCheck,
   UserPlus,
-  Users,
-  Video,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -27,10 +27,11 @@ import { Button } from '@/components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
 import { apiRoutes, appRoutes } from '@/lib/routes';
-import { DashboardHero, DashboardHeroPill, DashboardMetricCard, DashboardPanel } from '@/components/dashboard/dashboard-surfaces';
+import { DashboardPanel } from '@/components/dashboard/dashboard-surfaces';
 
 interface UserProfile {
   id: string;
@@ -69,9 +70,17 @@ interface MeProfile extends Omit<UserProfile, 'isFollowing'> {
 interface Pov {
   id: string;
   caption: string | null;
-  starRating: number;
+  starRating: number | null;
   createdAt: string;
   likesCount?: number;
+}
+
+interface Post {
+  id: string;
+  type: 'TEXT' | 'IMAGE' | 'VIDEO';
+  content: string | null;
+  mediaUrls: string[];
+  createdAt: string;
 }
 
 interface BusinessProfileForm {
@@ -142,6 +151,15 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
     queryFn: async () => {
       const res = await api.get(apiRoutes.pov.byUser(id), { params: { limit: 12 } });
       return res.data as { data: Pov[]; total: number };
+    },
+    enabled: !!session,
+  });
+
+  const { data: postsData } = useQuery<{ data: Post[]; total: number }>({
+    queryKey: ['user-posts', id],
+    queryFn: async () => {
+      const res = await api.get(apiRoutes.posts.byUser(id), { params: { limit: 12 } });
+      return res.data as { data: Post[]; total: number };
     },
     enabled: !!session,
   });
@@ -297,6 +315,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
 
   const publicInterests = profile?.interests ?? [];
   const povs = povsData?.data ?? [];
+  const posts = postsData?.data ?? [];
   const initials = (profile?.name ?? '?')
     .split(' ')
     .map((n) => n[0])
@@ -304,7 +323,6 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
     .toUpperCase()
     .slice(0, 2);
 
-  const joinedLabel = profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : '';
   const publicProfileUrl = profile
     ? new URL(
         appRoutes.user.byId(profile.id),
@@ -349,140 +367,209 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
     );
   }
 
+  const profileMessageHref =
+    session?.user.role === 'BUSINESS_OWNER'
+      ? appRoutes.business.messages
+      : session?.user.role === 'ADMIN'
+        ? appRoutes.admin.messages
+        : `${appRoutes.customer.messages}?person=${encodeURIComponent(profile.name)}`;
+
   return (
     <div className="flex flex-col gap-6">
-      <DashboardHero
-        eyebrow={isOwnProfile ? 'Your profile workspace' : 'Public user profile'}
-        title={isOwnProfile ? 'Manage your presence and account security.' : profile.name}
-        description={
-          profile.role === 'BUSINESS_OWNER'
-            ? 'This profile connects the person behind a business with the public trust and follow graph around their activity.'
-            : 'This profile shows who the user is, what they follow, and the POV activity they have contributed to BuzzMap.'
-        }
-        icon={isOwnProfile ? PencilLine : Users}
-      >
-        <DashboardHeroPill
-          icon={Users}
-          label="Followers"
-          value={`${profile._count?.followers ?? 0}`}
-          note="People currently following this user account."
-        />
-        <DashboardHeroPill
-          icon={Video}
-          label="POVs"
-          value={`${profile._count?.povs ?? 0}`}
-          note="Published POV reviews currently attached to this profile."
-        />
-        <DashboardHeroPill
-          icon={Store}
-          label="Role"
-          value={profile.role.replace('_', ' ')}
-          note={profile.businessProfile ? 'This user also owns a business profile.' : 'This user is not tied to a business profile.'}
-        />
-      </DashboardHero>
+      <section className="rounded-3xl border border-border/70 bg-card/85 p-5 shadow-[0_22px_70px_-48px_rgba(15,37,64,0.68)] md:p-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
+            <Avatar size="lg">
+              {profile.avatar ? <AvatarImage src={profile.avatar} alt={profile.name} /> : null}
+              <AvatarFallback>{initials}</AvatarFallback>
+            </Avatar>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <DashboardMetricCard
-          label="Followers"
-          value={String(profile._count?.followers ?? 0)}
-          note="Audience size around this profile."
-          icon={Users}
-          accent="from-sky-500/15 via-primary/[0.08] to-transparent"
-        />
-        <DashboardMetricCard
-          label="Following"
-          value={String(profile._count?.following ?? 0)}
-          note="Accounts this user is currently following."
-          icon={UserCheck}
-          accent="from-emerald-500/15 via-primary/[0.08] to-transparent"
-        />
-        <DashboardMetricCard
-          label="Joined"
-          value={joinedLabel}
-          note="When this account entered the platform."
-          icon={ShieldCheck}
-          accent="from-amber-500/18 via-primary/[0.08] to-transparent"
-        />
-      </div>
+            <div className="min-w-0 space-y-3">
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="min-w-0 text-3xl font-semibold tracking-tight text-primary">
+                    {profile.name}
+                  </h1>
+                  <Badge variant="secondary">{profile.role.replace('_', ' ')}</Badge>
+                </div>
+                <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                  <span className="inline-flex items-center gap-1.5">
+                    <MapPin className="size-4" />
+                    {profile.location ?? 'Location not set'}
+                  </span>
+                  {profile.businessProfile ? (
+                    <Link
+                      href={appRoutes.business.byId(profile.businessProfile.id)}
+                      className="inline-flex items-center gap-1.5 font-medium text-primary hover:underline"
+                    >
+                      <Store className="size-4" />
+                      {profile.businessProfile.businessName}
+                    </Link>
+                  ) : null}
+                </div>
+              </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <DashboardPanel
-          title="Profile Overview"
-          description="Public-facing identity, follow state, and high-level account context."
-          icon={Users}
-        >
-          <div className="flex flex-col gap-5 rounded-[28px] border border-border/70 bg-background/90 p-5">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="flex items-start gap-4">
-                <Avatar size="lg">
-                  {profile.avatar ? <AvatarImage src={profile.avatar} alt={profile.name} /> : null}
-                  <AvatarFallback>{initials}</AvatarFallback>
-                </Avatar>
-                <div className="space-y-2">
-                  <div>
-                    <h1 className="text-2xl font-semibold tracking-tight text-primary">{profile.name}</h1>
-                    <p className="text-sm text-muted-foreground">
-                      {profile.role.replace('_', ' ')}{profile.location ? ` • ${profile.location}` : ''}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {publicInterests.length > 0 ? (
-                      publicInterests.map((interest) => (
-                        <Badge key={interest} variant="outline">
-                          {interest}
-                        </Badge>
-                      ))
+              <div className="flex flex-wrap gap-2">
+                {publicInterests.length > 0 ? (
+                  publicInterests.map((interest) => (
+                    <Badge key={interest} variant="outline">
+                      {interest}
+                    </Badge>
+                  ))
+                ) : (
+                  <Badge variant="outline">No interests listed yet</Badge>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {!isOwnProfile ? (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={profile.isFollowing ? 'outline' : 'default'}
+                disabled={toggleFollow.isPending}
+                onClick={() => toggleFollow.mutate()}
+              >
+                {profile.isFollowing ? (
+                  <>
+                    <UserCheck data-icon="inline-start" />
+                    Unfollow
+                  </>
+                ) : (
+                  <>
+                    <UserPlus data-icon="inline-start" />
+                    Follow
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                nativeButton={false}
+                render={<Link href={profileMessageHref} />}
+              >
+                <MessageCircle data-icon="inline-start" />
+                Message
+              </Button>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-2xl border border-border/70 bg-background/80 px-4 py-3">
+            <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">POVs</p>
+            <p className="mt-1 text-2xl font-semibold text-foreground">{profile._count?.povs ?? 0}</p>
+          </div>
+          <div className="rounded-2xl border border-border/70 bg-background/80 px-4 py-3">
+            <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Posts</p>
+            <p className="mt-1 text-2xl font-semibold text-foreground">{postsData?.total ?? posts.length}</p>
+          </div>
+          <div className="rounded-2xl border border-border/70 bg-background/80 px-4 py-3">
+            <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Followers</p>
+            <p className="mt-1 text-2xl font-semibold text-foreground">{profile._count?.followers ?? 0}</p>
+          </div>
+          <div className="rounded-2xl border border-border/70 bg-background/80 px-4 py-3">
+            <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Following</p>
+            <p className="mt-1 text-2xl font-semibold text-foreground">{profile._count?.following ?? 0}</p>
+          </div>
+        </div>
+      </section>
+
+      <Tabs defaultValue="povs" className="w-full">
+        <TabsList>
+          <TabsTrigger value="povs">POVs</TabsTrigger>
+          <TabsTrigger value="posts">Posts</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="povs" className="mt-4">
+          {povs.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-border/70 bg-background/85 px-4 py-10 text-center text-sm text-muted-foreground">
+              No POVs yet.
+            </div>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {povs.map((pov) => (
+                <div
+                  key={pov.id}
+                  className="rounded-3xl border border-border/70 bg-background/90 px-4 py-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="line-clamp-3 text-sm font-semibold text-foreground">
+                        {pov.caption?.trim() || 'Untitled POV review'}
+                      </p>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        {new Date(pov.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    {pov.starRating !== null ? (
+                      <Badge variant="outline">{pov.starRating}/5</Badge>
                     ) : (
-                      <Badge variant="outline">No interests listed yet</Badge>
+                      <Badge variant="outline">Experience</Badge>
                     )}
                   </div>
                 </div>
-              </div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
 
-              {!isOwnProfile ? (
-                <Button
-                  variant={profile.isFollowing ? 'outline' : 'default'}
-                  disabled={toggleFollow.isPending}
-                  onClick={() => toggleFollow.mutate()}
+        <TabsContent value="posts" className="mt-4">
+          {posts.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-border/70 bg-background/85 px-4 py-10 text-center text-sm text-muted-foreground">
+              No posts yet.
+            </div>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {posts.map((post) => (
+                <div
+                  key={post.id}
+                  className="overflow-hidden rounded-3xl border border-border/70 bg-background/90"
                 >
-                  {profile.isFollowing ? (
-                    <>
-                      <UserCheck data-icon="inline-start" />
-                      Unfollow
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus data-icon="inline-start" />
-                      Follow
-                    </>
-                  )}
-                </Button>
-              ) : null}
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-border/70 bg-card/70 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Location</p>
-                <p className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-foreground">
-                  <MapPin className="size-4 text-primary" />
-                  {profile.location ?? 'Not set'}
-                </p>
-              </div>
-              {profile.businessProfile ? (
-                <div className="rounded-2xl border border-border/70 bg-card/70 px-4 py-3">
-                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Business</p>
-                  <a
-                    href={appRoutes.business.byId(profile.businessProfile.id)}
-                    className="mt-2 block text-sm font-medium text-primary hover:underline"
-                  >
-                    {profile.businessProfile.businessName}
-                  </a>
+                  {post.mediaUrls[0] ? (
+                    <div className="relative aspect-[4/3] bg-muted/30">
+                      {post.type === 'VIDEO' ? (
+                        <video src={post.mediaUrls[0]} className="size-full object-cover" controls />
+                      ) : (
+                        <Image
+                          src={post.mediaUrls[0]}
+                          alt={`${profile.name} post media`}
+                          fill
+                          sizes="(max-width: 1280px) 50vw, 20rem"
+                          className="object-cover"
+                        />
+                      )}
+                    </div>
+                  ) : null}
+                  <div className="space-y-3 px-4 py-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <Badge variant="outline" className="gap-1">
+                        <Newspaper className="size-3" />
+                        {post.type.toLowerCase()}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(post.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="line-clamp-4 text-sm leading-6 text-foreground">
+                      {post.content?.trim() || 'Shared a post'}
+                    </p>
+                  </div>
                 </div>
-              ) : null}
+              ))}
             </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
-            <div className="rounded-[28px] border border-border/70 bg-card/70 p-4">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      {isOwnProfile ? (
+        <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+          <div className="xl:col-span-2">
+            <DashboardPanel
+              title="Private Profile Tools"
+              description="Owner-only sharing controls for this account."
+              icon={QrCode}
+            >
+              <div className="flex flex-col gap-4 rounded-3xl border border-border/70 bg-background/90 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4">
                   <div className="overflow-hidden rounded-[24px] border border-border/70 bg-white p-2 shadow-sm">
                     {profile.profileQrCode ? (
@@ -502,9 +589,6 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                   </div>
                   <div className="space-y-2">
                     <p className="text-sm font-semibold text-foreground">Profile QR code</p>
-                    <p className="max-w-md text-sm text-muted-foreground">
-                      Share this community profile in person so one scan opens the live BuzzMap page.
-                    </p>
                     {publicProfileUrl ? (
                       <p className="break-all text-xs text-muted-foreground">{publicProfileUrl}</p>
                     ) : null}
@@ -533,49 +617,12 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                   ) : null}
                 </div>
               </div>
-            </div>
+            </DashboardPanel>
           </div>
-        </DashboardPanel>
 
-        <DashboardPanel
-          title="Recent POV Activity"
-          description="The latest customer perspective content published by this user."
-          icon={Video}
-        >
-          {povs.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-border/70 bg-background/85 px-4 py-10 text-center text-sm text-muted-foreground">
-              No POVs yet.
-            </div>
-          ) : (
-            <div className="grid gap-3">
-              {povs.map((pov) => (
-                <div
-                  key={pov.id}
-                  className="rounded-3xl border border-border/70 bg-background/90 px-4 py-4"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">
-                        {pov.caption?.trim() || 'Untitled POV review'}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {new Date(pov.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <Badge variant="outline">{pov.starRating}/5</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </DashboardPanel>
-      </div>
-
-      {isOwnProfile ? (
-        <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
           <DashboardPanel
-            title="Account Details"
-            description="Update your shared account identity across BuzzMap."
+            title="Private Account Details"
+            description="Update the account fields used by your BuzzMap profile."
             icon={PencilLine}
           >
             <FieldGroup className="grid gap-4">
@@ -653,8 +700,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
           </DashboardPanel>
 
           <DashboardPanel
-            title="Account Security"
-            description="Change your password directly from your own profile workspace."
+            title="Private Account Security"
+            description="Change your password from the owner-only workspace."
             icon={KeyRound}
           >
             <FieldGroup className="grid gap-4">
@@ -715,8 +762,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
           {isBusinessOwner && businessSource ? (
             <div className="xl:col-span-2">
               <DashboardPanel
-                title="Business Profile"
-                description="Business owners can update their public business profile from the same workspace."
+                title="Private Business Profile Controls"
+                description="Business owners can update their public business details here."
                 icon={Store}
               >
                 <FieldGroup className="grid gap-4 xl:grid-cols-2">

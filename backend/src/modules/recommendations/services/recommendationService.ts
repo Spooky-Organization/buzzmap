@@ -10,18 +10,20 @@ const MIN_REVIEW_THRESHOLD = 1;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function computeAvgRating(povs: { starRating: number }[]): number | null {
-  if (povs.length === 0) return null;
-  const sum = povs.reduce((acc, p) => acc + p.starRating, 0);
-  return parseFloat((sum / povs.length).toFixed(2));
+function computeAvgRating(povs: { starRating: number | null }[]): number | null {
+  const ratedPovs = povs.filter((pov) => pov.starRating !== null);
+  if (ratedPovs.length === 0) return null;
+  const sum = ratedPovs.reduce((acc, p) => acc + (p.starRating ?? 0), 0);
+  return parseFloat((sum / ratedPovs.length).toFixed(2));
 }
 
 function computeRecommendationPercentage(
-  povs: { recommends: boolean }[]
+  povs: { recommends: boolean | null }[]
 ): number | null {
-  if (povs.length === 0) return null;
-  const recommends = povs.filter((p) => p.recommends).length;
-  return parseFloat(((recommends / povs.length) * 100).toFixed(2));
+  const reviewPovs = povs.filter((pov) => pov.recommends !== null);
+  if (reviewPovs.length === 0) return null;
+  const recommends = reviewPovs.filter((p) => p.recommends).length;
+  return parseFloat(((recommends / reviewPovs.length) * 100).toFixed(2));
 }
 
 /**
@@ -80,11 +82,12 @@ export async function getBusinessStats(
     where: { followingId: business.userId },
   });
 
+  const ratedPovs = business.povs.filter((pov) => pov.starRating !== null);
   const avgRating = computeAvgRating(business.povs);
   const recommendationPercentage = computeRecommendationPercentage(business.povs);
 
   logger.debug(
-    { businessId, reviewCount: business.povs.length, followerCount },
+    { businessId, reviewCount: ratedPovs.length, followerCount },
     'Business stats retrieved'
   );
 
@@ -92,7 +95,7 @@ export async function getBusinessStats(
     businessId,
     avgRating,
     recommendationPercentage,
-    reviewCount: business.povs.length,
+    reviewCount: ratedPovs.length,
     followerCount,
   };
 }
@@ -123,8 +126,9 @@ export async function getTopBusinesses(
   });
 
   const results: TopBusinessResult[] = businesses
-    .filter((b) => b.povs.length >= MIN_REVIEW_THRESHOLD)
+    .filter((b) => b.povs.filter((pov) => pov.starRating !== null).length >= MIN_REVIEW_THRESHOLD)
     .map((b) => {
+      const reviewCount = b.povs.filter((pov) => pov.starRating !== null).length;
       const avgRating = computeAvgRating(b.povs);
       const recommendationPercentage = computeRecommendationPercentage(b.povs);
       const score = computeScore(avgRating, recommendationPercentage);
@@ -138,7 +142,7 @@ export async function getTopBusinesses(
         isVerified: b.isVerified,
         avgRating,
         recommendationPercentage,
-        reviewCount: b.povs.length,
+        reviewCount,
         score,
       };
     })

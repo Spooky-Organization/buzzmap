@@ -647,7 +647,7 @@ async function getCustomerConversationRecommendations(
       },
     }),
     prisma.pOV.findMany({
-      where: { authorId: userId },
+      where: { authorId: userId, businessId: { not: null } },
       orderBy: { createdAt: 'desc' },
       take: 30,
       select: {
@@ -715,6 +715,7 @@ async function getCustomerConversationRecommendations(
   }
 
   for (const pov of recentPovs) {
+    if (!pov.business) continue;
     const owner = pov.business.user;
     if (owner.id === userId) continue;
 

@@ -23,6 +23,8 @@ export const appRoutes = {
     message: (conversationId: string) => `/messages/${conversationId}`,
     notifications: '/notifications',
     povCreate: '/pov/create',
+    povCreateForBusiness: (businessId: string) =>
+      `/pov/create?businessId=${encodeURIComponent(businessId)}`,
     pov: (povId: string) => `/pov/${povId}`,
   },
   business: {
@@ -99,6 +101,8 @@ export const apiRoutes = {
   },
   posts: {
     root: `${API_PREFIX}/posts`,
+    byUser: (userId: string) => `${API_PREFIX}/posts/user/${userId}`,
+    byBusiness: (businessId: string) => `${API_PREFIX}/posts/business/${businessId}`,
   },
   pov: {
     root: `${API_PREFIX}/pov`,
@@ -122,6 +126,9 @@ export const apiRoutes = {
   recommendations: {
     businessStats: `${API_PREFIX}/recommendations/business/stats`,
     top: `${API_PREFIX}/recommendations/top`,
+  },
+  analytics: {
+    events: `${API_PREFIX}/analytics/events`,
   },
   search: {
     root: `${API_PREFIX}/search`,

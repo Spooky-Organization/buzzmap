@@ -143,10 +143,10 @@ export interface AdminModerationSummary {
   recentPovs: Array<{
     id: string;
     caption: string | null;
-    starRating: number;
+    starRating: number | null;
     createdAt: Date;
     author: { id: string; name: string };
-    business: { id: string; businessName: string };
+    business: { id: string; businessName: string } | null;
   }>;
   recentComments: Array<{
     id: string;

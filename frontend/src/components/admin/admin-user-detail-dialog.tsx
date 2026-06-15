@@ -67,9 +67,9 @@ interface UserProfileResponse {
 
 interface PovItem {
   id: string;
-  business: { id: string; businessName: string };
+  business: { id: string; businessName: string } | null;
   caption: string | null;
-  starRating: number;
+  starRating: number | null;
   likesCount: number;
   commentsCount: number;
   createdAt: string;
@@ -259,9 +259,15 @@ export function AdminUserDetailDialog({
                             <p className="font-medium text-foreground">
                               {pov.caption?.trim() || 'Untitled POV review'}
                             </p>
-                            <p className="text-sm text-muted-foreground">{pov.business.businessName}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {pov.business?.businessName ?? 'Personal experience'}
+                            </p>
                           </div>
-                          <Badge variant="outline">{pov.starRating}/5</Badge>
+                          {pov.starRating !== null ? (
+                            <Badge variant="outline">{pov.starRating}/5</Badge>
+                          ) : (
+                            <Badge variant="outline">Experience</Badge>
+                          )}
                         </div>
                         <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
                           <span>{new Date(pov.createdAt).toLocaleDateString()}</span>

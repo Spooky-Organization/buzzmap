@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { api } from '@/lib/api';
-import { apiRoutes } from '@/lib/routes';
+import { apiRoutes, appRoutes } from '@/lib/routes';
 import { DashboardHero, DashboardHeroPill } from '@/components/dashboard/dashboard-surfaces';
 
 interface BusinessProfileForm {
@@ -117,10 +117,10 @@ export default function BusinessSettingsPage() {
   });
 
   const form = draft ?? toBusinessProfileForm(data);
-  const publicProfileUrl =
+  const reviewCaptureUrl =
     data?.id
       ? new URL(
-          `/business/${data.id}`,
+          appRoutes.customer.povCreateForBusiness(data.id),
           process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
         ).toString()
       : null;
@@ -157,14 +157,14 @@ export default function BusinessSettingsPage() {
   const update = (key: keyof BusinessProfileForm, value: string) =>
     setDraft((current) => ({ ...(current ?? form), [key]: value }));
 
-  const copyPublicProfileLink = async () => {
-    if (!publicProfileUrl) return;
+  const copyReviewCaptureLink = async () => {
+    if (!reviewCaptureUrl) return;
 
     try {
-      await navigator.clipboard.writeText(publicProfileUrl);
-      toast.success('Public profile link copied');
+      await navigator.clipboard.writeText(reviewCaptureUrl);
+      toast.success('Review link copied');
     } catch {
-      toast.error('Failed to copy public profile link');
+      toast.error('Failed to copy review link');
     }
   };
 
@@ -325,7 +325,7 @@ export default function BusinessSettingsPage() {
         <CardHeader>
           <CardTitle>Business QR Code</CardTitle>
           <CardDescription>
-            Share the public business profile in-person with one scan.
+            Send customers straight into a prefilled POV review with one scan.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
@@ -347,13 +347,13 @@ export default function BusinessSettingsPage() {
               )}
             </div>
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-foreground">Scan to open this business</p>
+              <p className="text-sm font-semibold text-foreground">Scan to leave a POV</p>
               <p className="max-w-md text-sm text-muted-foreground">
-                BuzzMap keeps this QR code tied to the public business page, so printed posters,
-                counters, and packaging can send people straight to the live profile.
+                BuzzMap keeps this QR code tied to POV creation for this business, so printed
+                posters, counters, and packaging can collect customer experiences at the source.
               </p>
-              {publicProfileUrl ? (
-                <p className="break-all text-xs text-muted-foreground">{publicProfileUrl}</p>
+              {reviewCaptureUrl ? (
+                <p className="break-all text-xs text-muted-foreground">{reviewCaptureUrl}</p>
               ) : null}
             </div>
           </div>
@@ -362,11 +362,11 @@ export default function BusinessSettingsPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => void copyPublicProfileLink()}
-              disabled={!publicProfileUrl}
+              onClick={() => void copyReviewCaptureLink()}
+              disabled={!reviewCaptureUrl}
             >
               <Copy data-icon="inline-start" />
-              Copy profile link
+              Copy review link
             </Button>
             {data?.qrCode ? (
               <Button

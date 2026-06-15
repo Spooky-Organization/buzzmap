@@ -1,8 +1,9 @@
 import { getPrisma } from '../../../shared/prisma/index.js';
-import { uploadToStorage } from '../../../shared/storage/upload.js';
+import { getSignedUrl, uploadToStorage } from '../../../shared/storage/upload.js';
 import { AppError } from '../../../shared/middleware/errorHandler.js';
 import type { CreatePostDTO, PostResponse, PaginatedPostsResult } from '../models/index.js';
 import { sanitizeOptionalText } from '../../../shared/utils/sanitize.js';
+import { Role } from '@prisma/client';
 
 const postSelect = {
   id: true,
@@ -15,6 +16,77 @@ const postSelect = {
   author: { select: { id: true, name: true, avatar: true } },
   business: { select: { id: true, businessName: true } },
 } as const;
+
+type RawPost = Awaited<ReturnType<typeof getPrisma>>['post'] extends never
+  ? never
+  : {
+      id: string;
+      authorId: string;
+      businessId: string | null;
+      type: PostResponse['type'];
+      content: string | null;
+      mediaUrls: string[];
+      createdAt: Date;
+      author: PostResponse['author'];
+      business: PostResponse['business'];
+    };
+
+async function formatPost(post: RawPost): Promise<PostResponse> {
+  const mediaUrls = await Promise.all(
+    post.mediaUrls.map((url) =>
+      /^https?:\/\//i.test(url) ? Promise.resolve(url) : getSignedUrl(url)
+    )
+  );
+
+  return {
+    ...post,
+    mediaUrls,
+  };
+}
+
+async function resolveBusinessIdForPost(
+  authorId: string,
+  requestedBusinessId?: string
+): Promise<string | null> {
+  const prisma = getPrisma();
+
+  const author = await prisma.user.findUnique({
+    where: { id: authorId },
+    select: {
+      role: true,
+      businessProfile: { select: { id: true } },
+    },
+  });
+
+  if (!author) {
+    throw new AppError(404, 'Author not found');
+  }
+
+  if (requestedBusinessId) {
+    const business = await prisma.businessProfile.findUnique({
+      where: { id: requestedBusinessId },
+      select: { id: true },
+    });
+    if (!business) {
+      throw new AppError(404, 'Business not found');
+    }
+
+    if (author.role === Role.BUSINESS_OWNER && author.businessProfile?.id !== requestedBusinessId) {
+      throw new AppError(403, 'You can only publish posts for your own business.');
+    }
+
+    return requestedBusinessId;
+  }
+
+  if (author.role === Role.BUSINESS_OWNER) {
+    if (!author.businessProfile) {
+      throw new AppError(403, 'No business profile found for this user');
+    }
+    return author.businessProfile.id;
+  }
+
+  return null;
+}
 
 /**
  * Create a new post. If mediaFiles are provided they are uploaded to RustFS first.
@@ -36,29 +108,26 @@ export async function createPost(
     mediaUrls = uploads;
   }
 
-  // Validate businessId exists if provided
-  if (data.businessId) {
-    const business = await prisma.businessProfile.findUnique({
-      where: { id: data.businessId },
-      select: { id: true },
-    });
-    if (!business) {
-      throw new AppError(404, 'Business not found');
-    }
+  const content = sanitizeOptionalText(data.content) ?? null;
+
+  if (!content && mediaUrls.length === 0) {
+    throw new AppError(400, 'Post must have content or a media attachment.');
   }
+
+  const businessId = await resolveBusinessIdForPost(authorId, data.businessId);
 
   const post = await prisma.post.create({
     data: {
       authorId,
-      businessId: data.businessId ?? null,
+      businessId,
       type: data.type,
-      content: sanitizeOptionalText(data.content) ?? null,
+      content,
       mediaUrls,
     },
     select: postSelect,
   });
 
-  return post as PostResponse;
+  return formatPost(post);
 }
 
 /**
@@ -109,7 +178,7 @@ export async function getPostsByUser(
   ]);
 
   return {
-    data: posts as PostResponse[],
+    data: await Promise.all(posts.map(formatPost)),
     total,
     page,
     limit,
@@ -140,7 +209,7 @@ export async function getPostsByBusiness(
   ]);
 
   return {
-    data: posts as PostResponse[],
+    data: await Promise.all(posts.map(formatPost)),
     total,
     page,
     limit,

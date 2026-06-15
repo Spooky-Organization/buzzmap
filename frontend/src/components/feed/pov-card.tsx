@@ -16,8 +16,8 @@ export interface POVCardData {
   id: string;
   media: POVMediaItem[];
   caption: string | null;
-  starRating: number;
-  recommends: boolean;
+  starRating: number | null;
+  recommends: boolean | null;
   likesCount: number;
   commentsCount: number;
   isLiked: boolean;
@@ -107,7 +107,7 @@ export function POVCard({ pov }: POVCardProps) {
       <CardHeader className="gap-2">
         {/* Author + Business row */}
         <div className="flex items-center gap-3">
-          <Link href={`/profile/${pov.author.id}`} className="flex items-center gap-2 hover:opacity-80">
+          <Link href={appRoutes.user.byId(pov.author.id)} className="flex items-center gap-2 hover:opacity-80">
             <Avatar size="sm">
               <AvatarImage src={pov.author.avatar ?? undefined} alt={pov.author.name} />
               <AvatarFallback>{initials}</AvatarFallback>
@@ -128,14 +128,18 @@ export function POVCard({ pov }: POVCardProps) {
           )}
 
           <div className="ml-auto flex items-center gap-2">
-            <Badge variant={pov.recommends ? 'default' : 'outline'} className={pov.recommends ? 'bg-green-600 text-white' : ''}>
-              {pov.recommends ? 'Recommends' : 'Not recommended'}
-            </Badge>
+            {pov.recommends !== null ? (
+              <Badge variant={pov.recommends ? 'default' : 'outline'} className={pov.recommends ? 'bg-green-600 text-white' : ''}>
+                {pov.recommends ? 'Recommends' : 'Not recommended'}
+              </Badge>
+            ) : (
+              <Badge variant="outline">Experience</Badge>
+            )}
           </div>
         </div>
 
         {/* Rating */}
-        <StarRating rating={pov.starRating} />
+        {pov.starRating !== null ? <StarRating rating={pov.starRating} /> : null}
       </CardHeader>
 
       <CardContent>

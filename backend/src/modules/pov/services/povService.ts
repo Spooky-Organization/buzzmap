@@ -1,4 +1,5 @@
 import { getPrisma } from '../../../shared/prisma/index.js';
+import type { Prisma } from '@prisma/client';
 import { uploadToStorage, deleteFromStorage } from '../../../shared/storage/upload.js';
 import {
   formatMedia,
@@ -18,13 +19,14 @@ async function formatPOV(
     id: string;
     media: RawPOVMedia[];
     caption: string | null;
-    starRating: number;
-    recommends: boolean;
+    starRating: number | null;
+    recommends: boolean | null;
+    visibility: POVResponse['visibility'];
     likesCount: number;
     commentsCount: number;
     createdAt: Date;
     author: { id: string; name: string; avatar: string | null };
-    business: { id: string; businessName: string };
+    business: { id: string; businessName: string } | null;
   },
   requestingUserId?: string
 ): Promise<POVResponse> {
@@ -49,6 +51,7 @@ async function formatPOV(
     caption: pov.caption,
     starRating: pov.starRating,
     recommends: pov.recommends,
+    visibility: pov.visibility,
     likesCount: pov.likesCount,
     commentsCount: pov.commentsCount,
     createdAt: pov.createdAt,
@@ -61,6 +64,7 @@ const POV_SELECT = {
   caption: true,
   starRating: true,
   recommends: true,
+  visibility: true,
   likesCount: true,
   commentsCount: true,
   createdAt: true,
@@ -71,6 +75,55 @@ const POV_SELECT = {
   author: { select: { id: true, name: true, avatar: true } },
   business: { select: { id: true, businessName: true } },
 } as const;
+
+function visiblePOVWhere(requestingUserId?: string): Prisma.POVWhereInput {
+  if (!requestingUserId) {
+    return { visibility: 'PUBLIC' };
+  }
+
+  return {
+    OR: [
+      { visibility: 'PUBLIC' },
+      { authorId: requestingUserId },
+      {
+        visibility: 'FOLLOWERS',
+        author: {
+          followers: {
+            some: { followerId: requestingUserId },
+          },
+        },
+      },
+    ],
+  };
+}
+
+async function assertCanViewPOV(
+  pov: { id: string; author: { id: string }; visibility: POVResponse['visibility'] },
+  requestingUserId?: string
+): Promise<void> {
+  if (pov.visibility === 'PUBLIC' || pov.author.id === requestingUserId) {
+    return;
+  }
+
+  if (!requestingUserId) {
+    throw new AppError(404, 'POV not found');
+  }
+
+  const prisma = getPrisma();
+  const follow = await prisma.follow.findUnique({
+    where: {
+      followerId_followingId: {
+        followerId: requestingUserId,
+        followingId: pov.author.id,
+      },
+    },
+    select: { id: true },
+  });
+
+  if (!follow) {
+    throw new AppError(404, 'POV not found');
+  }
+}
 
 // ─── Service functions ────────────────────────────────────────────────────────
 
@@ -84,13 +137,14 @@ export async function createPOV(
   // Enforce gallery rules (count + per-type size) before any upload.
   validatePOVMediaFiles(mediaFiles);
 
-  // Verify business exists
-  const business = await prisma.businessProfile.findUnique({
-    where: { id: data.businessId },
-    select: { id: true, businessName: true },
-  });
-  if (!business) {
-    throw new AppError(404, 'Business not found');
+  if (data.businessId) {
+    const business = await prisma.businessProfile.findUnique({
+      where: { id: data.businessId },
+      select: { id: true },
+    });
+    if (!business) {
+      throw new AppError(404, 'Business not found');
+    }
   }
 
   // Upload each file, preserving the client-provided order as `position`.
@@ -113,10 +167,11 @@ export async function createPOV(
   const pov = await prisma.pOV.create({
     data: {
       authorId,
-      businessId: data.businessId,
+      businessId: data.businessId ?? null,
       caption: sanitizeOptionalText(data.caption) ?? null,
-      starRating: data.starRating,
-      recommends: data.recommends,
+      starRating: data.starRating ?? null,
+      recommends: data.recommends ?? null,
+      visibility: data.visibility ?? 'PUBLIC',
       media: { create: mediaRecords },
     },
     select: POV_SELECT,
@@ -165,6 +220,8 @@ export async function getPOV(
     throw new AppError(404, 'POV not found');
   }
 
+  await assertCanViewPOV(pov, requestingUserId);
+
   return formatPOV(pov, requestingUserId);
 }
 
@@ -175,11 +232,17 @@ export async function getPOVsByBusiness(
   requestingUserId?: string
 ): Promise<PaginatedResult<POVResponse>> {
   const prisma = getPrisma();
+  const where: Prisma.POVWhereInput = {
+    AND: [
+      { businessId },
+      visiblePOVWhere(requestingUserId),
+    ],
+  };
 
   const [total, povs] = await Promise.all([
-    prisma.pOV.count({ where: { businessId } }),
+    prisma.pOV.count({ where }),
     prisma.pOV.findMany({
-      where: { businessId },
+      where,
       select: POV_SELECT,
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
@@ -197,14 +260,21 @@ export async function getPOVsByBusiness(
 export async function getPOVsByUser(
   userId: string,
   page: number,
-  limit: number
+  limit: number,
+  requestingUserId?: string
 ): Promise<PaginatedResult<POVResponse>> {
   const prisma = getPrisma();
+  const where: Prisma.POVWhereInput = {
+    AND: [
+      { authorId: userId },
+      visiblePOVWhere(requestingUserId),
+    ],
+  };
 
   const [total, povs] = await Promise.all([
-    prisma.pOV.count({ where: { authorId: userId } }),
+    prisma.pOV.count({ where }),
     prisma.pOV.findMany({
-      where: { authorId: userId },
+      where,
       select: POV_SELECT,
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
@@ -212,7 +282,7 @@ export async function getPOVsByUser(
     }),
   ]);
 
-  const data = await Promise.all(povs.map((pov) => formatPOV(pov)));
+  const data = await Promise.all(povs.map((pov) => formatPOV(pov, requestingUserId)));
 
   return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
 }
@@ -223,11 +293,16 @@ export async function likePOV(userId: string, povId: string): Promise<void> {
   // Verify POV exists
   const pov = await prisma.pOV.findUnique({
     where: { id: povId },
-    select: { id: true },
+    select: {
+      id: true,
+      visibility: true,
+      author: { select: { id: true } },
+    },
   });
   if (!pov) {
     throw new AppError(404, 'POV not found');
   }
+  await assertCanViewPOV(pov, userId);
 
   // Handle duplicate gracefully using upsert
   const existingLike = await prisma.like.findUnique({
@@ -280,11 +355,16 @@ export async function addComment(
 
   const pov = await prisma.pOV.findUnique({
     where: { id: povId },
-    select: { id: true },
+    select: {
+      id: true,
+      visibility: true,
+      author: { select: { id: true } },
+    },
   });
   if (!pov) {
     throw new AppError(404, 'POV not found');
   }
+  await assertCanViewPOV(pov, userId);
 
   const [comment] = await prisma.$transaction([
     prisma.comment.create({
@@ -313,17 +393,23 @@ export async function addComment(
 export async function getComments(
   povId: string,
   page: number,
-  limit: number
+  limit: number,
+  requestingUserId?: string
 ): Promise<PaginatedResult<CommentResponse>> {
   const prisma = getPrisma();
 
   const pov = await prisma.pOV.findUnique({
     where: { id: povId },
-    select: { id: true },
+    select: {
+      id: true,
+      visibility: true,
+      author: { select: { id: true } },
+    },
   });
   if (!pov) {
     throw new AppError(404, 'POV not found');
   }
+  await assertCanViewPOV(pov, requestingUserId);
 
   const [total, comments] = await Promise.all([
     prisma.comment.count({ where: { povId } }),

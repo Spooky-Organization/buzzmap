@@ -33,12 +33,14 @@ type SelectedBusinessProfile = Prisma.BusinessProfileGetPayload<{
   select: typeof businessProfileSelect;
 }>;
 
-function getBusinessPublicUrl(businessId: string): string {
-  return new URL(`/business/${businessId}`, config.frontendUrl).toString();
+function getBusinessReviewUrl(businessId: string): string {
+  const url = new URL('/pov/create', config.frontendUrl);
+  url.searchParams.set('businessId', businessId);
+  return url.toString();
 }
 
 async function generateBusinessQrCode(businessId: string): Promise<string> {
-  return QRCode.toDataURL(getBusinessPublicUrl(businessId), {
+  return QRCode.toDataURL(getBusinessReviewUrl(businessId), {
     errorCorrectionLevel: 'M',
     margin: 1,
     width: 320,
@@ -52,12 +54,13 @@ async function generateBusinessQrCode(businessId: string): Promise<string> {
 async function ensureBusinessQrCode(
   profile: SelectedBusinessProfile
 ): Promise<SelectedBusinessProfile> {
-  if (profile.qrCode) {
+  const qrCode = await generateBusinessQrCode(profile.id);
+
+  if (profile.qrCode === qrCode) {
     return profile;
   }
 
   const prisma = getPrisma();
-  const qrCode = await generateBusinessQrCode(profile.id);
 
   await prisma.businessProfile.update({
     where: { id: profile.id },
@@ -74,9 +77,10 @@ function mapBusinessProfile(
   profile: SelectedBusinessProfile,
   followerCount: number
 ): BusinessProfileResponse {
+  const ratedPovs = profile.povs.filter((pov) => pov.starRating !== null);
   const avgRating =
-    profile.povs.length > 0
-      ? profile.povs.reduce((sum, p) => sum + p.starRating, 0) / profile.povs.length
+    ratedPovs.length > 0
+      ? ratedPovs.reduce((sum, p) => sum + p.starRating!, 0) / ratedPovs.length
       : 0;
 
   return {
@@ -95,7 +99,7 @@ function mapBusinessProfile(
     createdAt: profile.createdAt,
     updatedAt: profile.updatedAt,
     avgRating: Math.round(avgRating * 10) / 10,
-    reviewCount: profile.povs.length,
+    reviewCount: ratedPovs.length,
     followerCount,
     _count: profile._count,
   };

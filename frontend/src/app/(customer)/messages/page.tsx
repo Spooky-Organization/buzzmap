@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { ContactRound, MessageSquare, Phone, Plus, Search, Send, Sparkles, Upload } from 'lucide-react';
+import { ContactRound, Eye, MessageSquare, Plus, Search, Send, Sparkles, Upload, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -24,12 +25,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
 import { ConversationList, type Conversation } from '@/components/messaging/conversation-list';
 import { api } from '@/lib/api';
+import { trackAnalyticsEvent } from '@/lib/analytics';
 import { apiRoutes, appRoutes } from '@/lib/routes';
 import {
   type BackendConversationPreview,
   toConversationListItem,
 } from '@/lib/messaging';
-import { DashboardHero, DashboardHeroPill, DashboardPanel } from '@/components/dashboard/dashboard-surfaces';
+import { DashboardHero, DashboardPanel } from '@/components/dashboard/dashboard-surfaces';
 import { ConversationRowSkeleton } from '@/components/dashboard/loading-skeletons';
 
 interface SearchUserResult {
@@ -100,17 +102,80 @@ function formatInteractionDate(dateString: string): string {
   }).format(new Date(dateString));
 }
 
+function PersonResultCard({
+  user,
+  isStarting,
+  onStart,
+}: {
+  user: SearchUserResult;
+  isStarting: boolean;
+  onStart: (userId: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-4 rounded-[24px] border border-border/70 bg-background/90 p-4 shadow-sm">
+      <div className="flex min-w-0 items-start gap-3">
+        <Avatar>
+          {user.avatar ? <AvatarImage src={user.avatar} alt={user.name} /> : null}
+          <AvatarFallback>{initialsFor(user.name)}</AvatarFallback>
+        </Avatar>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-foreground">{user.name}</p>
+          <p className="text-xs text-muted-foreground">{user.role.replace(/_/g, ' ').toLowerCase()}</p>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          nativeButton={false}
+          render={<Link href={appRoutes.user.byId(user.id)} />}
+        >
+          <Eye data-icon="inline-start" />
+          Profile
+        </Button>
+        <Button
+          size="sm"
+          type="button"
+          onClick={() => onStart(user.id)}
+          disabled={isStarting}
+        >
+          {isStarting ? (
+            <>
+              <Spinner data-icon="inline-start" />
+              Opening
+            </>
+          ) : (
+            <>
+              <Send data-icon="inline-start" />
+              Message
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function MessagesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session } = useSession();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const [recipientName, setRecipientName] = useState('');
+  const [peopleKeyword, setPeopleKeyword] = useState('');
   const [contactsDraft, setContactsDraft] = useState('');
   const [importedContacts, setImportedContacts] = useState<ImportedContact[]>([]);
   const [creating, setCreating] = useState(false);
   const [quickStartingForUserId, setQuickStartingForUserId] = useState<string | null>(null);
   const currentUserId = session?.user?.id ?? '';
+  const personParam = searchParams.get('person')?.trim() ?? '';
+
+  useEffect(() => {
+    if (!personParam) return;
+    setPeopleKeyword(personParam);
+    setRecipientName(personParam);
+  }, [personParam]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -148,6 +213,40 @@ export default function MessagesPage() {
   });
 
   const conversations = data?.conversations ?? [];
+  const trimmedPeopleKeyword = peopleKeyword.trim();
+  const trimmedRecipientName = recipientName.trim();
+
+  const { data: visiblePeople = [], isLoading: visiblePeopleLoading } = useQuery<
+    SearchUserResult[]
+  >({
+    queryKey: ['message-people-search', trimmedPeopleKeyword],
+    queryFn: async () => {
+      const res = await api.get(apiRoutes.search.users, {
+        params: {
+          ...(trimmedPeopleKeyword && { keyword: trimmedPeopleKeyword }),
+          limit: trimmedPeopleKeyword ? 10 : 8,
+        },
+      });
+      return ((res.data.data ?? []) as SearchUserResult[]).filter(
+        (user) => user.id !== currentUserId
+      );
+    },
+    enabled: !!session && !!currentUserId,
+  });
+
+  const { data: recipientSearchResults = [], isLoading: recipientSearchLoading } =
+    useQuery<SearchUserResult[]>({
+      queryKey: ['message-recipient-search', trimmedRecipientName],
+      queryFn: async () => {
+        const res = await api.get(apiRoutes.search.users, {
+          params: { keyword: trimmedRecipientName, limit: 8 },
+        });
+        return ((res.data.data ?? []) as SearchUserResult[]).filter(
+          (user) => user.id !== currentUserId
+        );
+      },
+      enabled: dialogOpen && !!session && !!currentUserId && trimmedRecipientName.length >= 2,
+    });
 
   const { data: recommendations, isLoading: recommendationsLoading } = useQuery<
     RecommendedConversationUser[]
@@ -207,43 +306,10 @@ export default function MessagesPage() {
     toast.success('Contact sync cleared');
   };
 
-  const handleCreateConversation = async () => {
-    const name = recipientName.trim();
-    if (!name) return;
-
-    setCreating(true);
-    try {
-      const searchRes = await api.get(apiRoutes.search.users, {
-        params: { keyword: name, limit: 10 },
-      });
-
-      const users = (searchRes.data.data ?? []) as SearchUserResult[];
-      const normalizedName = name.toLowerCase();
-      const participant =
-        users.find(
-          (user) => user.id !== currentUserId && user.name.trim().toLowerCase() === normalizedName
-        ) ?? users.find((user) => user.id !== currentUserId);
-
-      if (!participant) {
-        throw new Error('participant-not-found');
-      }
-
-      await api.post(apiRoutes.messaging.conversations, {
-        type: 'DIRECT',
-        participantIds: [participant.id],
-      });
-      setDialogOpen(false);
-      setRecipientName('');
-      refetch();
-      toast.success('Conversation started');
-    } catch {
-      toast.error('Could not start conversation. Enter an existing user name.');
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  const startRecommendedConversation = async (userId: string) => {
+  const startConversationWithUser = async (
+    userId: string,
+    options: { closeDialog?: boolean } = {}
+  ) => {
     setQuickStartingForUserId(userId);
     try {
       const res = await api.post(apiRoutes.messaging.conversations, {
@@ -251,7 +317,16 @@ export default function MessagesPage() {
         participantIds: [userId],
       });
       const conversationId = res.data.id as string;
+      void trackAnalyticsEvent({
+        eventType: 'MESSAGE_STARTED',
+        conversationId,
+        metadata: { source: 'customer_messages' },
+      });
       toast.success('Conversation started');
+      if (options.closeDialog) {
+        setDialogOpen(false);
+        setRecipientName('');
+      }
       router.push(appRoutes.customer.message(conversationId));
     } catch {
       toast.error('Could not start this conversation');
@@ -261,32 +336,36 @@ export default function MessagesPage() {
     }
   };
 
+  const handleCreateConversation = async () => {
+    if (!trimmedRecipientName) return;
+
+    setCreating(true);
+    try {
+      const normalizedName = trimmedRecipientName.toLowerCase();
+      const participant =
+        recipientSearchResults.find(
+          (user) => user.name.trim().toLowerCase() === normalizedName
+        ) ?? recipientSearchResults[0];
+
+      if (!participant) {
+        throw new Error('participant-not-found');
+      }
+
+      await startConversationWithUser(participant.id, { closeDialog: true });
+    } catch {
+      toast.error('Choose an existing BuzzMap user from the results.');
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <DashboardHero
         eyebrow="Customer messaging"
         title="Keep conversations close to the commerce flow."
         icon={MessageSquare}
-      >
-        <DashboardHeroPill
-          icon={Send}
-          label="Thread model"
-          value="Direct chats"
-          note="Conversations stay lightweight and easy to inspect."
-        />
-        <DashboardHeroPill
-          icon={Search}
-          label="Start fast"
-          value="Name lookup"
-          note="Create a new conversation by finding an existing user."
-        />
-        <DashboardHeroPill
-          icon={Phone}
-          label="Contact sync"
-          value={hasContactSync ? `${importedContacts.length} loaded` : 'Not synced'}
-          note="Import phone contacts to find people already on BuzzMap."
-        />
-      </DashboardHero>
+      />
 
       <div className="flex flex-wrap justify-end gap-3">
         <Dialog open={contactDialogOpen} onOpenChange={setContactDialogOpen}>
@@ -341,12 +420,53 @@ export default function MessagesPage() {
                   placeholder="Enter a user name..."
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleCreateConversation()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      void handleCreateConversation();
+                    }
+                  }}
                 />
               </Field>
             </FieldGroup>
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-foreground">Matching people</p>
+              {trimmedRecipientName.length < 2 ? (
+                <div className="rounded-2xl border border-dashed border-border/70 bg-background/80 px-4 py-6 text-sm text-muted-foreground">
+                  Start typing a name to see people.
+                </div>
+              ) : recipientSearchLoading ? (
+                <div className="flex flex-col gap-3">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <ConversationRowSkeleton key={index} />
+                  ))}
+                </div>
+              ) : recipientSearchResults.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border/70 bg-background/80 px-4 py-6 text-sm text-muted-foreground">
+                  No people matched that name.
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {recipientSearchResults.map((user) => (
+                    <PersonResultCard
+                      key={user.id}
+                      user={user}
+                      isStarting={quickStartingForUserId === user.id}
+                      onStart={(userId) => void startConversationWithUser(userId, { closeDialog: true })}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
             <DialogFooter>
-              <Button disabled={creating || !recipientName.trim()} onClick={handleCreateConversation}>
+              <Button
+                disabled={
+                  creating ||
+                  recipientSearchLoading ||
+                  trimmedRecipientName.length < 2 ||
+                  recipientSearchResults.length === 0
+                }
+                onClick={handleCreateConversation}
+              >
                 {creating ? (
                   <>
                     <Spinner data-icon="inline-start" />
@@ -363,6 +483,47 @@ export default function MessagesPage() {
           </DialogContent>
         </Dialog>
       </div>
+
+      <DashboardPanel
+        title="Find People"
+        description="Search customers and creators, view profiles, or open a direct message."
+        icon={Users}
+      >
+        <div className="space-y-4">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="h-11 rounded-2xl pl-9"
+              placeholder="Search people by name"
+              value={peopleKeyword}
+              onChange={(event) => setPeopleKeyword(event.target.value)}
+            />
+          </div>
+
+          {visiblePeopleLoading ? (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <ConversationRowSkeleton key={index} />
+              ))}
+            </div>
+          ) : visiblePeople.length === 0 ? (
+            <div className="rounded-[24px] border border-dashed border-border/70 bg-background/80 px-4 py-8 text-sm text-muted-foreground">
+              No people matched this search.
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {visiblePeople.map((user) => (
+                <PersonResultCard
+                  key={user.id}
+                  user={user}
+                  isStarting={quickStartingForUserId === user.id}
+                  onStart={(userId) => void startConversationWithUser(userId)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </DashboardPanel>
 
       <DashboardPanel
         title="Recommended Starters"
@@ -421,7 +582,7 @@ export default function MessagesPage() {
                       </div>
                       <Button
                         type="button"
-                        onClick={() => void startRecommendedConversation(user.userId)}
+                        onClick={() => void startConversationWithUser(user.userId)}
                         disabled={quickStartingForUserId === user.userId}
                       >
                         {quickStartingForUserId === user.userId ? (
@@ -498,7 +659,7 @@ export default function MessagesPage() {
                     </div>
                     <Button
                       type="button"
-                      onClick={() => void startRecommendedConversation(user.userId)}
+                      onClick={() => void startConversationWithUser(user.userId)}
                       disabled={quickStartingForUserId === user.userId}
                     >
                       {quickStartingForUserId === user.userId ? (

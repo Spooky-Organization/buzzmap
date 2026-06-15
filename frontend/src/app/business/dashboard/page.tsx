@@ -7,6 +7,7 @@ import {
   ClipboardList,
   Eye,
   LayoutDashboard,
+  Megaphone,
   MessageSquareHeart,
   PackageSearch,
   Star,
@@ -33,7 +34,7 @@ interface BusinessDashboardData {
   recentPovs: Array<{
     id: string;
     caption: string | null;
-    starRating: number;
+    starRating: number | null;
     createdAt: string;
   }>;
 }
@@ -163,7 +164,11 @@ export default function BusinessDashboardPage() {
                       {new Date(pov.createdAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <Badge variant="outline">{pov.starRating}/5</Badge>
+                  {pov.starRating !== null ? (
+                    <Badge variant="outline">{pov.starRating}/5</Badge>
+                  ) : (
+                    <Badge variant="outline">Experience</Badge>
+                  )}
                 </div>
               </div>
             ))
@@ -182,6 +187,12 @@ export default function BusinessDashboardPage() {
                 icon={Store}
                 title="Product Shelf"
                 description="Update storefront inventory, pricing, and presentation."
+              />
+              <QuickLinkCard
+                href={appRoutes.business.postsCreate}
+                icon={Megaphone}
+                title="Create Post"
+                description="Publish business updates that appear on the public profile."
               />
               <QuickLinkCard
                 href={appRoutes.business.orders}

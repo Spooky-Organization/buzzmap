@@ -7,9 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 export function DashboardHero({
   title,
-  description,
-  icon: Icon,
-  children,
 }: {
   eyebrow: string;
   title: string;
@@ -18,24 +15,21 @@ export function DashboardHero({
   children?: ReactNode;
 }) {
   return (
-    <Card className="overflow-hidden border-primary/15 bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.16),transparent_30%),linear-gradient(180deg,rgba(15,37,64,0.06),rgba(15,37,64,0))] shadow-[0_24px_80px_-42px_rgba(15,37,64,0.58)]">
-      <CardContent className="grid gap-5 p-6 lg:grid-cols-[1.25fr_0.95fr] lg:p-8">
-        <div className="space-y-4">
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-                <Icon className="size-6" />
-              </div>
-              <h2 className="text-3xl font-semibold tracking-tight text-primary">{title}</h2>
-            </div>
-            {description ? (
-              <p className="max-w-3xl text-sm leading-7 text-muted-foreground">{description}</p>
-            ) : null}
-          </div>
-        </div>
-        {children ? <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">{children}</div> : null}
-      </CardContent>
-    </Card>
+    <header className="min-w-0 overflow-hidden pb-1">
+      <div className="flex min-w-0 items-center gap-4">
+        <span
+          aria-hidden="true"
+          className="h-10 w-1 shrink-0 rounded-full bg-[linear-gradient(180deg,hsl(var(--primary)),rgb(245,158,11))] shadow-[0_12px_28px_-16px_rgba(15,37,64,0.72)]"
+        />
+        <h1 className="min-w-0 max-w-5xl text-2xl font-semibold leading-tight text-primary sm:text-3xl">
+          {title}
+        </h1>
+      </div>
+      <div
+        aria-hidden="true"
+        className="mt-4 h-px w-full bg-[linear-gradient(90deg,rgba(15,37,64,0.22),rgba(245,158,11,0.34),transparent)]"
+      />
+    </header>
   );
 }
 

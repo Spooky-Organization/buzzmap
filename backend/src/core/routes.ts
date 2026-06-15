@@ -13,6 +13,7 @@ import recommendationRoutes from '../modules/recommendations/routes.js';
 import messagingRoutes from '../modules/messaging/routes.js';
 import businessRoutes from '../modules/business/routes.js';
 import adminRoutes from '../modules/admin/routes.js';
+import analyticsRoutes from '../modules/analytics/routes.js';
 
 export function registerRoutes(app: Express): void {
   app.use('/api/v1/auth', authRoutes);
@@ -29,4 +30,5 @@ export function registerRoutes(app: Express): void {
   app.use('/api/v1/messaging', messagingRoutes);
   app.use('/api/v1/business', businessRoutes);
   app.use('/api/v1/admin', adminRoutes);
+  app.use('/api/v1/analytics', analyticsRoutes);
 }

@@ -43,7 +43,7 @@ export async function getTrending(
 
     const { cursor, limit } = feedQuerySchema.parse(req.query);
 
-    const result = await feedService.getTrending(cursor, limit);
+    const result = await feedService.getTrending(req.user.userId, cursor, limit);
 
     res.status(200).json({ status: 'success', data: result });
   } catch (err) {

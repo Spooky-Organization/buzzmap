@@ -24,9 +24,22 @@ export async function create(
     // Body fields come as strings from multipart/form-data — coerce them
     const rawBody = {
       ...req.body,
-      starRating: Number(req.body.starRating),
+      businessId:
+        typeof req.body.businessId === 'string' && req.body.businessId.trim()
+          ? req.body.businessId
+          : undefined,
+      starRating:
+        req.body.starRating !== undefined && req.body.starRating !== ''
+          ? Number(req.body.starRating)
+          : undefined,
       recommends:
-        req.body.recommends === 'true' || req.body.recommends === true,
+        req.body.recommends !== undefined && req.body.recommends !== ''
+          ? req.body.recommends === 'true' || req.body.recommends === true
+          : undefined,
+      visibility:
+        typeof req.body.visibility === 'string' && req.body.visibility.trim()
+          ? req.body.visibility
+          : undefined,
     };
 
     const data = createPOVSchema.parse(rawBody);
@@ -95,7 +108,12 @@ export async function getMyPOVs(
   try {
     assertAuthenticated(req);
     const { page, limit } = paginationSchema.parse(req.query);
-    const result = await povService.getPOVsByUser(req.user.userId, page, limit);
+    const result = await povService.getPOVsByUser(
+      req.user.userId,
+      page,
+      limit,
+      req.user.userId
+    );
     res.status(200).json({ status: 'success', data: result });
   } catch (err) {
     next(err);
@@ -111,7 +129,7 @@ export async function getByUser(
     assertAuthenticated(req);
     const { userId } = req.params as { userId: string };
     const { page, limit } = paginationSchema.parse(req.query);
-    const result = await povService.getPOVsByUser(userId, page, limit);
+    const result = await povService.getPOVsByUser(userId, page, limit, req.user.userId);
     res.status(200).json({ status: 'success', data: result });
   } catch (err) {
     next(err);
@@ -173,7 +191,7 @@ export async function getComments(
     assertAuthenticated(req);
     const { id } = req.params as { id: string };
     const { page, limit } = paginationSchema.parse(req.query);
-    const result = await povService.getComments(id, page, limit);
+    const result = await povService.getComments(id, page, limit, req.user.userId);
     res.status(200).json({ status: 'success', data: result });
   } catch (err) {
     next(err);

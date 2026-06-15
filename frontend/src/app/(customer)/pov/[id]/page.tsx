@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { use, useState } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Heart, MessageCircle, Send, Star } from 'lucide-react';
 import { toast } from 'sonner';
@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
+import { trackAnalyticsEvent } from '@/lib/analytics';
 import { apiRoutes, appRoutes } from '@/lib/routes';
 import { cn } from '@/lib/utils';
 
@@ -21,8 +22,9 @@ interface POVDetail {
   id: string;
   media: POVMediaItem[];
   caption: string | null;
-  starRating: number;
-  recommends: boolean;
+  starRating: number | null;
+  recommends: boolean | null;
+  visibility: 'PUBLIC' | 'FOLLOWERS';
   likesCount: number;
   commentsCount: number;
   isLiked?: boolean;
@@ -109,6 +111,7 @@ export default function POVDetailPage({ params }: { params: Promise<{ id: string
   const { id } = use(params);
   const queryClient = useQueryClient();
   const [commentDraft, setCommentDraft] = useState('');
+  const trackedPovIdRef = useRef<string | null>(null);
 
   const {
     data: pov,
@@ -174,6 +177,18 @@ export default function POVDetailPage({ params }: { params: Promise<{ id: string
       toast.error('Failed to add comment');
     },
   });
+
+  useEffect(() => {
+    if (!pov?.id || trackedPovIdRef.current === pov.id) return;
+
+    trackedPovIdRef.current = pov.id;
+    void trackAnalyticsEvent({
+      eventType: 'POV_VIEWED',
+      povId: pov.id,
+      businessId: pov.business?.id,
+      metadata: { source: 'pov_detail' },
+    });
+  }, [pov?.business?.id, pov?.id]);
 
   if (isPOVLoading) {
     return <POVDetailSkeleton />;
@@ -243,17 +258,24 @@ export default function POVDetailPage({ params }: { params: Promise<{ id: string
                   {pov.business.businessName}
                 </Button>
               )}
-              <Badge
-                variant={pov.recommends ? 'default' : 'outline'}
-                className={pov.recommends ? 'bg-green-600 text-white' : ''}
-              >
-                {pov.recommends ? 'Recommends' : 'Not recommended'}
-              </Badge>
+              {pov.recommends !== null ? (
+                <Badge
+                  variant={pov.recommends ? 'default' : 'outline'}
+                  className={pov.recommends ? 'bg-green-600 text-white' : ''}
+                >
+                  {pov.recommends ? 'Recommends' : 'Not recommended'}
+                </Badge>
+              ) : (
+                <Badge variant="outline">Experience</Badge>
+              )}
+              {pov.visibility === 'FOLLOWERS' ? (
+                <Badge variant="outline">Followers</Badge>
+              ) : null}
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-4">
-            <StarRating rating={pov.starRating} />
+            {pov.starRating !== null ? <StarRating rating={pov.starRating} /> : null}
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
                 <Heart className={cn('size-4', pov.isLiked ? 'fill-red-500 text-red-500' : '')} />

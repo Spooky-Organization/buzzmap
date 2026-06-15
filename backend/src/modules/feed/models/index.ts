@@ -20,16 +20,17 @@ export interface FeedMediaItem {
 export interface FeedPOV {
   id: string;
   authorId: string;
-  businessId: string;
+  businessId: string | null;
   media: FeedMediaItem[];
   caption: string | null;
-  starRating: number;
-  recommends: boolean;
+  starRating: number | null;
+  recommends: boolean | null;
+  visibility: 'PUBLIC' | 'FOLLOWERS';
   likesCount: number;
   commentsCount: number;
   createdAt: Date;
   author: FeedAuthor;
-  business: FeedBusiness;
+  business: FeedBusiness | null;
 }
 
 export interface PaginatedFeedResult {

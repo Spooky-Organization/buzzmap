@@ -53,10 +53,11 @@ export async function searchBusinesses(
   ]);
 
   const data: BusinessSearchResult[] = businesses.map((b) => {
-    const reviewCount = b.povs.length;
+    const ratedPovs = b.povs.filter((p) => p.starRating !== null);
+    const reviewCount = ratedPovs.length;
     const avgRating =
       reviewCount > 0
-        ? b.povs.reduce((sum, p) => sum + p.starRating, 0) / reviewCount
+        ? ratedPovs.reduce((sum, p) => sum + (p.starRating ?? 0), 0) / reviewCount
         : null;
 
     return {
