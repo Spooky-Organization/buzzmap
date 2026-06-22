@@ -35,8 +35,26 @@ function getUserPublicUrl(userId: string): string {
   return new URL(`/user/${userId}`, config.frontendUrl).toString();
 }
 
-async function generateUserQrCode(userId: string): Promise<string> {
-  return QRCode.toDataURL(getUserPublicUrl(userId), {
+function getBusinessReviewUrl(businessProfileId: string): string {
+  return new URL(
+    `/pov/create?businessId=${encodeURIComponent(businessProfileId)}`,
+    config.frontendUrl
+  ).toString();
+}
+
+/**
+ * Build the profile QR code. For business owners the QR points customers
+ * straight to the review (POV create) page pre-attached to the business; for
+ * everyone else it falls back to the public profile page.
+ */
+async function generateUserQrCode(
+  userId: string,
+  businessProfileId?: string | null
+): Promise<string> {
+  const target = businessProfileId
+    ? getBusinessReviewUrl(businessProfileId)
+    : getUserPublicUrl(userId);
+  return QRCode.toDataURL(target, {
     errorCorrectionLevel: 'M',
     margin: 1,
     width: 320,
@@ -77,7 +95,7 @@ export async function getProfile(userId: string): Promise<UserProfileResponse> {
     throw new AppError(404, 'User not found');
   }
 
-  const profileQrCode = await generateUserQrCode(user.id);
+  const profileQrCode = await generateUserQrCode(user.id, user.businessProfile?.id);
 
   return {
     id: user.id,
@@ -143,7 +161,7 @@ export async function getPublicProfile(
     throw new AppError(404, 'User not found');
   }
 
-  const profileQrCode = await generateUserQrCode(user.id);
+  const profileQrCode = await generateUserQrCode(user.id, user.businessProfile?.id);
 
   return {
     id: user.id,
@@ -220,7 +238,7 @@ export async function updateProfile(
     interests: user.interests,
     location: user.location,
     phone: user.phone,
-    profileQrCode: await generateUserQrCode(user.id),
+    profileQrCode: await generateUserQrCode(user.id, user.businessProfile?.id),
     createdAt: user.createdAt,
     businessProfile: user.businessProfile,
     _count: {
@@ -271,7 +289,7 @@ export async function updateInterests(
     interests: user.interests,
     location: user.location,
     phone: user.phone,
-    profileQrCode: await generateUserQrCode(user.id),
+    profileQrCode: await generateUserQrCode(user.id, user.businessProfile?.id),
     createdAt: user.createdAt,
     businessProfile: user.businessProfile,
     _count: {
@@ -496,7 +514,7 @@ export async function detectFriends(
       role: following.role,
       interests: following.interests,
       location: following.location,
-      profileQrCode: await generateUserQrCode(following.id),
+      profileQrCode: await generateUserQrCode(following.id, following.businessProfile?.id),
       createdAt: following.createdAt,
       isFollowing: true,
       businessProfile: following.businessProfile,
