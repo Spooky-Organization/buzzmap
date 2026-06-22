@@ -46,9 +46,11 @@ services:
       dockerfile: Dockerfile.dev
     ports:
       - "${BACKEND_BIND_HOST}:${BACKEND_PORT}:${BACKEND_PORT}"
+    command: ["npm", "run", "dev"]
     volumes:
       - ./backend/src:/app/src
       - ./backend/prisma:/app/prisma
+      - ./backend/package.json:/app/package.json
       - backend_node_modules:/app/node_modules
     depends_on:
       postgres:

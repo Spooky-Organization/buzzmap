@@ -21,4 +21,7 @@ COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 ENTRYPOINT ["entrypoint.sh"]
-CMD ["npx", "tsx", "watch", "src/index.ts"]
+# Polling-based watcher (nodemon --legacy-watch): the dev bind mount does not
+# propagate inotify events, so tsx's native watcher never sees edits. Polling
+# via nodemon is what makes hot reload work in this container.
+CMD ["npm", "run", "dev"]
