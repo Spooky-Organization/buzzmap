@@ -5,7 +5,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import {
   ClipboardList,
-  Eye,
   LayoutDashboard,
   Megaphone,
   MessageSquareHeart,
@@ -208,27 +207,6 @@ export default function BusinessDashboardPage() {
               />
             </div>
           </DashboardPanel>
-
-          <DashboardPanel
-            title="Business Readiness"
-            description="Operational cues that help turn the business profile into a stronger public directory page."
-            icon={Eye}
-          >
-            <div className="grid gap-3">
-              <ReadinessItem
-                label="Profile curation"
-                description="Keep photos, coordinates, description, and contact details complete."
-              />
-              <ReadinessItem
-                label="Catalog quality"
-                description="Maintain accurate pricing and stock so the public shelf stays credible."
-              />
-              <ReadinessItem
-                label="Review velocity"
-                description="Encourage authentic customer POVs instead of relying on static listings alone."
-              />
-            </div>
-          </DashboardPanel>
         </div>
       </div>
     </div>
@@ -264,17 +242,3 @@ function QuickLinkCard({
   );
 }
 
-function ReadinessItem({
-  label,
-  description,
-}: {
-  label: string;
-  description: string;
-}) {
-  return (
-    <div className="rounded-3xl border border-border/70 bg-background/90 px-4 py-4">
-      <p className="text-sm font-semibold text-foreground">{label}</p>
-      <p className="mt-1 text-xs leading-6 text-muted-foreground">{description}</p>
-    </div>
-  );
-}
