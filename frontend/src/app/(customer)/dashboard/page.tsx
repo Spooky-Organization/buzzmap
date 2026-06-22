@@ -13,6 +13,7 @@ import {
   Plus,
   Sparkles,
   Star,
+  UserCheck,
   Users,
   Video,
 } from 'lucide-react';
@@ -24,6 +25,12 @@ import {
   DashboardHero,
   DashboardPanel,
 } from '@/components/dashboard/dashboard-surfaces';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { api } from '@/lib/api';
 import { apiRoutes, appRoutes } from '@/lib/routes';
 
@@ -178,20 +185,27 @@ export default function CustomerDashboardPage() {
             ) : null}
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
-              <p className="text-2xl font-semibold text-primary">{counts?.povs ?? 0}</p>
-              <p className="mt-1 text-sm text-muted-foreground">POV experiences</p>
+          <TooltipProvider delay={150}>
+            <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-3">
+              {[
+                { label: 'POV experiences', value: counts?.povs ?? 0, icon: Star },
+                { label: 'Followers', value: counts?.followers ?? 0, icon: Users },
+                { label: 'Following', value: counts?.following ?? 0, icon: UserCheck },
+              ].map((stat) => {
+                const Icon = stat.icon;
+                return (
+                  <Tooltip key={stat.label}>
+                    <TooltipTrigger className="flex flex-col items-center gap-1 rounded-2xl border border-border/70 bg-background/80 px-2 py-3 text-center outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                      <Icon className="size-4 text-muted-foreground" aria-hidden />
+                      <span className="text-2xl font-semibold text-primary">{stat.value}</span>
+                      <span className="sr-only">{stat.label}</span>
+                    </TooltipTrigger>
+                    <TooltipContent>{stat.label}</TooltipContent>
+                  </Tooltip>
+                );
+              })}
             </div>
-            <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
-              <p className="text-2xl font-semibold text-primary">{counts?.followers ?? 0}</p>
-              <p className="mt-1 text-sm text-muted-foreground">Followers</p>
-            </div>
-            <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
-              <p className="text-2xl font-semibold text-primary">{counts?.following ?? 0}</p>
-              <p className="mt-1 text-sm text-muted-foreground">Following</p>
-            </div>
-          </div>
+          </TooltipProvider>
 
           <div className="mt-5 flex flex-wrap gap-2">
             {visibleInterests.length > 0 ? (
