@@ -10,7 +10,7 @@ import { logger } from './shared/utils/logger.js';
 import { initPrisma } from './shared/prisma/index.js';
 import { initRedis } from './shared/redis/index.js';
 import { setIO } from './shared/socket/index.js';
-import { initStorage } from './shared/storage/index.js';
+import { initStorage, ensureBucket } from './shared/storage/index.js';
 import { setupNotificationNamespace } from './modules/notifications/socket.js';
 import { setupMessagingNamespace } from './modules/messaging/socket.js';
 
@@ -20,6 +20,7 @@ async function bootstrap() {
   initRedis();
   setIO(io);
   initStorage();
+  await ensureBucket();
 
   // Register Socket.IO namespaces
   setupNotificationNamespace(io.of('/notifications'));
