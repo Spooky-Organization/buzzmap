@@ -16,9 +16,11 @@ import {
   PencilLine,
   QrCode,
   Save,
+  Star,
   Store,
   UserCheck,
   UserPlus,
+  Users,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -29,6 +31,12 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { api } from '@/lib/api';
 import { apiRoutes, appRoutes } from '@/lib/routes';
 import { DashboardPanel } from '@/components/dashboard/dashboard-surfaces';
@@ -377,101 +385,107 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
   return (
     <div className="flex flex-col gap-6">
       <section className="rounded-3xl border border-border/70 bg-card/85 p-5 shadow-[0_22px_70px_-48px_rgba(15,37,64,0.68)] md:p-6">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
-            <Avatar size="lg">
-              {profile.avatar ? <AvatarImage src={profile.avatar} alt={profile.name} /> : null}
-              <AvatarFallback>{initials}</AvatarFallback>
-            </Avatar>
+        {/* Identity row: avatar + horizontal stats (Instagram/TikTok style) */}
+        <div className="flex items-center gap-4 sm:gap-6">
+          <Avatar size="lg" className="shrink-0">
+            {profile.avatar ? <AvatarImage src={profile.avatar} alt={profile.name} /> : null}
+            <AvatarFallback>{initials}</AvatarFallback>
+          </Avatar>
 
-            <div className="min-w-0 space-y-3">
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="min-w-0 text-3xl font-semibold tracking-tight text-primary">
-                    {profile.name}
-                  </h1>
-                  <Badge variant="secondary">{profile.role.replace('_', ' ')}</Badge>
-                </div>
-                <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                  <span className="inline-flex items-center gap-1.5">
-                    <MapPin className="size-4" />
-                    {profile.location ?? 'Location not set'}
-                  </span>
-                  {profile.businessProfile ? (
-                    <Link
-                      href={appRoutes.business.byId(profile.businessProfile.id)}
-                      className="inline-flex items-center gap-1.5 font-medium text-primary hover:underline"
-                    >
-                      <Store className="size-4" />
-                      {profile.businessProfile.businessName}
-                    </Link>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {publicInterests.length > 0 ? (
-                  publicInterests.map((interest) => (
-                    <Badge key={interest} variant="outline">
-                      {interest}
-                    </Badge>
-                  ))
-                ) : (
-                  <Badge variant="outline">No interests listed yet</Badge>
-                )}
-              </div>
+          <TooltipProvider delay={150}>
+            <div className="grid flex-1 grid-cols-4 gap-1 sm:gap-3">
+              {[
+                { label: 'POVs', value: profile._count?.povs ?? 0, icon: Star },
+                { label: 'Posts', value: postsData?.total ?? posts.length, icon: Newspaper },
+                { label: 'Followers', value: profile._count?.followers ?? 0, icon: Users },
+                { label: 'Following', value: profile._count?.following ?? 0, icon: UserCheck },
+              ].map((stat) => {
+                const Icon = stat.icon;
+                return (
+                  <Tooltip key={stat.label}>
+                    <TooltipTrigger className="flex flex-col items-center gap-1 rounded-xl py-1 text-center outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                      <Icon className="size-4 text-muted-foreground" aria-hidden />
+                      <span className="text-lg font-semibold text-foreground sm:text-2xl">
+                        {stat.value}
+                      </span>
+                      <span className="sr-only">{stat.label}</span>
+                    </TooltipTrigger>
+                    <TooltipContent>{stat.label}</TooltipContent>
+                  </Tooltip>
+                );
+              })}
             </div>
-          </div>
-
-          {!isOwnProfile ? (
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={profile.isFollowing ? 'outline' : 'default'}
-                disabled={toggleFollow.isPending}
-                onClick={() => toggleFollow.mutate()}
-              >
-                {profile.isFollowing ? (
-                  <>
-                    <UserCheck data-icon="inline-start" />
-                    Unfollow
-                  </>
-                ) : (
-                  <>
-                    <UserPlus data-icon="inline-start" />
-                    Follow
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                nativeButton={false}
-                render={<Link href={profileMessageHref} />}
-              >
-                <MessageCircle data-icon="inline-start" />
-                Message
-              </Button>
-            </div>
-          ) : null}
+          </TooltipProvider>
         </div>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-border/70 bg-background/80 px-4 py-3">
-            <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">POVs</p>
-            <p className="mt-1 text-2xl font-semibold text-foreground">{profile._count?.povs ?? 0}</p>
+        {/* Name, role, location, business, interests */}
+        <div className="mt-4 space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="min-w-0 text-2xl font-semibold tracking-tight text-primary sm:text-3xl">
+              {profile.name}
+            </h1>
+            <Badge variant="secondary">{profile.role.replace('_', ' ')}</Badge>
           </div>
-          <div className="rounded-2xl border border-border/70 bg-background/80 px-4 py-3">
-            <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Posts</p>
-            <p className="mt-1 text-2xl font-semibold text-foreground">{postsData?.total ?? posts.length}</p>
+          <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <MapPin className="size-4" />
+              {profile.location ?? 'Location not set'}
+            </span>
+            {profile.businessProfile ? (
+              <Link
+                href={appRoutes.business.byId(profile.businessProfile.id)}
+                className="inline-flex items-center gap-1.5 font-medium text-primary hover:underline"
+              >
+                <Store className="size-4" />
+                {profile.businessProfile.businessName}
+              </Link>
+            ) : null}
           </div>
-          <div className="rounded-2xl border border-border/70 bg-background/80 px-4 py-3">
-            <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Followers</p>
-            <p className="mt-1 text-2xl font-semibold text-foreground">{profile._count?.followers ?? 0}</p>
-          </div>
-          <div className="rounded-2xl border border-border/70 bg-background/80 px-4 py-3">
-            <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Following</p>
-            <p className="mt-1 text-2xl font-semibold text-foreground">{profile._count?.following ?? 0}</p>
+          <div className="flex flex-wrap gap-2">
+            {publicInterests.length > 0 ? (
+              publicInterests.map((interest) => (
+                <Badge key={interest} variant="outline">
+                  {interest}
+                </Badge>
+              ))
+            ) : (
+              <Badge variant="outline">No interests listed yet</Badge>
+            )}
           </div>
         </div>
+
+        {/* Actions — full-width on mobile, inline on larger screens */}
+        {!isOwnProfile ? (
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button
+              className="flex-1 sm:flex-none"
+              variant={profile.isFollowing ? 'outline' : 'default'}
+              disabled={toggleFollow.isPending}
+              onClick={() => toggleFollow.mutate()}
+            >
+              {profile.isFollowing ? (
+                <>
+                  <UserCheck data-icon="inline-start" />
+                  Unfollow
+                </>
+              ) : (
+                <>
+                  <UserPlus data-icon="inline-start" />
+                  Follow
+                </>
+              )}
+            </Button>
+            <Button
+              className="flex-1 sm:flex-none"
+              variant="outline"
+              nativeButton={false}
+              render={<Link href={profileMessageHref} />}
+            >
+              <MessageCircle data-icon="inline-start" />
+              Message
+            </Button>
+          </div>
+        ) : null}
       </section>
 
       <Tabs defaultValue="povs" className="w-full">
