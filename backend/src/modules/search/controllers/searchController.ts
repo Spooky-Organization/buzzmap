@@ -28,7 +28,7 @@ export async function searchAll(
     const [businesses, products, users] = await Promise.all([
       searchService.searchBusinesses(keyword, category, location, 1, 10),
       searchService.searchProducts(keyword, category, undefined, undefined, 1, 10),
-      searchService.searchUsers(keyword, 1, 10),
+      searchService.searchUsers(keyword, 1, 10, req.user.role === 'ADMIN'),
     ]);
 
     res.status(200).json({
@@ -111,7 +111,12 @@ export async function searchUsers(
   try {
     assertAuthenticated(req);
     const { keyword, page, limit } = searchUsersSchema.parse(req.query);
-    const result = await searchService.searchUsers(keyword, page, limit);
+    const result = await searchService.searchUsers(
+      keyword,
+      page,
+      limit,
+      req.user.role === 'ADMIN'
+    );
     res.status(200).json({ status: 'success', data: result });
   } catch (err) {
     next(err);

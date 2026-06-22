@@ -201,11 +201,14 @@ export async function getCategories(): Promise<string[]> {
 export async function searchUsers(
   keyword?: string,
   page: number = 1,
-  limit: number = 20
+  limit: number = 20,
+  includeAdmins: boolean = false
 ): Promise<PaginatedResult<UserSearchResult>> {
   const prisma = getPrisma();
 
   const where: Prisma.UserWhereInput = {
+    // Admin accounts are hidden from people discovery for every non-admin role.
+    ...(!includeAdmins && { role: { not: 'ADMIN' } }),
     ...(keyword && {
       name: { contains: keyword, mode: 'insensitive' },
     }),
