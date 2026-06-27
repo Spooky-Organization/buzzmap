@@ -377,7 +377,22 @@ export default function BusinessProfilePage({ params }: { params: Promise<{ id: 
                 <div className="rounded-2xl border bg-background p-4">
                   <div className="flex items-center justify-between gap-3">
                     {latestPov.starRating !== null ? (
-                      <Badge variant="outline">{latestPov.starRating}/5 stars</Badge>
+                      <div
+                        className="flex items-center gap-0.5"
+                        role="img"
+                        aria-label={`${latestPov.starRating} out of 5 stars`}
+                      >
+                        {Array.from({ length: 5 }, (_, index) => (
+                          <Star
+                            key={index}
+                            className={
+                              index < latestPov.starRating!
+                                ? 'size-4 fill-accent text-accent'
+                                : 'size-4 text-muted-foreground/30'
+                            }
+                          />
+                        ))}
+                      </div>
                     ) : (
                       <Badge variant="outline">Experience</Badge>
                     )}
