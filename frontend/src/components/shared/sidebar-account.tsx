@@ -89,10 +89,11 @@ export function SidebarAccount({ profileHref }: SidebarAccountProps) {
         </SidebarMenuItem>
       </SidebarMenu>
 
+      {/* Account dropdown lives in the top navbar on mobile (NavbarAccount); shown here on desktop only. */}
       <DropdownMenu>
         <DropdownMenuTrigger
           aria-label="Open account menu"
-          className="w-full rounded-md outline-none ring-ring focus-visible:ring-2 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:w-8"
+          className="hidden w-full rounded-md outline-none ring-ring focus-visible:ring-2 md:block group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:w-8"
         >
           <div className="flex h-8 w-full items-center gap-2 overflow-hidden rounded-md px-2 text-left text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2">
             <Avatar size="sm">
