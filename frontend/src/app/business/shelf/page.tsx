@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
-import { Plus, Edit, Trash2, MoreVertical, Store, PackagePlus, Save, Boxes, Tag, ClipboardList, MessageSquare } from 'lucide-react';
+import { Plus, Edit, Trash2, MoreVertical, Store, PackagePlus, Save, Boxes, Tag, ClipboardList, MessageSquare, ImagePlus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,7 +30,7 @@ import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
-import { api } from '@/lib/api';
+import { api, getApiErrorMessage } from '@/lib/api';
 import { apiRoutes, appRoutes } from '@/lib/routes';
 import {
   DashboardHero,
@@ -47,6 +47,8 @@ interface Product {
   stock: number;
   category: string;
   isAvailable: boolean;
+  images?: string[]; // browser-loadable URLs
+  imageKeys?: string[]; // raw stored references (parallel to images)
 }
 
 interface ProductForm {
@@ -57,7 +59,24 @@ interface ProductForm {
   category: string;
 }
 
+// An existing image kept on edit: its stable key + a displayable URL.
+interface KeptImage {
+  key: string;
+  url: string;
+}
+
+// A newly picked image awaiting upload.
+interface NewImage {
+  id: string;
+  file: File;
+  url: string; // object URL for preview
+}
+
 const emptyForm: ProductForm = { name: '', description: '', price: '', stock: '', category: '' };
+
+// Mirror the backend gallery limits (shared/storage/upload.ts + productService).
+const MAX_PRODUCT_IMAGES = 10;
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
 
 export default function ShelfPage() {
   const { data: session } = useSession();
@@ -66,6 +85,54 @@ export default function ShelfPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [form, setForm] = useState<ProductForm>(emptyForm);
+  const [keptImages, setKeptImages] = useState<KeptImage[]>([]);
+  const [newImages, setNewImages] = useState<NewImage[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Revoke any outstanding object URLs when the picked set changes / unmounts.
+  useEffect(() => {
+    return () => {
+      newImages.forEach((img) => URL.revokeObjectURL(img.url));
+    };
+  }, [newImages]);
+
+  const imageCount = keptImages.length + newImages.length;
+
+  function handleImageFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (fileInputRef.current) fileInputRef.current.value = ''; // allow re-pick
+    const accepted: NewImage[] = [];
+    let remaining = MAX_PRODUCT_IMAGES - imageCount;
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) {
+        toast.error(`"${file.name}" is not an image.`);
+        continue;
+      }
+      if (file.size > MAX_IMAGE_BYTES) {
+        toast.error(`"${file.name}" exceeds the 10 MB image limit.`);
+        continue;
+      }
+      if (remaining <= 0) {
+        toast.error(`A product can have at most ${MAX_PRODUCT_IMAGES} images.`);
+        break;
+      }
+      accepted.push({ id: crypto.randomUUID(), file, url: URL.createObjectURL(file) });
+      remaining -= 1;
+    }
+    if (accepted.length > 0) setNewImages((prev) => [...prev, ...accepted]);
+  }
+
+  function removeNewImage(id: string) {
+    setNewImages((prev) => {
+      const target = prev.find((img) => img.id === id);
+      if (target) URL.revokeObjectURL(target.url);
+      return prev.filter((img) => img.id !== id);
+    });
+  }
+
+  function removeKeptImage(key: string) {
+    setKeptImages((prev) => prev.filter((img) => img.key !== key));
+  }
 
   const { data, isLoading } = useQuery<{ products: Product[] }>({
     queryKey: ['business-products'],
@@ -101,22 +168,35 @@ export default function ShelfPage() {
   const saveProduct = useMutation({
     mutationFn: async () => {
       const payload = buildProductPayload();
+
+      // Multipart so image files ride alongside the scalar fields. Numeric
+      // fields go as strings; the backend coerces them.
+      const formData = new FormData();
+      formData.append('name', payload.name);
+      formData.append('description', payload.description);
+      formData.append('category', payload.category);
+      formData.append('price', String(payload.price));
+      formData.append('stock', String(payload.stock));
+      for (const img of newImages) {
+        formData.append('images', img.file);
+      }
+
+      const config = { headers: { 'Content-Type': 'multipart/form-data' } };
       if (editingProduct) {
-        await api.patch(apiRoutes.products.byId(editingProduct.id), payload);
+        // Tell the backend which existing images to keep (the rest are purged).
+        formData.append('existingImages', JSON.stringify(keptImages.map((i) => i.key)));
+        await api.patch(apiRoutes.products.byId(editingProduct.id), formData, config);
       } else {
-        await api.post(apiRoutes.products.root, payload);
+        await api.post(apiRoutes.products.root, formData, config);
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['business-products'] });
       setDialogOpen(false);
-      setForm(emptyForm);
-      setEditingProduct(null);
       toast.success(editingProduct ? 'Product updated' : 'Product added');
     },
     onError: (error) => {
-      const message = error instanceof Error ? error.message : 'Failed to save product';
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, 'Failed to save product'));
     },
   });
 
@@ -139,7 +219,14 @@ export default function ShelfPage() {
     onError: () => toast.error('Failed to update availability'),
   });
 
+  const resetImageState = () => {
+    newImages.forEach((img) => URL.revokeObjectURL(img.url));
+    setNewImages([]);
+    setKeptImages([]);
+  };
+
   const openEdit = (product: Product) => {
+    resetImageState();
     setEditingProduct(product);
     setForm({
       name: product.name,
@@ -148,10 +235,15 @@ export default function ShelfPage() {
       stock: product.stock.toString(),
       category: product.category,
     });
+    // Zip the parallel images/imageKeys arrays into editable kept-image rows.
+    const keys = product.imageKeys ?? [];
+    const urls = product.images ?? [];
+    setKeptImages(keys.map((key, i) => ({ key, url: urls[i] ?? '' })));
     setDialogOpen(true);
   };
 
   const openAdd = () => {
+    resetImageState();
     setEditingProduct(null);
     setForm(emptyForm);
     setDialogOpen(true);
@@ -234,7 +326,13 @@ export default function ShelfPage() {
           <h1 className="text-2xl font-bold text-primary">Product Shelf</h1>
           <p className="text-muted-foreground">Manage your products</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog
+          open={dialogOpen}
+          onOpenChange={(open) => {
+            setDialogOpen(open);
+            if (!open) resetImageState();
+          }}
+        >
           <DialogTrigger render={<Button onClick={openAdd} />}>
             <Plus data-icon="inline-start" />
             Add Product
@@ -291,6 +389,63 @@ export default function ShelfPage() {
                   />
                 </Field>
               </div>
+              <Field>
+                <FieldLabel>Images</FieldLabel>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="sr-only"
+                  onChange={handleImageFiles}
+                />
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  {keptImages.map((img) => (
+                    <div
+                      key={img.key}
+                      className="group relative aspect-square overflow-hidden rounded-md border bg-muted"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={img.url} alt="Product" className="size-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeKeptImage(img.key)}
+                        aria-label="Remove image"
+                        className="absolute right-1 top-1 rounded-full bg-black/60 p-0.5 text-white transition-colors hover:bg-black/80"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  {newImages.map((img) => (
+                    <div
+                      key={img.id}
+                      className="group relative aspect-square overflow-hidden rounded-md border bg-muted"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={img.url} alt="New product" className="size-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeNewImage(img.id)}
+                        aria-label="Remove image"
+                        className="absolute right-1 top-1 rounded-full bg-black/60 p-0.5 text-white transition-colors hover:bg-black/80"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  {imageCount < MAX_PRODUCT_IMAGES ? (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex aspect-square flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed border-border text-muted-foreground transition-colors hover:border-ring hover:bg-muted/30"
+                    >
+                      <ImagePlus className="size-5" />
+                      <span className="text-[10px] font-medium">Add</span>
+                    </button>
+                  ) : null}
+                </div>
+              </Field>
             </FieldGroup>
             <DialogFooter>
               <Button
@@ -394,6 +549,20 @@ export default function ShelfPage() {
                 </div>
               </CardHeader>
               <CardContent className="flex flex-col gap-2">
+                <div className="aspect-video overflow-hidden rounded-md border bg-muted">
+                  {product.images?.[0] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={product.images[0]}
+                      alt={product.name}
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex size-full items-center justify-center text-xs text-muted-foreground">
+                      No image
+                    </div>
+                  )}
+                </div>
                 <div className="flex items-center justify-between">
                   <span className="text-lg font-bold text-primary">
                     {product.currency} {product.price.toFixed(2)}
