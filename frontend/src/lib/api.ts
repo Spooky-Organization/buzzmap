@@ -43,4 +43,29 @@ api.interceptors.response.use(
   }
 );
 
+/**
+ * Extract a user-safe message from a failed API call. Server-provided messages
+ * are surfaced only for client errors (4xx) — these are operational and
+ * human-readable (validation, file type/size, not-found). Server errors (5xx),
+ * network failures, and anything unexpected fall back to the caller's generic
+ * message so internal details are never shown to the user.
+ */
+export function getApiErrorMessage(error: unknown, fallback: string): string {
+  if (axios.isAxiosError(error)) {
+    const status = error.response?.status;
+    const data = error.response?.data as
+      | { message?: string; errors?: Array<{ message?: string }> }
+      | undefined;
+    if (status && status >= 400 && status < 500) {
+      // Prefer the first field-level validation message when present.
+      const fieldMessage = data?.errors?.find((e) => e?.message)?.message;
+      if (fieldMessage) return fieldMessage;
+      if (typeof data?.message === 'string' && data.message.trim()) {
+        return data.message;
+      }
+    }
+  }
+  return fallback;
+}
+
 export { api };

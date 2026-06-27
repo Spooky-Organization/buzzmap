@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Camera, Upload, Star, Images, X } from 'lucide-react';
+import { Camera, Upload, Star, Images, X, Send, Globe, Lock, ThumbsUp, ThumbsDown, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Field, FieldGroup, FieldLabel, FieldDescription } from '@/components/ui/field';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Input } from '@/components/ui/input';
-import { api } from '@/lib/api';
+import { api, getApiErrorMessage } from '@/lib/api';
 import { apiRoutes, appRoutes } from '@/lib/routes';
 import { cn } from '@/lib/utils';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -199,8 +199,8 @@ export default function CreatePOVPage() {
 
       toast.success('POV posted successfully!');
       router.push(appRoutes.customer.feed);
-    } catch {
-      toast.error('Failed to post POV. Please try again.');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to post POV. Please try again.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -333,6 +333,7 @@ export default function CreatePOVPage() {
                         setBusinessSearch('');
                       }}
                     >
+                      <Trash2 />
                       Remove
                     </Button>
                   </div>
@@ -431,9 +432,11 @@ export default function CreatePOVPage() {
                       aria-label="Recommend"
                     >
                       <ToggleGroupItem value="true" aria-label="Yes, recommend">
+                        <ThumbsUp />
                         Yes
                       </ToggleGroupItem>
                       <ToggleGroupItem value="false" aria-label="No, do not recommend">
+                        <ThumbsDown />
                         No
                       </ToggleGroupItem>
                     </ToggleGroup>
@@ -459,9 +462,11 @@ export default function CreatePOVPage() {
                   aria-label="POV visibility"
                 >
                   <ToggleGroupItem value="PUBLIC" aria-label="Public POV">
+                    <Globe />
                     Public
                   </ToggleGroupItem>
                   <ToggleGroupItem value="FOLLOWERS" aria-label="Followers-only POV">
+                    <Lock />
                     Followers
                   </ToggleGroupItem>
                 </ToggleGroup>
@@ -483,7 +488,7 @@ export default function CreatePOVPage() {
 
               {/* Submit */}
               <Button type="submit" disabled={isSubmitting} className="w-full">
-                {isSubmitting ? <Spinner /> : null}
+                {isSubmitting ? <Spinner /> : <Send />}
                 {isSubmitting ? 'Posting…' : 'Post POV'}
               </Button>
               </div>
