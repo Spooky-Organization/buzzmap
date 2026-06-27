@@ -1,5 +1,5 @@
 import { getPrisma } from '../../../shared/prisma/index.js';
-import { getSignedUrl, uploadToStorage } from '../../../shared/storage/upload.js';
+import { resolveStorageUrl, uploadToStorage } from '../../../shared/storage/upload.js';
 import { AppError } from '../../../shared/middleware/errorHandler.js';
 import type { CreatePostDTO, PostResponse, PaginatedPostsResult } from '../models/index.js';
 import { sanitizeOptionalText } from '../../../shared/utils/sanitize.js';
@@ -33,9 +33,7 @@ type RawPost = Awaited<ReturnType<typeof getPrisma>>['post'] extends never
 
 async function formatPost(post: RawPost): Promise<PostResponse> {
   const mediaUrls = await Promise.all(
-    post.mediaUrls.map((url) =>
-      /^https?:\/\//i.test(url) ? Promise.resolve(url) : getSignedUrl(url)
-    )
+    post.mediaUrls.map((url) => resolveStorageUrl(url))
   );
 
   return {

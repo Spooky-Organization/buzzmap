@@ -1,6 +1,6 @@
 import { getPrisma } from '../../../shared/prisma/index.js';
 import { logger } from '../../../shared/utils/logger.js';
-import { getSignedUrl } from '../../../shared/storage/upload.js';
+import { resolveStorageUrl } from '../../../shared/storage/upload.js';
 import { Prisma } from '@prisma/client';
 import type {
   BusinessSearchResult,
@@ -146,7 +146,7 @@ export async function searchProducts(
       currency: product.currency,
       category: product.category,
       isAvailable: product.isAvailable,
-      imageUrl: product.images[0] ? await getSignedUrl(product.images[0]) : null,
+      imageUrl: product.images[0] ? await resolveStorageUrl(product.images[0]) : null,
     }))
   );
 

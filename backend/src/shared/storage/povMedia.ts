@@ -1,4 +1,4 @@
-import { getSignedUrl } from './upload.js';
+import { resolveStorageUrl } from './upload.js';
 import { AppError } from '../middleware/errorHandler.js';
 
 /**
@@ -92,16 +92,8 @@ export interface FormattedPOVMedia {
 }
 
 /**
- * Already-absolute URLs (e.g. seed/CDN links) are returned as-is; storage keys
- * are turned into time-limited signed URLs.
- */
-async function resolveUrl(value: string): Promise<string> {
-  if (/^https?:\/\//i.test(value)) return value;
-  return getSignedUrl(value);
-}
-
-/**
- * Resolve stored media rows into ordered, signed-URL media items.
+ * Resolve stored media rows into ordered media items with browser-loadable URLs
+ * (absolute URLs pass through; storage keys are signed). See `resolveStorageUrl`.
  */
 export async function formatMedia(
   media: RawPOVMedia[]
@@ -111,9 +103,9 @@ export async function formatMedia(
   return Promise.all(
     ordered.map(async (m) => ({
       id: m.id,
-      url: await resolveUrl(m.url),
+      url: await resolveStorageUrl(m.url),
       type: m.type === 'VIDEO' ? ('video' as const) : ('image' as const),
-      thumbnailUrl: m.thumbnailUrl ? await resolveUrl(m.thumbnailUrl) : null,
+      thumbnailUrl: m.thumbnailUrl ? await resolveStorageUrl(m.thumbnailUrl) : null,
       position: m.position,
     }))
   );
