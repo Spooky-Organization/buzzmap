@@ -6,7 +6,9 @@ import type { Prisma } from '@prisma/client';
  */
 export class FeedQueryBuilder {
   private where: Prisma.POVWhereInput = {};
-  private orderBy: Prisma.POVOrderByWithRelationInput = { createdAt: 'desc' };
+  private orderBy:
+    | Prisma.POVOrderByWithRelationInput
+    | Prisma.POVOrderByWithRelationInput[] = { createdAt: 'desc' };
   private cursor?: string;
   private take: number = 20;
 
@@ -65,10 +67,12 @@ export class FeedQueryBuilder {
   }
 
   /**
-   * Sort by likesCount descending (for trending feed).
+   * Ordering for the trending feed. Reach surface: freshly posted POVs lead, so
+   * recency is the primary key and likes are only a tiebreak. Ordering purely by
+   * likesCount would bury brand-new (0-like) POVs at the bottom.
    */
   sortByTrending(): this {
-    this.orderBy = { likesCount: 'desc' };
+    this.orderBy = [{ createdAt: 'desc' }, { likesCount: 'desc' }];
     return this;
   }
 

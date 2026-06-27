@@ -28,9 +28,14 @@ function toPaginatedResult(items: FeedPOV[], take: number): PaginatedFeedResult 
 }
 
 /**
- * Returns a personalized feed for the given user.
- * If the user has interests set, filter POVs whose business category is in those interests.
- * Falls back to a chronological feed when no interests are configured.
+ * Returns the feed for the given user, newest-first.
+ *
+ * This is a *reach* surface: every POV the viewer is allowed to see should
+ * appear, so the only gate is visibility (PUBLIC, the viewer's own, or
+ * FOLLOWERS-of-people-they-follow). Interests are intentionally NOT used to
+ * exclude content here — hard-filtering by interest would hide business reviews
+ * (the core trust signal) and even the viewer's own posts. `filterByInterests`
+ * remains on the builder for future use as a ranking boost, not an exclusion.
  */
 export async function getPersonalizedFeed(
   userId: string,
@@ -39,23 +44,12 @@ export async function getPersonalizedFeed(
 ): Promise<PaginatedFeedResult> {
   const prisma = getPrisma();
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { interests: true },
-  });
-
-  const interests = user?.interests ?? [];
   const effectiveLimit = limit ?? 20;
 
-  const builder = new FeedQueryBuilder()
+  const args = new FeedQueryBuilder()
     .filterByVisibleTo(userId)
-    .paginate(cursor, effectiveLimit);
-
-  if (interests.length > 0) {
-    builder.filterByInterests(interests);
-  }
-
-  const args = builder.build();
+    .paginate(cursor, effectiveLimit)
+    .build();
 
   const rows = await prisma.pOV.findMany(args);
   const povs = await toFeedPOVs(rows as unknown as Parameters<typeof toFeedPOVs>[0]);
