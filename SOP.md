@@ -147,7 +147,82 @@ Append to [`CHANGELOG.md`](./CHANGELOG.md) using its existing template. Rules (m
 6. **Changelog** after the batch is coherent (§6).
 7. **Stop at git.** Leave staging/commits to the owner (§1.3).
 
-## 8. End-of-Work Git Operations
+## 8. Production Server & Public Routing
+
+### Access
+The production server is reachable over SSH:
+
+```bash
+ssh spooky-spectre@178.162.219.94
+```
+
+Treat production access as sensitive — do not run destructive or state-changing
+commands without explicit owner approval. `sudo` requires a password (not
+passwordless); editing `/etc/cloudflared/config.yml` and restarting the tunnel
+service need it.
+
+### Topology (how the public site is served)
+The app is deployed via **Coolify** as Docker containers on this server:
+
+| Component | Container port (published) | Notes |
+|---|---|---|
+| Frontend (Next.js) | `localhost:3100` | Coolify-managed |
+| Backend (Express)  | `localhost:4100` | Coolify-managed; `403` at `/` is normal |
+| Postgres / Redis / RustFS | internal | Coolify-managed |
+
+Public traffic reaches these **through a Cloudflare Tunnel**, NOT through the
+server's public IP/ports and NOT through Coolify's Traefik proxy:
+
+- `cloudflared` runs as a host systemd service: `cloudflared.service`
+  (tunnel **`coolify-data-tech`**, ID `0d271a71-12e5-4729-9d72-823cfa3b14d7`).
+- Ingress is defined in **`/etc/cloudflared/config.yml`** (root-owned). Buzzmap
+  rules point the public hostnames straight at the container ports:
+  - `thebuzzmap.com` → `http://localhost:3100`
+  - `api.thebuzzmap.com` → `http://localhost:4100`
+- Cloudflare DNS uses **proxied CNAMEs to the tunnel** (`…cfargotunnel.com`,
+  shown as type "Tunnel → coolify-data-tech" in the dashboard) — **not** A
+  records to the server IP.
+
+Because routing bypasses Traefik, the origin does not need public 80/443 open
+for BuzzMap, and the tunnel terminates nothing app-side (TLS is at Cloudflare's
+edge; `cloudflared` forwards plain HTTP to the local ports).
+
+### Diagnosing "site is down"
+1. **DNS first:** `dig +short thebuzzmap.com` should return Cloudflare edge IPs
+   (`104.21.x` / `172.67.x`). If it resolves, it is **not** a DNS issue.
+2. **Tunnel health:** `systemctl status cloudflared` and
+   `cloudflared tunnel info coolify-data-tech` (expect active connectors).
+3. **Ingress correctness:** confirm the host is in `/etc/cloudflared/config.yml`
+   and resolves: `cloudflared tunnel --config <file> ingress rule https://thebuzzmap.com/`.
+4. **App reachability from host:** `curl -s -o /dev/null -w '%{http_code}\n'
+   http://localhost:3100/` (frontend should be `200`).
+
+### Changing tunnel routing (runbook)
+```bash
+# 1) stage + validate a new ingress config (no sudo)
+cloudflared tunnel --config /home/spooky-spectre/config.yml.new ingress validate
+# 2) install + restart (sudo)
+sudo cp -a /etc/cloudflared/config.yml /etc/cloudflared/config.yml.bak
+sudo cp /home/spooky-spectre/config.yml.new /etc/cloudflared/config.yml
+sudo systemctl restart cloudflared      # brief blip for other tunnel hosts
+# 3) point DNS at the tunnel (no sudo; uses ~/.cloudflared/cert.pem)
+cloudflared tunnel route dns --overwrite-dns coolify-data-tech thebuzzmap.com
+```
+Order matters: update ingress/restart **before** flipping DNS so there is no
+window where DNS points at a tunnel that cannot serve the host.
+
+> **Known pitfall (resolved 2026-06-23):** the site was previously served via
+> proxied **A records → origin :443 → Coolify Traefik**. Traefik load-balances
+> to a container's IP on a Docker network it shares with `coolify-proxy`; the
+> frontend container was dual-homed (`asocgo44…` + a custom `buzzmap-network`)
+> with no `traefik.docker.network` label, so Traefik dialed the frontend's IP on
+> the network the proxy is NOT attached to → connections blackholed and hung
+> (backend happened to resolve to the reachable IP, so `api.` worked). Fix was
+> to move routing to the Cloudflare Tunnel (above), bypassing Traefik. If any
+> host is ever routed back through Traefik, pin it with
+> `traefik.docker.network=<predefined coolify network>`.
+
+## 9. End-of-Work Git Operations
 
 Run git operations only after implementation, verification, and changelog work
 are complete, and only when the owner explicitly asks for end-of-work git
