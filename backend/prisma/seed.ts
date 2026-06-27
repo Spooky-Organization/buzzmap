@@ -11,6 +11,11 @@ import {
 } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcrypt';
+import { initStorage, ensureBucket } from '../src/shared/storage/index.js';
+import {
+  uploadBufferToStorage,
+  storageObjectExists,
+} from '../src/shared/storage/upload.js';
 
 const adapter = new PrismaPg({ connectionString: process.env['DATABASE_URL']! });
 const prisma = new PrismaClient({ adapter });
@@ -18,6 +23,39 @@ const prisma = new PrismaClient({ adapter });
 const SAMPLE_VIDEO_URL = 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4';
 const SAMPLE_THUMBNAIL_URL = 'https://placehold.co/1280x720/png?text=BuzzMap+POV';
 const SAMPLE_IMAGE_URL = 'https://placehold.co/1280x720/png?text=BuzzMap+Photo';
+
+// ─── Seed image re-hosting (placeholder URLs → RustFS) ────────────────────────
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
+/**
+ * Ensure a seed image lives in RustFS under a deterministic key and return that
+ * key. Idempotent and self-healing: if the object already exists it's reused; if
+ * it's missing (first seed, or after a storage reset) the external placeholder
+ * is fetched and uploaded. Network/storage failures fall back to the original
+ * URL so seeding never breaks (e.g. offline or before storage is reachable).
+ */
+async function ensureSeedImage(sourceUrl: string, key: string): Promise<string> {
+  try {
+    if (await storageObjectExists(key)) return key;
+    const res = await fetch(sourceUrl);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const buffer = Buffer.from(await res.arrayBuffer());
+    const contentType = res.headers.get('content-type') ?? 'image/png';
+    return await uploadBufferToStorage(key, buffer, contentType);
+  } catch (err) {
+    console.warn(
+      `[seed] Could not re-host ${sourceUrl}; keeping original URL.`,
+      (err as Error).message
+    );
+    return sourceUrl;
+  }
+}
 
 type SeedUserInput = {
   email: string;
@@ -916,13 +954,23 @@ async function seedKenyanSampleData(): Promise<void> {
   for (const product of sampleProducts) {
     const business = businessesByName.get(product.businessName);
     if (!business) continue;
+
+    // Re-host placeholder images into RustFS under deterministic keys. The
+    // helper is idempotent (skips upload when the object already exists) and
+    // self-heals after a storage reset, so this is safe to run on every boot.
+    const images = await Promise.all(
+      product.images.map((url, i) =>
+        ensureSeedImage(url, `products/seed/${slugify(product.name)}-${i}.png`)
+      )
+    );
+
     productsByName.set(
       product.name,
       await upsertProduct(business.id, {
         name: product.name,
         description: product.description,
         price: product.price,
-        images: product.images,
+        images,
         stock: product.stock,
         category: product.category,
       })
@@ -1058,6 +1106,17 @@ async function seedKenyanSampleData(): Promise<void> {
 
 async function main() {
   await ensureAdminUser();
+  // Storage is needed to re-host seed product images; tolerate it being
+  // unreachable (re-hosting then falls back to the placeholder URLs).
+  try {
+    initStorage();
+    await ensureBucket();
+  } catch (err) {
+    console.warn(
+      '[seed] Storage not ready; product images will keep placeholder URLs.',
+      (err as Error).message
+    );
+  }
   await seedKenyanSampleData();
 }
 
