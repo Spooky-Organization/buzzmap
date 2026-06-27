@@ -3,10 +3,23 @@ import { config } from '../../config/index.js';
 import { logger } from '../utils/logger.js';
 
 let s3Client: S3Client | null = null;
+let publicS3Client: S3Client | null = null;
 
 export function getStorage(): S3Client {
   if (!s3Client) throw new Error('Storage client not initialized. Call initStorage() first.');
   return s3Client;
+}
+
+/**
+ * Client whose endpoint is the *browser-reachable* storage host. Used only for
+ * generating pre-signed GET URLs: the internal endpoint (e.g. `rustfs:9000`) is
+ * a Docker-network hostname the browser cannot resolve, and a presigned URL's
+ * signature covers the host, so the public host must be baked in at sign time.
+ */
+export function getPublicStorage(): S3Client {
+  if (!publicS3Client)
+    throw new Error('Storage client not initialized. Call initStorage() first.');
+  return publicS3Client;
 }
 
 export function initStorage(): S3Client {
@@ -19,6 +32,15 @@ export function initStorage(): S3Client {
       secretAccessKey: config.storage.secretKey,
     },
     forcePathStyle: true, // Required for MinIO/RustFS compatibility
+  });
+  publicS3Client = new S3Client({
+    endpoint: config.storage.publicEndpoint,
+    region: 'us-east-1',
+    credentials: {
+      accessKeyId: config.storage.accessKey,
+      secretAccessKey: config.storage.secretKey,
+    },
+    forcePathStyle: true,
   });
   return s3Client;
 }

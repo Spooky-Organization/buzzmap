@@ -88,6 +88,13 @@ export const config = {
     secretKey: env.STORAGE_SECRET_KEY,
     bucketName: env.STORAGE_BUCKET_NAME,
     useSsl: env.STORAGE_USE_SSL === 'true',
+    // Browser-reachable base URL used to sign GET URLs. The internal endpoint is
+    // a Docker hostname the browser can't resolve, so this must be a host the
+    // client can reach (e.g. http://localhost:9000 in dev, a media domain in
+    // prod). Falls back to the internal endpoint when unset.
+    publicEndpoint:
+      process.env.STORAGE_PUBLIC_ENDPOINT ??
+      `${env.STORAGE_USE_SSL === 'true' ? 'https' : 'http'}://${env.STORAGE_ENDPOINT}:${env.STORAGE_PORT}`,
   },
 
   socketCorsOrigin: env.SOCKET_CORS_ORIGIN,
