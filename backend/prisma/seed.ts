@@ -11,11 +11,13 @@ import {
 } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcrypt';
-import { initStorage, ensureBucket } from '../src/shared/storage/index.js';
 import {
-  uploadBufferToStorage,
-  storageObjectExists,
-} from '../src/shared/storage/upload.js';
+  S3Client,
+  PutObjectCommand,
+  HeadObjectCommand,
+  HeadBucketCommand,
+  CreateBucketCommand,
+} from '@aws-sdk/client-s3';
 
 const adapter = new PrismaPg({ connectionString: process.env['DATABASE_URL']! });
 const prisma = new PrismaClient({ adapter });
@@ -25,6 +27,50 @@ const SAMPLE_THUMBNAIL_URL = 'https://placehold.co/1280x720/png?text=BuzzMap+POV
 const SAMPLE_IMAGE_URL = 'https://placehold.co/1280x720/png?text=BuzzMap+Photo';
 
 // ─── Seed image re-hosting (placeholder URLs → RustFS) ────────────────────────
+//
+// Self-contained on purpose: the seed runs via `tsx prisma/seed.ts` in the
+// pruned prod runner image, which ships only `dist/` (no `src/`), so it must NOT
+// import the app's storage module. It talks to S3/RustFS directly via env config
+// and degrades gracefully (keeps placeholder URLs) when storage is unavailable.
+
+const STORAGE_BUCKET = process.env['STORAGE_BUCKET_NAME'] ?? '';
+
+let storage: S3Client | null = null;
+
+function makeStorageClient(): S3Client | null {
+  const endpoint = process.env['STORAGE_ENDPOINT'];
+  const port = process.env['STORAGE_PORT'];
+  const accessKeyId = process.env['STORAGE_ACCESS_KEY'];
+  const secretAccessKey = process.env['STORAGE_SECRET_KEY'];
+  if (!endpoint || !port || !accessKeyId || !secretAccessKey || !STORAGE_BUCKET) {
+    return null;
+  }
+  const useSsl = process.env['STORAGE_USE_SSL'] === 'true';
+  return new S3Client({
+    endpoint: `${useSsl ? 'https' : 'http'}://${endpoint}:${port}`,
+    region: 'us-east-1',
+    credentials: { accessKeyId, secretAccessKey },
+    forcePathStyle: true,
+  });
+}
+
+/** Create the bucket if missing (idempotent). */
+async function ensureStorageBucket(client: S3Client): Promise<void> {
+  try {
+    await client.send(new HeadBucketCommand({ Bucket: STORAGE_BUCKET }));
+    return;
+  } catch {
+    // fall through to create
+  }
+  try {
+    await client.send(new CreateBucketCommand({ Bucket: STORAGE_BUCKET }));
+  } catch (err) {
+    const name = (err as { name?: string }).name;
+    if (name !== 'BucketAlreadyOwnedByYou' && name !== 'BucketAlreadyExists') {
+      throw err;
+    }
+  }
+}
 
 function slugify(value: string): string {
   return value
@@ -37,17 +83,32 @@ function slugify(value: string): string {
  * Ensure a seed image lives in RustFS under a deterministic key and return that
  * key. Idempotent and self-healing: if the object already exists it's reused; if
  * it's missing (first seed, or after a storage reset) the external placeholder
- * is fetched and uploaded. Network/storage failures fall back to the original
- * URL so seeding never breaks (e.g. offline or before storage is reachable).
+ * is fetched and uploaded. When storage is unavailable or any step fails, falls
+ * back to the original URL so seeding never breaks.
  */
 async function ensureSeedImage(sourceUrl: string, key: string): Promise<string> {
+  if (!storage) return sourceUrl;
   try {
-    if (await storageObjectExists(key)) return key;
+    try {
+      await storage.send(new HeadObjectCommand({ Bucket: STORAGE_BUCKET, Key: key }));
+      return key; // already hosted
+    } catch {
+      // not present — upload below
+    }
     const res = await fetch(sourceUrl);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const buffer = Buffer.from(await res.arrayBuffer());
     const contentType = res.headers.get('content-type') ?? 'image/png';
-    return await uploadBufferToStorage(key, buffer, contentType);
+    await storage.send(
+      new PutObjectCommand({
+        Bucket: STORAGE_BUCKET,
+        Key: key,
+        Body: buffer,
+        ContentType: contentType,
+        ContentLength: buffer.length,
+      })
+    );
+    return key;
   } catch (err) {
     console.warn(
       `[seed] Could not re-host ${sourceUrl}; keeping original URL.`,
@@ -1107,15 +1168,18 @@ async function seedKenyanSampleData(): Promise<void> {
 async function main() {
   await ensureAdminUser();
   // Storage is needed to re-host seed product images; tolerate it being
-  // unreachable (re-hosting then falls back to the placeholder URLs).
-  try {
-    initStorage();
-    await ensureBucket();
-  } catch (err) {
-    console.warn(
-      '[seed] Storage not ready; product images will keep placeholder URLs.',
-      (err as Error).message
-    );
+  // unconfigured or unreachable — re-hosting then keeps the placeholder URLs.
+  storage = makeStorageClient();
+  if (storage) {
+    try {
+      await ensureStorageBucket(storage);
+    } catch (err) {
+      console.warn(
+        '[seed] Storage not ready; product images will keep placeholder URLs.',
+        (err as Error).message
+      );
+      storage = null;
+    }
   }
   await seedKenyanSampleData();
 }

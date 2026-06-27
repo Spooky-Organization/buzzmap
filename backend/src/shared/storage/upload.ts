@@ -1,10 +1,5 @@
 import multer from 'multer';
-import {
-  PutObjectCommand,
-  DeleteObjectCommand,
-  GetObjectCommand,
-  HeadObjectCommand,
-} from '@aws-sdk/client-s3';
+import { PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl as awsGetSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { config } from '../../config/index.js';
 import { getStorage, getPublicStorage } from './index.js';
@@ -144,46 +139,6 @@ export async function uploadToStorage(
   );
 
   return key;
-}
-
-/**
- * Upload a raw Buffer under an explicit key, bypassing multer/content sniffing.
- * For non-request code paths (e.g. the DB seed) where the key is deterministic
- * and the content type is already known.
- */
-export async function uploadBufferToStorage(
-  key: string,
-  body: Buffer,
-  contentType: string
-): Promise<string> {
-  const client = getStorage();
-  await client.send(
-    new PutObjectCommand({
-      Bucket: config.storage.bucketName,
-      Key: key,
-      Body: body,
-      ContentType: contentType,
-      ContentLength: body.length,
-    })
-  );
-  return key;
-}
-
-/**
- * Whether an object exists in storage. Used by idempotent code paths (e.g. the
- * seed) that must re-create objects after a storage reset rather than trusting
- * a stale DB reference.
- */
-export async function storageObjectExists(key: string): Promise<boolean> {
-  const client = getStorage();
-  try {
-    await client.send(
-      new HeadObjectCommand({ Bucket: config.storage.bucketName, Key: key })
-    );
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 /**
