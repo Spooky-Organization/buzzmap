@@ -17,6 +17,7 @@ router.patch(
   '/:id',
   authenticate,
   authorize('BUSINESS_OWNER'),
+  upload.array('images', 10),
   productController.update
 );
 router.delete(

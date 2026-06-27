@@ -50,6 +50,27 @@ export async function create(
   }
 }
 
+/**
+ * Parse the multipart `existingImages` field (JSON array of stored image
+ * references the client wants to keep). Absent → undefined (images untouched).
+ */
+function parseExistingImages(raw: unknown): string[] | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw !== 'string') {
+    throw new AppError(400, 'existingImages must be a JSON array string');
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new AppError(400, 'existingImages must be valid JSON');
+  }
+  if (!Array.isArray(parsed) || !parsed.every((v) => typeof v === 'string')) {
+    throw new AppError(400, 'existingImages must be an array of strings');
+  }
+  return parsed as string[];
+}
+
 export async function update(
   req: Request,
   res: Response,
@@ -58,8 +79,24 @@ export async function update(
   try {
     assertAuthenticated(req);
     const { id } = req.params as { id: string };
-    const data = updateProductSchema.parse(req.body);
-    const product = await productService.updateProduct(id, req.user.userId, data);
+
+    // Numeric fields arrive as strings over multipart/form-data; coerce only
+    // when present so JSON-only updates (e.g. availability toggles) still parse.
+    const rawBody = { ...req.body };
+    if (rawBody.price !== undefined) rawBody.price = Number(rawBody.price);
+    if (rawBody.stock !== undefined) rawBody.stock = Number(rawBody.stock);
+
+    const data = updateProductSchema.parse(rawBody);
+    const imageFiles = req.files as Express.Multer.File[] | undefined;
+    const existingImages = parseExistingImages(req.body.existingImages);
+
+    const product = await productService.updateProduct(
+      id,
+      req.user.userId,
+      data,
+      imageFiles,
+      existingImages
+    );
     res.status(200).json({ status: 'success', data: product });
   } catch (err) {
     next(err);

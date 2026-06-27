@@ -1,5 +1,9 @@
 import { getPrisma } from '../../../shared/prisma/index.js';
-import { uploadToStorage, getSignedUrl } from '../../../shared/storage/upload.js';
+import {
+  uploadToStorage,
+  resolveStorageUrl,
+  deleteFromStorage,
+} from '../../../shared/storage/upload.js';
 import { AppError } from '../../../shared/middleware/errorHandler.js';
 import { logger } from '../../../shared/utils/logger.js';
 import type {
@@ -11,8 +15,28 @@ import type {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const MAX_PRODUCT_IMAGES = 10;
+
 async function resolveImageUrls(keys: string[]): Promise<string[]> {
-  return Promise.all(keys.map((key) => getSignedUrl(key)));
+  return Promise.all(keys.map((key) => resolveStorageUrl(key)));
+}
+
+/** A stored image is a deletable storage object only if it's not an absolute URL. */
+function isStorageKey(value: string): boolean {
+  return !/^https?:\/\//i.test(value);
+}
+
+/** Best-effort removal of storage objects; never fails the request on cleanup. */
+async function deleteStorageKeys(keys: string[]): Promise<void> {
+  await Promise.all(
+    keys.filter(isStorageKey).map(async (key) => {
+      try {
+        await deleteFromStorage(key);
+      } catch (err) {
+        logger.warn({ key, err }, 'Failed to delete product image from storage');
+      }
+    })
+  );
 }
 
 async function formatProduct(product: {
@@ -29,7 +53,9 @@ async function formatProduct(product: {
   createdAt: Date;
 }): Promise<ProductResponse> {
   const images = await resolveImageUrls(product.images);
-  return { ...product, images };
+  // `imageKeys` exposes the raw stored references so the owner's edit UI can
+  // identify which images to keep/remove (signed URLs are not stable ids).
+  return { ...product, images, imageKeys: product.images };
 }
 
 const PRODUCT_SELECT = {
@@ -133,14 +159,50 @@ export async function createProduct(
 export async function updateProduct(
   productId: string,
   userId: string,
-  data: UpdateProductDTO
+  data: UpdateProductDTO,
+  imageFiles?: Express.Multer.File[],
+  existingImages?: string[]
 ): Promise<ProductResponse> {
   const prisma = getPrisma();
-  await getOwnedProduct(productId, userId);
+  const owned = await getOwnedProduct(productId, userId);
+
+  // Images are only touched when the request manages them — i.e. it uploaded
+  // new files and/or sent an explicit `existingImages` keep-list. A plain
+  // scalar update (or availability toggle) leaves the gallery untouched.
+  const managesImages =
+    (imageFiles && imageFiles.length > 0) || existingImages !== undefined;
+
+  let images: string[] | undefined;
+  if (managesImages) {
+    // Keep only references that actually belong to this product (guards against
+    // a stale/forged keep-list), then append the freshly uploaded keys.
+    const kept = (existingImages ?? owned.images).filter((ref) =>
+      owned.images.includes(ref)
+    );
+
+    const uploaded: string[] = [];
+    if (imageFiles) {
+      for (const file of imageFiles) {
+        uploaded.push(await uploadToStorage(file, 'products'));
+      }
+    }
+
+    images = [...kept, ...uploaded];
+    if (images.length > MAX_PRODUCT_IMAGES) {
+      await deleteStorageKeys(uploaded); // roll back to avoid orphaned objects
+      throw new AppError(
+        400,
+        `A product can have at most ${MAX_PRODUCT_IMAGES} images.`
+      );
+    }
+
+    // Purge images the owner dropped.
+    await deleteStorageKeys(owned.images.filter((ref) => !images!.includes(ref)));
+  }
 
   const product = await prisma.product.update({
     where: { id: productId },
-    data,
+    data: { ...data, ...(images !== undefined ? { images } : {}) },
     select: PRODUCT_SELECT,
   });
 
@@ -153,9 +215,10 @@ export async function deleteProduct(
   userId: string
 ): Promise<void> {
   const prisma = getPrisma();
-  await getOwnedProduct(productId, userId);
+  const owned = await getOwnedProduct(productId, userId);
 
   await prisma.product.delete({ where: { id: productId } });
+  await deleteStorageKeys(owned.images); // free the product's storage objects
 
   logger.info({ productId, userId }, 'Product deleted');
 }

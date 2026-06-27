@@ -23,7 +23,8 @@ export interface ProductResponse {
   description: string;
   price: number;
   currency: string;
-  images: string[];
+  images: string[]; // browser-loadable URLs (signed or absolute)
+  imageKeys: string[]; // raw stored references (keys or absolute URLs) for edit
   stock: number;
   category: string;
   isAvailable: boolean;

@@ -9,18 +9,17 @@ export const createProductSchema = z.object({
   category: z.string().min(1).max(100),
 });
 
-export const updateProductSchema = z
-  .object({
-    name: z.string().min(1).max(200).optional(),
-    description: z.string().min(1).max(2000).optional(),
-    price: z.number().positive().optional(),
-    stock: z.number().int().min(0).optional(),
-    category: z.string().min(1).max(100).optional(),
-    isAvailable: z.boolean().optional(),
-  })
-  .refine((data) => Object.keys(data).length > 0, {
-    message: 'At least one field must be provided for update',
-  });
+// No non-empty refinement: an update may legitimately change only images
+// (handled out-of-band via multipart files + `existingImages`), leaving every
+// scalar field absent.
+export const updateProductSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  description: z.string().min(1).max(2000).optional(),
+  price: z.number().positive().optional(),
+  stock: z.number().int().min(0).optional(),
+  category: z.string().min(1).max(100).optional(),
+  isAvailable: z.boolean().optional(),
+});
 
 export const updateStockSchema = z.object({
   quantity: z.number().int(),
